@@ -1,6 +1,5 @@
-import type { NextConfig } from 'next';
-
-const config: NextConfig = {
+/** @type {import('next').NextConfig} */
+const config = {
   // ── Performance ──────────────────────────────────────────────────
   // Framer Motion is already tree-shaken; no special config needed.
   // Compiler: remove console.log in production builds only.
@@ -65,4 +64,4 @@ const config: NextConfig = {
   },
 };
 
-export default config;
+module.exports = config;
