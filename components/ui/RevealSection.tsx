@@ -15,8 +15,7 @@ export default function RevealSection({ children, className, delay = 0, as: Tag 
   const { ref, visible } = useIntersection<HTMLDivElement>({ threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
   return (
-    <Tag
-      // @ts-expect-error — dynamic tag ref
+    <div
       ref={ref}
       className={cn(
         'transition-all duration-700 ease-out',
@@ -28,6 +27,6 @@ export default function RevealSection({ children, className, delay = 0, as: Tag 
       )}
     >
       {children}
-    </Tag>
+    </div>
   );
 }

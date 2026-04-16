@@ -8,7 +8,7 @@ function RateBar({ item }: { item: (typeof RATE_CHART)[number] }) {
     <div ref={ref} className="flex flex-col items-center gap-2">
       <span
         className={`text-[11px] font-bold transition-opacity duration-500 ${visible ? 'opacity-100' : 'opacity-0'}`}
-        style={{ color: item.projected ? '#D97706' : '#3B82F6' }}
+        style={{ color: '#D97706' }}
       >
         {item.rate}¢
       </span>
@@ -18,9 +18,7 @@ function RateBar({ item }: { item: (typeof RATE_CHART)[number] }) {
           style={{
             height: visible ? `${item.height}%` : '0%',
             transitionDelay: '100ms',
-            background: item.projected
-              ? 'linear-gradient(to top, #D97706, #F59E0B)'
-              : 'linear-gradient(to top, #1E2D45, #2563EB)',
+            background: 'linear-gradient(to top, #D97706, #F59E0B)',
           }}
         />
       </div>

@@ -72,7 +72,7 @@ export default function NotYetPage() {
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row justify-center gap-3">
             <LinkButton href="/">Back to Homepage</LinkButton>
-            <LinkButton href="/#calculator" variant="secondary">Try the Calculator</LinkButton>
+            <LinkButton href="/#calculator">Try the Calculator</LinkButton>
           </div>
         </div>
       </main>
