@@ -87,13 +87,13 @@ export default function MeetMichael() {
             </RevealSection>
 
             <div className="flex flex-col gap-4 mb-10">
-              {[
+              {([
                 { icon: '⚡', label: 'Instant SMS response — usually under 2 minutes' },
                 { icon: '🔒', label: 'No spam. Reply STOP anytime to opt out.' },
                 { icon: '🤝', label: 'Qualifies your home before any human contact' },
                 { icon: '📅', label: 'Sends personalized booking link when you\'re ready' },
-              ].map(f => (
-                <RevealSection key={f.label} delay={2}>
+              ] as const).map((f, i) => (
+                <RevealSection key={f.label} delay={(i as 0 | 1 | 2 | 3)}>
                   <div className="flex items-start gap-3">
                     <span className="text-[18px] flex-shrink-0 mt-0.5">{f.icon}</span>
                     <p className="text-[14.5px] text-white/70">{f.label}</p>

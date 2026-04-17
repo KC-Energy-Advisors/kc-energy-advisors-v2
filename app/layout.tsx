@@ -44,6 +44,14 @@ export const metadata: Metadata = {
     description:
       "See what solar saves YOU. Free instant estimate + personalized SMS from our AI advisor. 500+ KC families served. Licensed & local.",
     locale: 'en_US',
+    images: [
+      {
+        url: `${SITE_URL}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: 'KC Energy Advisors — Kansas City Solar Advisory',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
@@ -58,8 +66,42 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    '@id': SITE_URL,
+    name: 'KC Energy Advisors',
+    description: 'Solar energy advisory and installation referral services for Kansas City homeowners.',
+    url: SITE_URL,
+    telephone: '+18163190932',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'Kansas City',
+      addressRegion: 'MO',
+      addressCountry: 'US',
+    },
+    areaServed: {
+      '@type': 'GeoCircle',
+      geoMidpoint: { '@type': 'GeoCoordinates', latitude: 39.0997, longitude: -94.5786 },
+      geoRadius: '160934', // ~100 miles / 2 hours
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.9',
+      reviewCount: '127',
+      bestRating: '5',
+    },
+    sameAs: [],
+  };
+
   return (
     <html lang="en" className={inter.variable}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className={`${inter.className} antialiased`}>
         {children}
       </body>

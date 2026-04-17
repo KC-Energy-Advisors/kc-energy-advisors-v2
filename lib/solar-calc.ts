@@ -3,7 +3,7 @@ import type { SavingsResult } from './types';
 
 /**
  * Calculate estimated solar savings for a given monthly bill.
- * All math is KC-specific (1,200 kWh/kW/yr production, 3.5% escalation).
+ * All math is KC-specific (1,200 kWh/kW/yr production, 3.4% annual escalation per EIA).
  */
 export function calcSavings(monthlyBill: number): SavingsResult {
   const annual = monthlyBill * 12;
@@ -36,10 +36,14 @@ export function fmtDollars(n: number): string {
   return '$' + n.toLocaleString('en-US');
 }
 
-/** Convert a raw phone string to E.164 format */
+/**
+ * Convert a raw phone string to E.164 format.
+ * Returns an empty string if the input cannot form a valid US number,
+ * so callers can treat the empty string as a validation failure.
+ */
 export function toE164(raw: string): string {
   const digits = raw.replace(/\D/g, '');
-  if (digits.length === 10)                        return '+1' + digits;
-  if (digits.length === 11 && digits[0] === '1') return '+' + digits;
-  return '+1' + digits;
+  if (digits.length === 10)                           return '+1' + digits;
+  if (digits.length === 11 && digits[0] === '1')      return '+' + digits;
+  return ''; // ← invalid — let caller show the user a clear error
 }

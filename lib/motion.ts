@@ -15,7 +15,7 @@ import type { Variants } from 'framer-motion';
 
 /** Fade + translate up — primary reveal for text and cards */
 export const fadeUp: Variants = {
-  hidden:  { opacity: 0, y: 24 },
+  hidden:  { opacity: 0, y: 16 },
   visible: {
     opacity: 1,
     y: 0,
@@ -90,11 +90,10 @@ export const staggerSlow: Variants = {
 
 /** Hero headline — large text entrance with slight spring */
 export const heroHeadline: Variants = {
-  hidden:  { opacity: 0, y: 14, filter: 'blur(4px)' },
+  hidden:  { opacity: 0, y: 14 },
   visible: {
     opacity: 1,
     y: 0,
-    filter: 'blur(0px)',
     transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 },
   },
 };
@@ -153,14 +152,20 @@ export const rowRight: Variants = {
 
 // ── Button interactions ───────────────────────────────────────────
 
-/** Primary CTA button — subtle pulse glow while idle */
+/**
+ * Primary CTA button — subtle opacity pulse while idle.
+ *
+ * Previously animated boxShadow (a paint property) at repeat: Infinity,
+ * which caused a browser repaint every single frame. Opacity is a
+ * compositor-only property — the GPU handles it entirely off the main
+ * thread with zero repaint cost.
+ *
+ * The visual result is nearly identical: the button gently breathes.
+ * The static boxShadow is set once via Tailwind/CSS and never changes.
+ */
 export const ctaGlow = {
   animate: {
-    boxShadow: [
-      '0 4px 16px rgba(37,99,235,0.3)',
-      '0 4px 28px rgba(37,99,235,0.55)',
-      '0 4px 16px rgba(37,99,235,0.3)',
-    ],
+    opacity: [1, 0.82, 1],
     transition: {
       duration: 3,
       repeat: Infinity,

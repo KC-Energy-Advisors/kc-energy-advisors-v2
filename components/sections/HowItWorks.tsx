@@ -57,7 +57,11 @@ function Step({ step, index }: { step: typeof STEPS[number]; index: number }) {
 
 export default function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-28" style={{ background: '#FFFFFF' }}>
+    <section
+      id="how-it-works"
+      className="py-28"
+      style={{ background: '#F8FAFC', borderTop: '1px solid #E5E7EB' }}
+    >
       <div className="max-w-site mx-auto px-6">
         {/* Eyebrow */}
         <p className="text-[12px] font-semibold uppercase tracking-[0.12em] mb-5" style={{ color: '#2563EB' }}>

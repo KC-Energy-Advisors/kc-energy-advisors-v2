@@ -70,10 +70,10 @@ export default function QualifyForm() {
   // ── Step 1: Ownership ────────────────────────────────────────────
   const handleOwnership = useCallback((owns: boolean) => {
     if (!owns) {
-      // Renter — soft disqualify
+      // Renter — soft disqualify (fire-and-forget, no personal info to send)
       submitToAPI({
         ...buildBasePayload('no', 'no', '', '', 0),
-        firstName: 'Unknown',
+        firstName: '',
         lastName: '',
         phone: '',
         email: '',
@@ -91,7 +91,7 @@ export default function QualifyForm() {
     if (!inArea) {
       submitToAPI({
         ...buildBasePayload('yes', 'no', '', '', 0),
-        firstName: 'Unknown',
+        firstName: '',
         lastName: '',
         phone: '',
         email: '',
@@ -118,7 +118,7 @@ export default function QualifyForm() {
       // Low bill disqualify
       submitToAPI({
         ...buildBasePayload('yes', 'yes', code, option.label, option.midpoint),
-        firstName: 'Unknown',
+        firstName: '',
         lastName: '',
         phone: '',
         email: '',
@@ -205,10 +205,10 @@ export default function QualifyForm() {
               No credit check. No sales call until you want one.
               Just your custom Savings Report — built for your home, your bill, your zip code.
             </p>
-            {/* Real urgency insert */}
+            {/* Urgency — distinct from Hero copy */}
             <p className="text-[14px] font-medium" style={{ color: '#F59E0B' }}>
-              → Electricity demand is projected to rise 15–20% by 2035.{' '}
-              <span style={{ color: '#94A3B8' }}>Homeowners who lock in their rate now won&apos;t pay those increases.</span>
+              → Takes 60 seconds.{' '}
+              <span style={{ color: '#94A3B8' }}>Michael texts you within minutes with your custom numbers.</span>
             </p>
           </div>
 

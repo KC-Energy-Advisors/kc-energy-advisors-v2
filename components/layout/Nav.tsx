@@ -79,9 +79,9 @@ export default function Nav() {
           aria-expanded={open}
           className="md:hidden ml-auto flex flex-col gap-[5px] p-2"
         >
-          <span className={cn('block w-[22px] h-0.5 rounded-sm transition-transform duration-250', scrolled ? 'bg-white' : 'bg-white', open && 'translate-y-[7px] rotate-45')} />
-          <span className={cn('block w-[22px] h-0.5 rounded-sm transition-opacity duration-250',  scrolled ? 'bg-white' : 'bg-white', open && 'opacity-0')} />
-          <span className={cn('block w-[22px] h-0.5 rounded-sm transition-transform duration-250', scrolled ? 'bg-white' : 'bg-white', open && '-translate-y-[7px] -rotate-45')} />
+          <span className={cn('block w-[22px] h-0.5 bg-white rounded-sm transition-transform duration-250', open && 'translate-y-[7px] rotate-45')} />
+          <span className={cn('block w-[22px] h-0.5 bg-white rounded-sm transition-opacity duration-250',  open && 'opacity-0')} />
+          <span className={cn('block w-[22px] h-0.5 bg-white rounded-sm transition-transform duration-250', open && '-translate-y-[7px] -rotate-45')} />
         </button>
       </div>
 

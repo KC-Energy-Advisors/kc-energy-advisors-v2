@@ -6,9 +6,14 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 html {
-  /* scroll-behavior: smooth; */
+  scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Anchor scroll offset — accounts for sticky nav (68px) + 12px breathing room */
+[id] {
+  scroll-margin-top: 84px;
 }
 
 /* ── Range slider — cross-browser thumb styles ───────────────── */
@@ -69,7 +74,7 @@ input[type='range']::-moz-range-track {
   color: inherit;
 }
 
-/* ── Focus visible ring ──────────────────────────────────────── */
+/* Focus visible ring */
 :focus-visible {
   outline: 2px solid #2563EB;
   outline-offset: 2px;
@@ -77,5 +82,5 @@ input[type='range']::-moz-range-track {
 
 /* Focus style for buttons / links within dark sections */
 .bg-brand-navy :focus-visible {
-  outline-color: rgba(255,255,255,0.5);
+  outline-color: rgba(255, 255, 255, 0.95);
 }
