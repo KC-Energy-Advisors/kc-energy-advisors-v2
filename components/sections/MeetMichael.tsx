@@ -20,7 +20,9 @@ function TypingDots() {
 }
 
 interface Msg { from: 'michael' | 'user'; text: string; }
-
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 export default function MeetMichael() {
   const { ref: sectionRef, visible } = useIntersection<HTMLDivElement>({ threshold: 0.3, once: true });
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -28,7 +30,45 @@ export default function MeetMichael() {
   const [done, setDone]         = useState(false);
   const chatEndRef               = useRef<HTMLDivElement>(null);
   const startedRef               = useRef(false);
+const [isChatOpen, setIsChatOpen] = useState(false);
 
+const openChat = () => {
+  setIsChatOpen(true);
+};
+const sendMessage = async (message: string) => {
+  if (!message.trim()) return;
+
+  // show user message
+  setMessages((prev) => [
+    ...prev,
+    { from: "user", text: message },
+  ]);
+
+  try {
+    const res = await fetch("https://michael-agent-2uow.onrender.com/webhook/website-chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: message,
+        name: "Website Visitor",
+        phone: "web-user",
+      }),
+    });
+
+    const data = await res.json();
+
+    // show AI reply
+    setMessages((prev) => [
+      ...prev,
+      { from: "michael", text: data.reply },
+    ]);
+
+  } catch (err) {
+    console.error("Send error:", err);
+  }
+};
   useEffect(() => {
     if (!visible || startedRef.current) return;
     startedRef.current = true;
@@ -103,10 +143,23 @@ export default function MeetMichael() {
             </div>
 
             <RevealSection delay={3}>
-              <LinkButton href="#qualify" variant="white" size="lg">
-                Text with Michael Now →
-              </LinkButton>
+            <button
+  onClick={openChat}
+  className="mt-6 inline-block bg-brand-gold text-black font-semibold px-6 py-3 rounded-xl shadow-lg hover:scale-105 transition cursor-pointer"
+>
+  Text with Michael Now →
+</button>
             </RevealSection>
+            {isChatOpen && (
+  <div className="mt-4 max-w-md rounded-xl border border-brand-blue/20 bg-slate-900 p-4 text-white shadow-xl">
+    <p className="text-sm font-semibold">
+      Start chatting with Michael now
+    </p>
+    <p className="text-xs text-white/70 mt-1">
+      Type your question in the phone on the right →
+    </p>
+  </div>
+)}
           </div>
 
           {/* Right — animated phone */}
@@ -171,29 +224,52 @@ export default function MeetMichael() {
                   <div ref={chatEndRef} />
                 </div>
 
-                {/* Input bar */}
-                <div className="bg-slate-800 px-4 py-3 flex items-center gap-2 border-t border-white/[0.06]">
-                  <div className="flex-1 bg-slate-700 rounded-full px-4 py-2 text-[11.5px] text-white/30">
-                    Text a message…
-                  </div>
-                  <div className="w-8 h-8 bg-brand-blue rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-                      <path d="M12 7H2M7 2l5 5-5 5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                </div>
-              </div>
+               {/* Input bar */}
+<div className="bg-slate-800 px-4 py-3 flex items-center gap-2 border-t border-white/10">
+  <input
+    type="text"
+    placeholder="Type a message..."
+    className="flex-1 bg-slate-700 rounded-full px-4 py-2 text-sm text-white outline-none"
+    onKeyDown={(e) => {
+      if (e.key === "Enter") {
+        sendMessage(e.currentTarget.value);
+        e.currentTarget.value = "";
+      }
+    }}
+  />
 
-              {/* Decorative glows */}
-              <div className="absolute -top-10 -left-10 w-48 h-48 bg-brand-blue/20 rounded-full blur-[60px] pointer-events-none" aria-hidden />
-              <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-gold/15 rounded-full blur-[50px] pointer-events-none" aria-hidden />
-            </div>
-          </div>
+  <button
+    type="button"
+    onClick={(e) => {
+      const input = e.currentTarget.parentElement?.querySelector("input");
+      if (input && input.value) {
+        sendMessage(input.value);
+        input.value = "";
+      }
+    }}
+    className="w-8 h-8 bg-brand-blue rounded-full flex items-center justify-center text-white"
+  >
+    ➤
+  </button>
+</div>
 
-        </div>
-      </div>
-    </section>
-  );
+</div> {/* closes phone shell */}
+
+{/* Decorative glows */}
+<div className="absolute -top-10 -left-10 w-48 h-48 bg-brand-blue/20 rounded-full blur-[60px] pointer-events-none"></div>
+<div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-gold/15 rounded-full blur-[50px] pointer-events-none"></div>
+
+</div> {/* closes relative phone wrapper */}
+</div> {/* closes right column */}
+</div> {/* closes grid */}
+
+{isChatOpen && (
+  <div className="mt-10 mx-auto max-w-2xl rounded-2xl border border-white/10 bg-slate-900 p-6 text-white shadow-2xl">
+    Chat is open 🔥
+  </div>
+)}
+
+</div> {/* closes max-w-site container */}
+</section>
+);
 }
-
-function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }

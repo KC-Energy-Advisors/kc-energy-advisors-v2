@@ -175,9 +175,12 @@ export default function QualifyForm() {
     setLoading(true);
     try {
       await submitToAPI(payload, true);
+      console.log('[QualifyForm] ✅ submission succeeded — redirecting to /thank-you');
       router.push('/thank-you');
     } catch (err) {
-      setError('Something went wrong. Please try again or call us directly.');
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[QualifyForm] ❌ submission failed:', msg);
+      setError(msg || 'Something went wrong. Please try again or call us directly.');
       setLoading(false);
     }
   }, [form, fs, router]);
@@ -388,8 +391,11 @@ export default function QualifyForm() {
                   </div>
 
                   {error && (
-                    <div className="bg-red-500/10 border border-red-500/25 rounded-xl px-4 py-3 text-[13px] text-red-400 font-medium">
-                      {error}
+                    <div className="bg-red-500/10 border border-red-500/25 rounded-xl px-4 py-3 text-[13px] text-red-400">
+                      <p className="font-medium mb-1">{error}</p>
+                      <p className="text-red-400/60 text-[11px]">
+                        Your info is saved — tap the button below to try again.
+                      </p>
                     </div>
                   )}
 
@@ -483,11 +489,25 @@ function buildBasePayload(
   };
 }
 
-async function submitToAPI(payload: LeadPayload, qualified: boolean) {
-  const res = await fetch('/api/submit-lead', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...payload, qualified }),
+async function submitToAPI(payload: LeadPayload, qualified: boolean): Promise<void> {
+  console.log('[QualifyForm] → submitting', {
+    qualified,
+    phone:  payload.phone,
+    source: payload.source,
+    bill:   payload.bill_label,
   });
-  if (!res.ok) throw new Error(`API error ${res.status}`);
+
+  const res = await fetch('/api/submit-lead', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ ...payload, qualified }),
+  });
+
+  // Always try to parse the response body for logging, even on error
+  const data = await res.json().catch(() => ({}));
+  console.log('[QualifyForm] ← response', { status: res.status, ok: res.ok, data });
+
+  if (!res.ok) {
+    throw new Error(data.error || `API error ${res.status}`);
+  }
 }

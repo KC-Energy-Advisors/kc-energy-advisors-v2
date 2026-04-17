@@ -115,10 +115,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid phone number format' }, { status: 400 });
   }
 
-  // GHL webhook URL must be set
+  // GHL webhook URL must be set in production; in dev, skip GHL and log a warning
   if (!process.env.GHL_WEBHOOK_URL) {
-    console.error('[submit-lead] GHL_WEBHOOK_URL not set — check Vercel env vars');
-    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[submit-lead] ❌ GHL_WEBHOOK_URL not set — check Vercel env vars');
+      return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+    }
+    console.warn('[submit-lead] ⚠️  GHL_WEBHOOK_URL not set — dev mode, returning mock success');
+    console.warn('[submit-lead] payload that would have been sent:', JSON.stringify(payload, null, 2));
+    return NextResponse.json({ success: true, qualified, ghl_ok: false, python_ok: false, dev_mode: true });
   }
 
   // ── Fire both webhooks in parallel, independently ─────────────────
