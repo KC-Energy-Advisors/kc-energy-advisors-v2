@@ -45,7 +45,7 @@ const sendMessage = async (message: string) => {
   ]);
 
   try {
-    const res = await fetch("https://michael-agent-2uow.onrender.com/webhook/website-chat", {
+    const res = await fetch("https://michael-agent-2uov.onrender.com/webhook/website-chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -218,58 +218,4 @@ const sendMessage = async (message: string) => {
                   {done && (
                     <div className="text-center text-[10px] text-white/25 mt-2 animate-msg-pop">
                       🎉 Booked — see you Tuesday at 2pm!
-                    </div>
-                  )}
-
-                  <div ref={chatEndRef} />
-                </div>
-
-               {/* Input bar */}
-<div className="bg-slate-800 px-4 py-3 flex items-center gap-2 border-t border-white/10">
-  <input
-    type="text"
-    placeholder="Type a message..."
-    className="flex-1 bg-slate-700 rounded-full px-4 py-2 text-sm text-white outline-none"
-    onKeyDown={(e) => {
-      if (e.key === "Enter") {
-        sendMessage(e.currentTarget.value);
-        e.currentTarget.value = "";
-      }
-    }}
-  />
-
-  <button
-    type="button"
-    onClick={(e) => {
-      const input = e.currentTarget.parentElement?.querySelector("input");
-      if (input && input.value) {
-        sendMessage(input.value);
-        input.value = "";
-      }
-    }}
-    className="w-8 h-8 bg-brand-blue rounded-full flex items-center justify-center text-white"
-  >
-    ➤
-  </button>
-</div>
-
-</div> {/* closes phone shell */}
-
-{/* Decorative glows */}
-<div className="absolute -top-10 -left-10 w-48 h-48 bg-brand-blue/20 rounded-full blur-[60px] pointer-events-none"></div>
-<div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-gold/15 rounded-full blur-[50px] pointer-events-none"></div>
-
-</div> {/* closes relative phone wrapper */}
-</div> {/* closes right column */}
-</div> {/* closes grid */}
-
-{isChatOpen && (
-  <div className="mt-10 mx-auto max-w-2xl rounded-2xl border border-white/10 bg-slate-900 p-6 text-white shadow-2xl">
-    Chat is open 🔥
-  </div>
-)}
-
-</div> {/* closes max-w-site container */}
-</section>
-);
-}
+           
