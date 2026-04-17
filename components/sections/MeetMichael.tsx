@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useIntersection } from '@/hooks/useIntersection';
 import { CHAT_SCRIPT } from '@/lib/constants';
 import RevealSection from '@/components/ui/RevealSection';
-import { LinkButton } from '@/components/ui/Button';
+// LinkButton removed — not used in this component
 
 function TypingDots() {
   return (
@@ -218,4 +218,18 @@ const sendMessage = async (message: string) => {
                   {done && (
                     <div className="text-center text-[10px] text-white/25 mt-2 animate-msg-pop">
                       🎉 Booked — see you Tuesday at 2pm!
+                    </div>
+                  )}
+
+                  <div ref={chatEndRef} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+}
            
