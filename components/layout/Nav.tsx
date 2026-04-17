@@ -40,7 +40,7 @@ export default function Nav() {
     const id = href.slice(1);
     const el = document.getElementById(id);
     if (!el) return;
-    window.scrollTo({ top: el.getBoundingClientRect().top + scrollY - 68 - 12, behavior: 'smooth' });
+    window.scrollTo({ top: el.getBoundingClientRect().top + scrollY - 68 - 12, behavior: 'auto' });
   };
 
   // Transparent on hero, Deep Ink + blur on scroll (per docx spec)

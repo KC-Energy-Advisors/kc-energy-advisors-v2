@@ -6,11 +6,36 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 html {
-  scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Smooth scroll ONLY after user interaction */
+/*html:focus-within {
+  scroll-behavior: smooth;
+}/**
+ * Scope smooth scroll to user-initiated interactions only.
+ *
+ * DO NOT put scroll-behavior: smooth on bare `html {}`.
+ * Next.js App Router calls window.scrollTo(0, 0) programmatically
+ * after hydration to manage scroll restoration. When smooth scroll
+ * is set globally, that internal call becomes animated — the browser
+ * visibly pulls the page upward from any cached scroll position back
+ * to 0. Users experience this as an involuntary upward jerk on load.
+ *
+ * :focus-within is false during programmatic scroll (no element has
+ * focus before the user interacts), so Next.js's scrollTo() is
+ * instantaneous. User-triggered anchor navigation (which fires after
+ * a click, meaning focus exists) still animates smoothly. Nav.tsx
+ * also calls window.scrollTo({ behavior: 'smooth' }) explicitly, so
+ * anchor links are unaffected regardless.
+ */
+/*@media (prefers-reduced-motion: no-preference) {
+  html:focus-within {
+    scroll-behavior: smooth;
+  }
+}
+*/
 /* ── Anchor scroll offset — accounts for sticky nav (68px) + 12px breathing room */
 [id] {
   scroll-margin-top: 84px;

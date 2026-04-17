@@ -59,7 +59,7 @@ export default function MeetMichael() {
   }, [visible]);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    //chatEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'nearest'// });
   }, [messages, typing]);
 
   return (
@@ -138,7 +138,7 @@ export default function MeetMichael() {
                 </div>
 
                 {/* Chat messages */}
-                <div className="bg-[#1a1f2e] px-4 py-4 min-h-[340px] max-h-[340px] overflow-y-auto flex flex-col gap-3 scroll-smooth">
+                <div className="bg-[#1a1f2e] px-4 py-4 min-h-[340px] max-h-[340px] overflow-y-auto flex flex-col gap-3">
                   {messages.map((m, i) => (
                     <div
                       key={i}

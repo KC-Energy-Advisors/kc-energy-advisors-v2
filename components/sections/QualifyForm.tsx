@@ -64,7 +64,7 @@ export default function QualifyForm() {
   const topRef                = useRef<HTMLDivElement>(null);
 
   const scrollToTop = () => {
-    topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+   // topRef.current?.scrollIntoView({ behavior: 'auto', block: 'start'// });
   };
 
   // ── Step 1: Ownership ────────────────────────────────────────────
