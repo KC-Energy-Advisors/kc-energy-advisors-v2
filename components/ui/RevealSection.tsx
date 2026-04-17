@@ -12,7 +12,7 @@ interface Props {
 const DELAYS = ['', 'delay-75', 'delay-150', 'delay-200', 'delay-300'] as const;
 
 export default function RevealSection({ children, className, delay = 0, as: Tag = 'div' }: Props) {
-  const { ref, visible } = useIntersection<HTMLDivElement>({ threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  const { ref, visible } = useIntersection<HTMLDivElement>({ threshold: 0, rootMargin: '0px' });
 
   return (
     <div
