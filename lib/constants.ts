@@ -61,15 +61,15 @@ export const BASE_TAGS = ['solar-lead-website'] as const;
 // ── Michael AI chat script (mirrors michael_agent.py flow) ───────
 // Delays are cumulative ms from section entering viewport
 export const CHAT_SCRIPT: ChatMessage[] = [
-  { from: 'michael', text: "Hey! I'm Michael with KC Energy Advisors. Quick question — do you own your home?",                                                                             delay: 800  },
-  { from: 'user',    text: "Yeah, I own the place.",                                                                                                                                     delay: 2200 },
-  { from: 'michael', text: "Perfect. Are you in the Kansas City area — within about 2 hours?",                                                                                           delay: 1600 },
-  { from: 'user',    text: "Yep, out in Overland Park.",                                                                                                                                 delay: 2400 },
-  { from: 'michael', text: "Nice. What's your average monthly electric bill — ballpark is fine.",                                                                                        delay: 1800 },
-  { from: 'user',    text: "Around $180 a month, sometimes more in summer.",                                                                                                             delay: 2600 },
-  { from: 'michael', text: "Sounds like your home is a solid candidate. Want to grab a free 15-min call with one of our KC advisors? No pressure — just your numbers.",                  delay: 2000 },
-  { from: 'user',    text: "Yeah, let's do it. Just booked for Tuesday at 2pm.",                                                                                                         delay: 2800 },
-  { from: 'michael', text: "You're all set! Your advisor will walk you through exactly what you'd save. Talk soon. 🎉",                                                                  delay: 1400 },
+  { from: 'michael', text: "Hey! I'm Michael with KC Energy Advisors. Quick question — do you own your home?",                                                                             delay: 250  },
+  { from: 'user',    text: "Yeah, I own the place.",                                                                                                                                     delay: 650  },
+  { from: 'michael', text: "Perfect. Are you in the Kansas City area — within about 2 hours?",                                                                                           delay: 480  },
+  { from: 'user',    text: "Yep, out in Overland Park.",                                                                                                                                 delay: 700  },
+  { from: 'michael', text: "Nice. What's your average monthly electric bill — ballpark is fine.",                                                                                        delay: 540  },
+  { from: 'user',    text: "Around $180 a month, sometimes more in summer.",                                                                                                             delay: 780  },
+  { from: 'michael', text: "Sounds like your home is a solid candidate. Want to grab a free 15-min call with one of our KC advisors? No pressure — just your numbers.",                  delay: 600  },
+  { from: 'user',    text: "Yeah, let's do it. Just booked for Tuesday at 2pm.",                                                                                                         delay: 800  },
+  { from: 'michael', text: "You're all set! Your advisor will walk you through exactly what you'd save. Talk soon. 🎉",                                                                  delay: 420  },
 ];
 
 // ── KC utility rate chart data (2019–2025 est.) ──────────────────

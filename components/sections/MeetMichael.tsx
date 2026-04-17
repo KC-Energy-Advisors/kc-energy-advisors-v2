@@ -30,10 +30,17 @@ export default function MeetMichael() {
   const [done, setDone]         = useState(false);
   const chatEndRef               = useRef<HTMLDivElement>(null);
   const startedRef               = useRef(false);
-const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [inputValue, setInputValue] = useState('');
 
 const openChat = () => {
   setIsChatOpen(true);
+};
+const handleSend = async () => {
+  const msg = inputValue.trim();
+  if (!msg) return;
+  setInputValue('');
+  await sendMessage(msg);
 };
 const sendMessage = async (message: string) => {
   if (!message.trim()) return;
@@ -90,7 +97,7 @@ const sendMessage = async (message: string) => {
 
         if (cancelled) break;
         setMessages(prev => [...prev, { from: msg.from, text: msg.text }]);
-        await sleep(200);
+        await sleep(80);
       }
       if (!cancelled) setDone(true);
     })();
@@ -156,17 +163,17 @@ const sendMessage = async (message: string) => {
       Start chatting with Michael now
     </p>
     <p className="text-xs text-white/70 mt-1">
-      Type your question in the phone on the right →
+      Type your question in the phone →
     </p>
   </div>
 )}
           </div>
 
           {/* Right — animated phone */}
-          <div ref={sectionRef} className="flex justify-center">
+          <div ref={sectionRef} className="flex items-center justify-center">
             <div className="relative">
               {/* Phone shell */}
-              <div className="w-[300px] bg-slate-900 rounded-[48px] border-4 border-slate-700 shadow-2xl shadow-black/60 overflow-hidden">
+              <div className="w-[300px] bg-slate-900 rounded-[48px] border-4 border-slate-700 shadow-2xl shadow-black/60 flex flex-col h-[380px]">
                 {/* Status bar */}
                 <div className="bg-slate-900 px-6 pt-5 pb-3 flex items-center justify-between">
                   <span className="text-[11px] text-white/50 font-medium">9:41 AM</span>
@@ -191,7 +198,7 @@ const sendMessage = async (message: string) => {
                 </div>
 
                 {/* Chat messages */}
-                <div className="bg-[#1a1f2e] px-4 py-4 min-h-[340px] max-h-[340px] overflow-y-auto flex flex-col gap-3">
+                <div className="bg-[#1a1f2e] px-4 py-4 flex-1 overflow-y-auto flex flex-col gap-3">
                   {messages.map((m, i) => (
                     <div
                       key={i}
@@ -222,6 +229,27 @@ const sendMessage = async (message: string) => {
                   )}
 
                   <div ref={chatEndRef} />
+                </div>
+
+                {/* Chat input — always visible, never gated */}
+                <div className="bg-slate-800 px-3 py-3 flex items-center gap-2 border-t border-white/[0.06] shrink-0">
+                  <input
+                    type="text"
+                    value={inputValue}
+                    onChange={e => setInputValue(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
+                    placeholder="Type a message…"
+                    className="flex-1 bg-slate-700 text-white text-[12px] placeholder-white/30 rounded-full px-4 py-2 outline-none border border-transparent focus:border-brand-blue/50 transition-colors"
+                  />
+                  <button
+                    onClick={handleSend}
+                    aria-label="Send message"
+                    className="w-8 h-8 bg-brand-blue rounded-full flex items-center justify-center flex-shrink-0 hover:bg-blue-500 transition-colors"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden>
+                      <path d="M1 6.5h11M6.5 1l5.5 5.5-5.5 5.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
