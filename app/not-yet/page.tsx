@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default function NotYetPage() {
+
   return (
     <>
       <Nav />

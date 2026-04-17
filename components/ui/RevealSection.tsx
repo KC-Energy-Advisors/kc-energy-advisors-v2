@@ -1,4 +1,3 @@
-'use client';
 import { useIntersection } from '@/hooks/useIntersection';
 import { cn } from '@/lib/utils';
 
@@ -12,7 +11,7 @@ interface Props {
 const DELAYS = ['', 'delay-75', 'delay-150', 'delay-200', 'delay-300'] as const;
 
 export default function RevealSection({ children, className, delay = 0, as: Tag = 'div' }: Props) {
-  const { ref, visible } = useIntersection<HTMLDivElement>({ threshold: 0, rootMargin: '0px' });
+  const { ref, visible } = useIntersection<HTMLDivElement>({ threshold: 0.15, rootMargin: '0px 0px -10% 0px' });
 
   return (
     <div
@@ -22,7 +21,7 @@ export default function RevealSection({ children, className, delay = 0, as: Tag 
         DELAYS[delay] ?? '',
         visible
           ? 'opacity-100 translate-y-0'
-          : 'opacity-0 translate-y-7',
+          : 'opacity-100 translate-y-0',
         className,
       )}
     >
