@@ -40,15 +40,15 @@ const config = {
           // CSP — adjust if you add third-party scripts
           {
             key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://api.leadconnectorhq.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https:",
-              "frame-src https://api.leadconnectorhq.com https://widgets.leadconnectorhq.com",
-              "connect-src 'self' https://services.leadconnectorhq.com https://michael-agent-2uov.onrender.com",
-            ].join('; '),
+           value: [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://api.leadconnectorhq.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: blob: https:",
+  "frame-src https://api.leadconnectorhq.com https://widgets.leadconnectorhq.com",
+  "connect-src 'self' https://services.leadconnectorhq.com https://api.leadconnectorhq.com https://michael-agent-2uov.onrender.com"
+].join('; ')
           },
         ],
       },
