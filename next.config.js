@@ -47,7 +47,7 @@ const config = {
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https:",
               "frame-src https://api.leadconnectorhq.com https://widgets.leadconnectorhq.com",
-              "connect-src 'self' https://services.leadconnectorhq.com https://michael-agent-2uow.onrender.com",
+              "connect-src 'self' https://services.leadconnectorhq.com https://michael-agent-2uov.onrender.com",
             ].join('; '),
           },
         ],
