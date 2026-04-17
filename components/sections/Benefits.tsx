@@ -81,7 +81,7 @@ export default function Benefits() {
           whileInView="visible"
           viewport={viewport}
         >
-          *Source: Zillow, 2023. **Consult a tax professional for eligibility. Savings estimates based on avg. KC rates and EIA historical data.
+          *Home value increase based on national studies; individual results vary. Savings estimates based on avg. KC Evergy rates and system sizing data.
         </motion.p>
       </div>
     </section>

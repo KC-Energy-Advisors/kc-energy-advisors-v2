@@ -7,6 +7,7 @@ import ProblemSection    from '@/components/sections/ProblemSection';
 import SolutionSection   from '@/components/sections/SolutionSection';
 import Calculator        from '@/components/sections/Calculator';
 import HowItWorks        from '@/components/sections/HowItWorks';
+import EvergySolar       from '@/components/sections/EvergySolar';
 import MeetMichael       from '@/components/sections/MeetMichael';
 import Benefits          from '@/components/sections/Benefits';
 import Reviews           from '@/components/sections/Reviews';
@@ -38,6 +39,9 @@ export default function HomePage() {
 
         {/* S5 — Light: How It Works (3 steps) */}
         <HowItWorks />
+
+        {/* S5b — White: How Evergy Works With Solar (net metering explainer) */}
+        <EvergySolar />
 
         {/* S6 — Dark: Meet Michael (AI chat preview) */}
         <MeetMichael />

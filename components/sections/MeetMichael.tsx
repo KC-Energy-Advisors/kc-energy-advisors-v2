@@ -3,11 +3,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useIntersection } from '@/hooks/useIntersection';
 import { CHAT_SCRIPT } from '@/lib/constants';
 import RevealSection from '@/components/ui/RevealSection';
-// LinkButton removed — not used in this component
 
 function TypingDots() {
   return (
-    <div className="flex items-center gap-1 px-4 py-3 bg-slate-100 rounded-2xl rounded-tl-sm w-fit">
+    <div className="flex items-center gap-1 px-4 py-3 bg-slate-700 rounded-2xl rounded-tl-sm w-fit">
       {[0, 1, 2].map(i => (
         <span
           key={i}
@@ -23,6 +22,7 @@ interface Msg { from: 'michael' | 'user'; text: string; }
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
 export default function MeetMichael() {
   const { ref: sectionRef, visible } = useIntersection<HTMLDivElement>({ threshold: 0.3, once: true });
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -33,60 +33,76 @@ export default function MeetMichael() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
 
-const openChat = () => {
-  setIsChatOpen(true);
-};
-const handleSend = async () => {
-  const msg = inputValue.trim();
-  if (!msg) return;
-  setInputValue('');
-  await sendMessage(msg);
-};
-const sendMessage = async (message: string) => {
-  if (!message.trim()) return;
+  const openChat = () => setIsChatOpen(true);
 
-  // show user message
-  setMessages((prev) => [
-    ...prev,
-    { from: "user", text: message },
-  ]);
+  const handleSend = async () => {
+    const msg = inputValue.trim();
+    if (!msg) return;
+    setInputValue('');
+    await sendMessage(msg);
+  };
 
-  try {
-    const res = await fetch("https://michael-agent-2uov.onrender.com/webhook/website-chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: message,
-        name: "Website Visitor",
-        phone: "web-user",
-      }),
-    });
+  const sendMessage = async (message: string) => {
+    if (!message.trim()) return;
 
-    const data = await res.json();
+    // Capture history BEFORE appending the new user message so Claude sees
+    // prior turns as context (last 10 messages, mapped to {role, content}).
+    const historySnapshot = messages.slice(-10).map(m => ({
+      role:    m.from === 'michael' ? 'assistant' : 'user',
+      content: m.text,
+    }));
 
-    // show AI reply
-    setMessages((prev) => [
-      ...prev,
-      { from: "michael", text: data.reply },
-    ]);
+    // Optimistically show the user's message and typing indicator
+    setMessages(prev => [...prev, { from: 'user', text: message }]);
+    setTyping(true);
 
-  } catch (err) {
-    console.error("Send error:", err);
-  }
-};
+    try {
+      // POST to our own Next.js API route — keeps the Python URL server-side
+      const res = await fetch('/api/website-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          name:    'Website Visitor',
+          phone:   'web-user',
+          source:  'website_chat',
+          history: historySnapshot,   // ← gives Claude full conversation context
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.reply) {
+        console.warn('[MeetMichael] website-chat non-OK', { status: res.status, mode: data.mode, data });
+        setMessages(prev => [
+          ...prev,
+          { from: 'michael', text: "Sorry, I'm having trouble connecting right now. Text me directly at (816) 319-0932!" },
+        ]);
+        return;
+      }
+
+      console.log('[MeetMichael] ✅ reply received', { mode: data.mode, reply: data.reply.slice(0, 80) });
+      setMessages(prev => [...prev, { from: 'michael', text: data.reply }]);
+
+    } catch (err) {
+      console.error('[MeetMichael] ❌ send error', err);
+      setMessages(prev => [
+        ...prev,
+        { from: 'michael', text: "Something went wrong. Text me directly at (816) 319-0932!" },
+      ]);
+    } finally {
+      setTyping(false);
+    }
+  };
+
   useEffect(() => {
     if (!visible || startedRef.current) return;
     startedRef.current = true;
-
     let cancelled = false;
     (async () => {
       for (let i = 0; i < CHAT_SCRIPT.length; i++) {
         const msg = CHAT_SCRIPT[i];
         if (cancelled) break;
-
-        // Show typing indicator for Michael's messages
         if (msg.from === 'michael') {
           setTyping(true);
           await sleep(msg.delay);
@@ -94,19 +110,17 @@ const sendMessage = async (message: string) => {
         } else {
           await sleep(msg.delay);
         }
-
         if (cancelled) break;
         setMessages(prev => [...prev, { from: msg.from, text: msg.text }]);
         await sleep(80);
       }
       if (!cancelled) setDone(true);
     })();
-
     return () => { cancelled = true; };
   }, [visible]);
 
   useEffect(() => {
-    //chatEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'nearest'// });
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [messages, typing]);
 
   return (
@@ -138,7 +152,7 @@ const sendMessage = async (message: string) => {
                 { icon: '⚡', label: 'Instant SMS response — usually under 2 minutes' },
                 { icon: '🔒', label: 'No spam. Reply STOP anytime to opt out.' },
                 { icon: '🤝', label: 'Qualifies your home before any human contact' },
-                { icon: '📅', label: 'Sends personalized booking link when you\'re ready' },
+                { icon: '📅', label: "Sends personalized booking link when you're ready" },
               ] as const).map((f, i) => (
                 <RevealSection key={f.label} delay={(i as 0 | 1 | 2 | 3)}>
                   <div className="flex items-start gap-3">
@@ -150,46 +164,66 @@ const sendMessage = async (message: string) => {
             </div>
 
             <RevealSection delay={3}>
-            <button
-  onClick={openChat}
-  className="mt-6 inline-block bg-brand-gold text-black font-semibold px-6 py-3 rounded-xl shadow-lg hover:scale-105 transition cursor-pointer"
->
-  Text with Michael Now →
-</button>
+              <button
+                onClick={openChat}
+                className="mt-6 inline-block bg-brand-gold text-black font-semibold px-6 py-3 rounded-xl shadow-lg hover:scale-105 transition cursor-pointer"
+              >
+                Text with Michael Now →
+              </button>
             </RevealSection>
             {isChatOpen && (
-  <div className="mt-4 max-w-md rounded-xl border border-brand-blue/20 bg-slate-900 p-4 text-white shadow-xl">
-    <p className="text-sm font-semibold">
-      Start chatting with Michael now
-    </p>
-    <p className="text-xs text-white/70 mt-1">
-      Type your question in the phone →
-    </p>
-  </div>
-)}
+              <div className="mt-4 max-w-md rounded-xl border border-brand-blue/20 bg-slate-900 p-4 text-white shadow-xl">
+                <p className="text-sm font-semibold">Start chatting with Michael now</p>
+                <p className="text-xs text-white/70 mt-1">Type your question in the phone →</p>
+              </div>
+            )}
           </div>
 
-          {/* Right — animated phone */}
+          {/* Right — phone mockup */}
           <div ref={sectionRef} className="flex items-center justify-center">
             <div className="relative">
+              {/* Ambient glow behind phone */}
+              <div
+                className="absolute inset-0 rounded-[56px] pointer-events-none"
+                style={{
+                  background: 'radial-gradient(ellipse at center, rgba(59,130,246,0.18) 0%, transparent 70%)',
+                  transform: 'scale(1.25)',
+                  filter: 'blur(24px)',
+                }}
+              />
+
               {/* Phone shell */}
-              <div className="w-[300px] bg-slate-900 rounded-[48px] border-4 border-slate-700 shadow-2xl shadow-black/60 flex flex-col h-[380px]">
+              <div
+                className="relative w-[300px] bg-slate-900 rounded-[48px] border-[5px] border-slate-700 overflow-hidden flex flex-col"
+                style={{
+                  height: '540px',
+                  boxShadow: '0 40px 90px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.04) inset',
+                }}
+              >
                 {/* Status bar */}
-                <div className="bg-slate-900 px-6 pt-5 pb-3 flex items-center justify-between">
+                <div className="relative bg-slate-900 px-5 pt-5 pb-2 flex items-center justify-between shrink-0">
                   <span className="text-[11px] text-white/50 font-medium">9:41 AM</span>
-                  <div className="w-[80px] h-[22px] bg-slate-800 rounded-full mx-auto absolute left-1/2 -translate-x-1/2 top-5" />
-                  <div className="flex gap-1">
-                    {[3,3,3,4].map((w, i) => (
-                      <div key={i} className="bg-white/50 rounded-sm" style={{ width: w, height: 10 }} />
+                  {/* Dynamic island */}
+                  <div className="absolute left-1/2 -translate-x-1/2 top-[14px] w-[88px] h-[26px] bg-black rounded-full z-10" />
+                  {/* Signal + battery */}
+                  <div className="flex gap-1 items-center">
+                    {[5, 7, 9, 11].map((h, i) => (
+                      <div key={i} className="bg-white/50 rounded-[1px] w-[3px]" style={{ height: h }} />
                     ))}
+                    <div className="ml-1.5 w-[20px] h-[10px] rounded-[3px] border border-white/35 relative flex items-center pl-[2px]">
+                      <div className="w-[13px] h-[6px] bg-white/55 rounded-[2px]" />
+                      <div className="absolute -right-[3px] top-1/2 -translate-y-1/2 w-[3px] h-[5px] bg-white/30 rounded-r-[2px]" />
+                    </div>
                   </div>
                 </div>
 
                 {/* Chat header */}
-                <div className="bg-slate-800 px-5 py-3 flex items-center gap-3 border-b border-white/[0.06]">
-                  <div className="w-9 h-9 rounded-full bg-brand-blue flex items-center justify-center text-white font-black text-sm flex-shrink-0">M</div>
-                  <div>
-                    <div className="text-[13px] font-semibold text-white">Michael · KC Energy Advisors</div>
+                <div className="bg-slate-800 px-5 py-3 flex items-center gap-3 border-b border-white/[0.06] shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-brand-blue flex items-center justify-center text-white font-black text-sm flex-shrink-0 shadow-lg">
+                    M
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-semibold text-white truncate">Michael · KC Energy Advisors</div>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse-dot" />
                       <span className="text-[10px] text-white/45">AI Advisor · Typically replies instantly</span>
@@ -197,15 +231,15 @@ const sendMessage = async (message: string) => {
                   </div>
                 </div>
 
-                {/* Chat messages */}
-                <div className="bg-[#1a1f2e] px-4 py-4 flex-1 overflow-y-auto flex flex-col gap-3">
+                {/* Chat messages — scrollable, fills available space */}
+                <div className="bg-[#1a1f2e] px-4 py-4 flex-1 overflow-y-auto flex flex-col gap-2.5 min-h-0">
                   {messages.map((m, i) => (
                     <div
                       key={i}
                       className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'} animate-msg-pop`}
                     >
                       <div
-                        className={`max-w-[78%] text-[12.5px] leading-relaxed rounded-2xl px-3.5 py-2.5 ${
+                        className={`max-w-[80%] text-[12.5px] leading-relaxed rounded-2xl px-3.5 py-2.5 ${
                           m.from === 'michael'
                             ? 'bg-slate-700 text-white rounded-tl-sm'
                             : 'bg-brand-blue text-white rounded-tr-sm'
@@ -223,7 +257,7 @@ const sendMessage = async (message: string) => {
                   )}
 
                   {done && (
-                    <div className="text-center text-[10px] text-white/25 mt-2 animate-msg-pop">
+                    <div className="text-center text-[10px] text-white/30 mt-2 animate-msg-pop">
                       🎉 Booked — see you Tuesday at 2pm!
                     </div>
                   )}
@@ -231,8 +265,10 @@ const sendMessage = async (message: string) => {
                   <div ref={chatEndRef} />
                 </div>
 
-                {/* Chat input — always visible, never gated */}
-                <div className="bg-slate-800 px-3 py-3 flex items-center gap-2 border-t border-white/[0.06] shrink-0">
+                {/* Input bar — always visible, pinned at bottom */}
+                <div className="px-3 py-2.5 flex items-center gap-2 border-t border-white/[0.06] shrink-0"
+                  style={{ background: 'rgba(30,35,50,0.98)' }}
+                >
                   <input
                     type="text"
                     value={inputValue}
@@ -245,13 +281,15 @@ const sendMessage = async (message: string) => {
                     onClick={handleSend}
                     aria-label="Send message"
                     className="w-8 h-8 bg-brand-blue rounded-full flex items-center justify-center flex-shrink-0 hover:bg-blue-500 transition-colors"
+                    style={{ boxShadow: '0 2px 8px rgba(59,130,246,0.4)' }}
                   >
                     <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden>
                       <path d="M1 6.5h11M6.5 1l5.5 5.5-5.5 5.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
                 </div>
-              </div>
+
+              </div>{/* /phone shell */}
             </div>
           </div>
 
@@ -260,4 +298,3 @@ const sendMessage = async (message: string) => {
     </section>
   );
 }
-           

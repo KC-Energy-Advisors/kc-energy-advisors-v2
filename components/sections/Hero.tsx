@@ -77,8 +77,8 @@ export default function Hero() {
           initial="hidden"
           animate="visible"
         >
-          Your Utility Company<br className="hidden sm:block" />{' '}
-          Gets Paid Every Month.
+          Evergy Raised Rates Again.<br className="hidden sm:block" />{' '}
+          Lock In a Lower Bill.
         </motion.h1>
 
         {/* Subheadline */}
@@ -89,9 +89,9 @@ export default function Hero() {
           initial="hidden"
           animate="visible"
         >
-          AI data centers. Electric vehicles. Smart homes.
-          American electricity demand is surging — and an aging grid
-          is struggling to keep up. Utilities pass that cost to you.
+          KC homeowners are replacing unpredictable Evergy bills
+          with one fixed monthly solar cost — lower than what they pay now,
+          locked in for 25 years.
         </motion.p>
 
         {/* Urgency insert */}
@@ -102,9 +102,9 @@ export default function Hero() {
           initial="hidden"
           animate="visible"
         >
-          → Electricity demand is projected to rise 15–20% by 2035.{' '}
+          → Evergy has filed for another rate increase.{' '}
           <span style={{ color: '#94A3B8' }}>
-            Homeowners who lock in their rate now won&apos;t pay those increases.
+            Every month you wait is another month at their rate, not yours.
           </span>
         </motion.p>
 
@@ -158,7 +158,7 @@ export default function Hero() {
           <div className="w-px h-8 bg-white/10" />
           <StatItem to={500} suffix="+" label="KC families served" />
           <div className="w-px h-8 bg-white/10" />
-          <StatItem to={30} suffix="%" label="Federal tax credit available" />
+          <StatItem to={25} suffix=" yr" label="Panel warranty included" />
         </motion.div>
       </div>
 
