@@ -87,7 +87,7 @@ export const RATE_CHART = [
 // Updated: removed tax credit Q&A (expired Dec 31 2025), added Evergy-specific answers.
 export const FAQ_ITEMS = [
   {
-    q: 'Is this actually $0 down?',
+    q: 'Is this really $0 down?',
     a: 'Yes. You pay nothing to get started. Your first solar payment replaces your Evergy bill — and it\'s typically lower. No deposit, no installation cost, no surprises.',
   },
   {
