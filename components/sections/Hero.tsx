@@ -90,7 +90,7 @@ export default function Hero() {
           animate="visible"
         >
           KC homeowners are replacing unpredictable Evergy bills
-          with one fixed monthly solar cost — lower than what they pay now,
+          with one fixed monthly solar cost — that is immune to any future rate increases -
           locked in for 25 years.
         </motion.p>
 

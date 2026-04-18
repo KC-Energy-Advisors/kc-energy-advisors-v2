@@ -197,8 +197,7 @@ Rate increases are documented news. This headline triggers immediate recognition
 
 **Benefit 4 — $0 Down**
 > **Nothing out of pocket to get started.**
-> You don't need cash or savings. Your first solar payment is typically lower than
-> your current Evergy bill. You start saving from day one.
+> You don't need cash or savings. Your first solar payment puts purpose behind your hard earned money! Your exact numbers depend on your home and usage - that's what we map out during your free analysis.
 
 **Benefit 5 — Net Metering Works in Your Favor**
 > **Extra energy you produce credits your bill.**
@@ -208,12 +207,12 @@ Rate increases are documented news. This headline triggers immediate recognition
 **Benefit 6 — One Day to Install**
 > **Installation is one day. You're not living in a construction zone.**
 > We handle permits, Evergy interconnection, and inspection. You get a live system
-> in 3–4 weeks from your first call.
+> in 6–8 weeks from your first call.
 
 **Why this converts:**
 - Every benefit is grounded in Evergy reality (not generic solar marketing)
 - Addresses the top objection (cost) in benefit 4
-- Uses specific language ("60–90%", "3–4 weeks") that generic sites don't
+- Uses specific language ("60–90%", "6–8 weeks") that generic sites don't
 - "Right-sized" language is unique and builds trust by showing you actually know
   how Evergy net metering works
 
@@ -240,7 +239,7 @@ Rate increases are documented news. This headline triggers immediate recognition
 **Step 4: Flip the Switch**
 > Your system goes live. Your bill drops. Done.
 
-**Timeline: First call to live system is typically 3–4 weeks.**
+**Timeline: First call to live system is typically 6–8 weeks.**
 
 **Why this converts:**
 - Four steps feel achievable (not overwhelming)
@@ -264,10 +263,8 @@ on your behalf. You don't need to negotiate with them or navigate their paperwor
 
 **Q: How expensive is solar?**
 
-Installed system costs in Kansas City typically run $18,000–$26,000 depending on
-your home's size and energy usage. With $0 down financing, most homeowners pay
-$130–$160/month — which is less than their current Evergy bill. You're not spending
-more. You're redirecting what you already pay.
+Installed system costs in Kansas City typically run $18,000–$50,000 depending on
+your home's size and energy usage. With $0 down financing, most homeowners pay right around their current Evergy bill. The difference: You're not spending... You begin investing by redirecting what you already pay
 
 If your bill is under $75/month, we'll tell you honestly that solar probably won't
 pencil out. We'd rather lose a small deal than send you into something that doesn't work.
@@ -317,7 +314,7 @@ asset — not a liability.
 **Q: How long does installation actually take?**
 
 One day for the installation itself. The total process — permits, Evergy interconnection
-approval, inspection — typically runs 3–4 weeks. We manage all of it. You don't have
+approval, inspection — typically runs 6-8 weeks. We manage all of it. You don't have
 to call Evergy, file paperwork, or chase anyone down. One point of contact from start
 to live system.
 
@@ -360,9 +357,9 @@ feel seamless — same voice, same knowledge, same honesty. That consistency is 
 |---|---|
 | "Evergy raised rates 14%" | "Evergy raised rates in Missouri by about 14% this past year" |
 | "Right-sized for Evergy" | "We size systems to match your actual usage — Evergy doesn't pay well for excess" |
-| "3–4 weeks, start to live" | "Usually 3–4 weeks from first call to live panels" |
+| "3–4 weeks, start to live" | "Usually 6-8 weeks from first call to live panels" |
 | "Near-zero bills several months" | "Spring and fall, a lot of KC homeowners hit near-zero on their bill" |
-| "$0 down financing" | "You don't need cash — the payment usually comes in lower than your current bill" |
+| "$0 down financing" | "You don't need cash — the payment just locks in your rate and gives you ownership" |
 | "No tax credit" | DON'T VOLUNTEER IT. If asked: "The federal credit expired last year — but the math still works on monthly savings" |
 
 **Important**: Michael should NOT proactively mention the expired tax credit.
@@ -399,9 +396,18 @@ can vary by service territory.
 Don't publish shorter break-even claims without running the specific math.
 Let Michael run personalized numbers rather than publishing a single figure.
 
-### 5. "60–90% bill reduction" — confirm your typical results
-This is a wide range. If your installed systems consistently hit 80–90%, narrow it.
-If you're seeing 50–70% for some homeowners, say so. Specific is better than optimistic.
+### 5. Avoid broad "bill reduction" claims
+
+Do not publish percentage-based savings claims (e.g. "60–90%") on the website or in AI responses.
+
+Savings vary significantly by home, usage, system size, and financing structure. Broad claims can be misleading and reduce trust.
+
+Instead, position solar as:
+- A way to take control of energy costs
+- Protection against utility rate increases
+- A predictable, stable payment depending on the homeowner’s setup
+
+Let Michael (AI) or advisors provide personalized projections based on the homeowner’s actual usage instead of quoting generalized percentages.
 
 ---
 

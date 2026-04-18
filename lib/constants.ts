@@ -104,7 +104,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: 'Is solar still worth it?',
-    a: "Yes — and the math is actually straightforward. If you're paying $150+ to Evergy today, and Evergy keeps raising rates (which they have, every year or two), your bill keeps growing. Solar replaces that with one fixed monthly payment — lower than your current bill — for 25 years. The longer Evergy raises rates, the better solar looks by comparison.",
+    a: "Yes — and the math is actually straightforward. If you're paying $150+ to Evergy today, and Evergy keeps raising rates (which they have, every year or two), your bill keeps growing. Solar replaces that with one fixed monthly payment — immune to future rate increases — for 25 years. The longer Evergy raises rates, the better solar looks by comparison.",
   },
   {
     q: 'What if I sell my house?',
@@ -112,7 +112,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: 'How long does installation take?',
-    a: 'Installation itself is one day. The full process — permits, Evergy interconnection approval, inspection — typically runs 3–4 weeks. We manage all of it. You have one point of contact from your first call to the day your system goes live.',
+    a: 'Installation itself is one day. The full process — permits, Evergy interconnection approval, inspection — typically runs 6–8 weeks. We manage all of it. You have one point of contact from your first call to the day your system goes live.',
   },
   {
     q: "My bill isn't that high. Does solar make sense?",
@@ -126,7 +126,7 @@ export const FAQ_ITEMS = [
 export const BENEFITS = [
   {
     title: '$0 Down.',
-    body:  'No upfront cost. Not $1. Your first month of solar production is your first month of savings.',
+    body:  'No upfront cost. Not $1. Your first month of solar production is your first month of energy independence',
     icon:  '💳',
   },
   {
@@ -135,9 +135,8 @@ export const BENEFITS = [
     icon:  '🔒',
   },
   {
-    title: 'Lower Monthly Bills.',
-    body:  'Most KC homeowners cut their electric bill by 60–80% immediately. That savings starts the month your panels turn on.',
-    icon:  '📉',
+   title: "Take Control of Your Energy Costs",
+body: "Most KC homeowners aren’t trying to gamble on utility rates anymore — they’re looking for something predictable. Solar gives you control over your energy costs instead of being at the mercy of Evergy’s increases.",
   },
   {
     title: 'Done in One Day.',
