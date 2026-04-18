@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
-import './globals.css';
+import "./globals.css";
 
 const inter = Inter({
   subsets: ['latin'],
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     "Kansas City homeowners: see exactly how much solar saves you. Free 60-second estimate + personalized SMS from Michael, our AI solar advisor. Licensed, local, no pressure.",
   keywords: [
     'solar panels Kansas City', 'KC solar advisor', 'Missouri solar incentives',
-    'Evergy solar', 'solar savings calculator KC', 'federal solar tax credit',
+    'Evergy solar', 'solar savings calculator KC',
     'solar installation Kansas City', 'KC solar cost',
   ],
   authors: [{ name: 'KC Energy Advisors LLC' }],

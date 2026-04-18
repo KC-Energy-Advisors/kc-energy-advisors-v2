@@ -20,8 +20,7 @@ export function calcSavings(monthlyBill: number): SavingsResult {
   const annualKwh  = (monthlyBill / SOLAR.RATE_KWH) * 12;
   const systemKw   = annualKwh / SOLAR.KWH_PER_KW;
   const systemCost = systemKw * SOLAR.COST_PER_KW;
-  const credit     = systemCost * SOLAR.TAX_CREDIT;
-
+const credit = 0
   return {
     yr1:    Math.round(yr1),
     yr5:    Math.round(yr5),

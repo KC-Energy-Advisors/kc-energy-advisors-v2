@@ -9,7 +9,6 @@ const LOGOS = [
 
 const STATS = [
   { value: '500+',  label: 'KC Homes Powered'      },
-  { value: '30%',   label: 'Federal Tax Credit'     },
   { value: '$0',    label: 'Down • Many Qualify'    },
   { value: '25yr',  label: 'Panel Warranty'         },
 ];
