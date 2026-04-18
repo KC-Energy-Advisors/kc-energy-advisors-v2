@@ -67,9 +67,9 @@ export const CHAT_SCRIPT: ChatMessage[] = [
   { from: 'user',    text: "Yep, out in Overland Park.",                                                                                                                     delay: 700 },
   { from: 'michael', text: "Perfect — Evergy territory. What's your average monthly electric bill? Ballpark is fine.",                                                       delay: 540 },
   { from: 'user',    text: "Around $180 a month, more in summer.",                                                                                                           delay: 780 },
-  { from: 'michael', text: "$180 is a solid number. At that rate, solar typically cuts your bill by 60–80% and locks it in — so Evergy's rate hikes don't hit you anymore.", delay: 600 },
+  { from: 'michael', text: "$180 is starting to get up there. That’s where most homeowners start looking to lock in something more predictable and protect themselves from Evergy’s rate hikes. Solar can help stabilize your costs depending on your setup. Want to see what it would look like for your home?", delay: 600 },
   { from: 'user',    text: "That sounds good. How do I find out what I'd actually save?",                                                                                    delay: 800 },
-  { from: 'michael', text: "Easy — 15-min call with one of our advisors. No pressure, just real numbers for your home. Want me to send you a booking link?",                delay: 420 },
+  { from: 'michael', text: "Easy — we just set up a quick in-person visit to go over your actual usage and walk through real numbers for your home. It’s super low pressure. Want me to send you a link to grab a time that works?",                delay: 420 },
 ];
 
 // ── KC utility rate chart data (2019–2025) ───────────────────────
