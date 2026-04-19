@@ -1,8 +1,10 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
-import { useIntersection } from '@/hooks/useIntersection';
+import { useState, useRef } from 'react';
 import { CHAT_SCRIPT } from '@/lib/constants';
 import RevealSection from '@/components/ui/RevealSection';
+
+// All demo messages pre-computed at module level — never changes, zero cost.
+const DEMO_MESSAGES: Msg[] = CHAT_SCRIPT.map(m => ({ from: m.from, text: m.text }));
 
 function TypingDots() {
   return (
@@ -19,21 +21,19 @@ function TypingDots() {
 }
 
 interface Msg { from: 'michael' | 'user'; text: string; }
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 export default function MeetMichael() {
-  const { ref: sectionRef, visible } = useIntersection<HTMLDivElement>({ threshold: 0.3, once: true });
-  const [messages, setMessages] = useState<Msg[]>([]);
+  // Full message list from first render — no post-mount appends, no layout shift.
+  const [messages, setMessages] = useState<Msg[]>(DEMO_MESSAGES);
   const [typing, setTyping]     = useState(false);
-  const [done, setDone]         = useState(false);
-  const chatEndRef               = useRef<HTMLDivElement>(null);
-  const startedRef               = useRef(false);
+  const userInitiatedRef         = useRef(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
 
-  const openChat = () => setIsChatOpen(true);
+  const openChat = () => {
+    userInitiatedRef.current = true;
+    setIsChatOpen(true);
+  };
 
   const handleSend = async () => {
     const msg = inputValue.trim();
@@ -45,19 +45,15 @@ export default function MeetMichael() {
   const sendMessage = async (message: string) => {
     if (!message.trim()) return;
 
-    // Capture history BEFORE appending the new user message so Claude sees
-    // prior turns as context (last 10 messages, mapped to {role, content}).
     const historySnapshot = messages.slice(-10).map(m => ({
       role:    m.from === 'michael' ? 'assistant' : 'user',
       content: m.text,
     }));
 
-    // Optimistically show the user's message and typing indicator
     setMessages(prev => [...prev, { from: 'user', text: message }]);
     setTyping(true);
 
     try {
-      // POST to our own Next.js API route — keeps the Python URL server-side
       const res = await fetch('/api/website-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -66,14 +62,13 @@ export default function MeetMichael() {
           name:    'Website Visitor',
           phone:   'web-user',
           source:  'website_chat',
-          history: historySnapshot,   // ← gives Claude full conversation context
+          history: historySnapshot,
         }),
       });
 
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.reply) {
-        console.warn('[MeetMichael] website-chat non-OK', { status: res.status, mode: data.mode, data });
         setMessages(prev => [
           ...prev,
           { from: 'michael', text: "Sorry, I'm having trouble connecting right now. Text me directly at (816) 319-0932!" },
@@ -81,11 +76,9 @@ export default function MeetMichael() {
         return;
       }
 
-      console.log('[MeetMichael] ✅ reply received', { mode: data.mode, reply: data.reply.slice(0, 80) });
       setMessages(prev => [...prev, { from: 'michael', text: data.reply }]);
 
     } catch (err) {
-      console.error('[MeetMichael] ❌ send error', err);
       setMessages(prev => [
         ...prev,
         { from: 'michael', text: "Something went wrong. Text me directly at (816) 319-0932!" },
@@ -95,33 +88,6 @@ export default function MeetMichael() {
     }
   };
 
-  useEffect(() => {
-    if (!visible || startedRef.current) return;
-    startedRef.current = true;
-    let cancelled = false;
-    (async () => {
-      for (let i = 0; i < CHAT_SCRIPT.length; i++) {
-        const msg = CHAT_SCRIPT[i];
-        if (cancelled) break;
-        if (msg.from === 'michael') {
-          setTyping(true);
-          await sleep(msg.delay);
-          setTyping(false);
-        } else {
-          await sleep(msg.delay);
-        }
-        if (cancelled) break;
-        setMessages(prev => [...prev, { from: msg.from, text: msg.text }]);
-        await sleep(80);
-      }
-      if (!cancelled) setDone(true);
-    })();
-    return () => { cancelled = true; };
-  }, [visible]);
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, [messages, typing]);
 
   return (
     <section id="meet-michael" className="bg-brand-navy py-24 overflow-hidden">
@@ -180,7 +146,7 @@ export default function MeetMichael() {
           </div>
 
           {/* Right — phone mockup */}
-          <div ref={sectionRef} className="flex items-center justify-center">
+          <div className="flex items-center justify-center">
             <div className="relative">
               {/* Ambient glow behind phone */}
               <div
@@ -192,7 +158,7 @@ export default function MeetMichael() {
                 }}
               />
 
-              {/* Phone shell */}
+              {/* Phone shell — fixed 540px, overflow-hidden, never grows */}
               <div
                 className="relative w-[300px] bg-slate-900 rounded-[48px] border-[5px] border-slate-700 overflow-hidden flex flex-col"
                 style={{
@@ -203,9 +169,7 @@ export default function MeetMichael() {
                 {/* Status bar */}
                 <div className="relative bg-slate-900 px-5 pt-5 pb-2 flex items-center justify-between shrink-0">
                   <span className="text-[11px] text-white/50 font-medium">9:41 AM</span>
-                  {/* Dynamic island */}
                   <div className="absolute left-1/2 -translate-x-1/2 top-[14px] w-[88px] h-[26px] bg-black rounded-full z-10" />
-                  {/* Signal + battery */}
                   <div className="flex gap-1 items-center">
                     {[5, 7, 9, 11].map((h, i) => (
                       <div key={i} className="bg-white/50 rounded-[1px] w-[3px]" style={{ height: h }} />
@@ -231,12 +195,12 @@ export default function MeetMichael() {
                   </div>
                 </div>
 
-                {/* Chat messages — scrollable, fills available space */}
+                {/* Chat messages — flex-1 + overflow-hidden: messages scroll inside, phone never grows */}
                 <div className="bg-[#1a1f2e] px-4 py-4 flex-1 overflow-y-auto flex flex-col gap-2.5 min-h-0">
                   {messages.map((m, i) => (
                     <div
                       key={i}
-                      className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'} animate-msg-pop`}
+                      className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
                         className={`max-w-[80%] text-[12.5px] leading-relaxed rounded-2xl px-3.5 py-2.5 ${
@@ -251,18 +215,10 @@ export default function MeetMichael() {
                   ))}
 
                   {typing && (
-                    <div className="flex justify-start animate-msg-pop">
+                    <div className="flex justify-start">
                       <TypingDots />
                     </div>
                   )}
-
-                  {done && (
-                    <div className="text-center text-[10px] text-white/30 mt-2 animate-msg-pop">
-                      🎉 Booked — see you Tuesday at 2pm!
-                    </div>
-                  )}
-
-                  <div ref={chatEndRef} />
                 </div>
 
                 {/* Input bar — always visible, pinned at bottom */}
