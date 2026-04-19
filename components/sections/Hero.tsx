@@ -62,7 +62,7 @@ export default function Hero() {
         <motion.p
           className="text-[12px] font-semibold uppercase tracking-[0.12em] mb-5"
           style={{ color: '#F59E0B' }}
-          initial={{ opacity: 0, x: -16 }}
+          initial={false}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
@@ -74,7 +74,7 @@ export default function Hero() {
           className="text-display-xl font-black text-white mb-6 max-w-3xl"
           style={{ letterSpacing: '-0.02em', lineHeight: 1.05 }}
           variants={heroHeadline}
-          initial="hidden"
+          initial={false}
           animate="visible"
         >
           Evergy Raised Rates Again.<br className="hidden sm:block" />{' '}
@@ -86,7 +86,7 @@ export default function Hero() {
           className="text-lg sm:text-xl leading-relaxed max-w-[580px] mb-4"
           style={{ color: '#94A3B8' }}
           variants={heroSub}
-          initial="hidden"
+          initial={false}
           animate="visible"
         >
           KC homeowners are replacing unpredictable Evergy bills
@@ -99,7 +99,7 @@ export default function Hero() {
           className="text-[14px] font-medium mb-9"
           style={{ color: '#F59E0B' }}
           variants={heroSub}
-          initial="hidden"
+          initial={false}
           animate="visible"
         >
           → Evergy has filed for another rate increase.{' '}
@@ -112,7 +112,7 @@ export default function Hero() {
         <motion.div
           className="flex flex-wrap gap-3 mb-14"
           variants={heroCTA}
-          initial="hidden"
+          initial={false}
           animate="visible"
         >
           {/* Primary CTA with pulse glow */}
@@ -151,7 +151,7 @@ export default function Hero() {
         <motion.div
           className="flex items-center flex-wrap gap-8"
           variants={heroStats}
-          initial="hidden"
+          initial={false}
           animate="visible"
         >
           <StatItem to={1800} suffix="" label="Avg. annual savings / home" />
@@ -166,7 +166,7 @@ export default function Hero() {
       <motion.div
         className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest"
         style={{ color: 'rgba(255,255,255,0.25)' }}
-        initial={{ opacity: 0 }}
+        initial={false}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.2, duration: 0.6 }}
       >
