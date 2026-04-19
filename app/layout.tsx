@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import "./globals.css";
+import ScrollDebug from '@/components/ui/ScrollDebug';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -103,8 +104,9 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className} antialiased`}>
-        {children}
-      </body>
+  <ScrollDebug />
+  {children}
+</body>
     </html>
   );
 }
