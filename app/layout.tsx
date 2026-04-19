@@ -104,6 +104,21 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className} antialiased`}>
+  <div
+    style={{
+      position: 'fixed',
+      top: 20,
+      left: 20,
+      zIndex: 999999,
+      background: 'red',
+      color: 'white',
+      padding: '10px 14px',
+      fontWeight: 'bold',
+      borderRadius: '8px',
+    }}
+  >
+    TEST LIVE
+  </div>
   <ScrollDebug />
   {children}
 </body>
