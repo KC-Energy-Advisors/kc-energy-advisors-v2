@@ -37,12 +37,11 @@ export default function MeetMichael() {
     if (!userInitiatedRef.current) return;
     const el = chatContainerRef.current;
     if (!el) return;
-    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
-    if (isNearBottom) {
+    requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+        el.scrollTop = el.scrollHeight;
       });
-    }
+    });
   }, [messages]);
 
   const openChat = () => {
@@ -53,6 +52,7 @@ export default function MeetMichael() {
   const handleSend = async () => {
     const msg = inputValue.trim();
     if (!msg) return;
+    userInitiatedRef.current = true;
     setInputValue('');
     await sendMessage(msg);
   };
