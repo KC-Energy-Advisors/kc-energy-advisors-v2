@@ -10,6 +10,9 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+html, body {
+  overflow-anchor: none;
+}
 /* Smooth scroll ONLY after user interaction */
 /*html:focus-within {
   scroll-behavior: smooth;
