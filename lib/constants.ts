@@ -69,7 +69,7 @@ export const CHAT_SCRIPT: ChatMessage[] = [
   { from: 'user',    text: "Around $180 a month, more in summer.",                                                                                                           delay: 780 },
   { from: 'michael', text: "$180 is starting to get up there. That’s where most homeowners start looking to lock in something more predictable and protect themselves from Evergy’s rate hikes. Solar can help stabilize your costs depending on your setup. Want to see what it would look like for your home?", delay: 600 },
   { from: 'user',    text: "That sounds good. How do I find out what I'd actually save?",                                                                                    delay: 800 },
-  { from: 'michael', text: "Easy — we just set up a quick in-person visit to go over your actual usage and walk through real numbers for your home. It’s super low pressure. Want me to send you a link to grab a time that works?",                delay: 420 },
+  { from: ‘michael’, text: "Simple — I come out to your home, look at your actual Evergy bill, and map out exactly what solar would save you. No pressure, no commitment. We only move forward if the numbers actually make sense for you. Want me to send you a link to pick a time?",                delay: 420 },
 ];
 
 // ── KC utility rate chart data (2019–2025) ───────────────────────
