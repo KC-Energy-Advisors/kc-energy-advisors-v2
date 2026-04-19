@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CHAT_SCRIPT } from '@/lib/constants';
 import RevealSection from '@/components/ui/RevealSection';
 
@@ -26,9 +26,24 @@ export default function MeetMichael() {
   // Full message list from first render — no post-mount appends, no layout shift.
   const [messages, setMessages] = useState<Msg[]>(DEMO_MESSAGES);
   const [typing, setTyping]     = useState(false);
+  const chatContainerRef         = useRef<HTMLDivElement>(null);
   const userInitiatedRef         = useRef(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
+
+  // iMessage-style internal scroll — ONLY scrolls the phone container, NEVER the page.
+  // Skipped for the initial pre-rendered demo messages (userInitiatedRef is false).
+  useEffect(() => {
+    if (!userInitiatedRef.current) return;
+    const el = chatContainerRef.current;
+    if (!el) return;
+    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
+    if (isNearBottom) {
+      requestAnimationFrame(() => {
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+      });
+    }
+  }, [messages]);
 
   const openChat = () => {
     userInitiatedRef.current = true;
@@ -71,23 +86,22 @@ export default function MeetMichael() {
       if (!res.ok || !data.reply) {
         setMessages(prev => [
           ...prev,
-          { from: 'michael', text: "Sorry, I'm having trouble connecting right now. Text me directly at (816) 319-0932!" },
+          { from: 'michael', text: "Sorry, having a tech issue on my end. You can grab a time here: https://kcenergyadvisors.com/get-solar-info" },
         ]);
         return;
       }
 
       setMessages(prev => [...prev, { from: 'michael', text: data.reply }]);
 
-    } catch (err) {
+    } catch {
       setMessages(prev => [
         ...prev,
-        { from: 'michael', text: "Something went wrong. Text me directly at (816) 319-0932!" },
+        { from: 'michael', text: "Something went wrong on my end. You can grab a time here: https://kcenergyadvisors.com/get-solar-info" },
       ]);
     } finally {
       setTyping(false);
     }
   };
-
 
   return (
     <section id="meet-michael" className="bg-brand-navy py-24 overflow-hidden">
@@ -195,8 +209,11 @@ export default function MeetMichael() {
                   </div>
                 </div>
 
-                {/* Chat messages — flex-1 + overflow-hidden: messages scroll inside, phone never grows */}
-                <div className="bg-[#1a1f2e] px-4 py-4 flex-1 overflow-y-auto flex flex-col gap-2.5 min-h-0">
+                {/* Chat messages — scrolls internally only, page never moves */}
+                <div
+                  ref={chatContainerRef}
+                  className="bg-[#1a1f2e] px-4 py-4 flex-1 overflow-y-auto flex flex-col gap-2.5 min-h-0"
+                >
                   {messages.map((m, i) => (
                     <div
                       key={i}
