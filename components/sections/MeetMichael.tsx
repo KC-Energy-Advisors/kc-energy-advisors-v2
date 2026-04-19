@@ -1,10 +1,13 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { CHAT_SCRIPT } from '@/lib/constants';
 import RevealSection from '@/components/ui/RevealSection';
 
-// All demo messages pre-computed at module level — never changes, zero cost.
-const DEMO_MESSAGES: Msg[] = CHAT_SCRIPT.map(m => ({ from: m.from, text: m.text }));
+// Single opening line — matches the backend's response to an empty/first message.
+// This is the ONLY static content in the widget. Every subsequent message is a
+// live API response from /api/website-chat. No demo data, no fake conversations.
+const OPENING_MSG = [
+  { from: 'michael' as const, text: "Hey! What questions do you have about going solar in KC?" },
+];
 
 function TypingDots() {
   return (
@@ -23,8 +26,9 @@ function TypingDots() {
 interface Msg { from: 'michael' | 'user'; text: string; }
 
 export default function MeetMichael() {
-  // Full message list from first render — no post-mount appends, no layout shift.
-  const [messages, setMessages] = useState<Msg[]>(DEMO_MESSAGES);
+  // Seeded with ONE static opening from Michael. Every message after this comes
+  // exclusively from /api/website-chat — no local demo data, no CHAT_SCRIPT.
+  const [messages, setMessages] = useState<Msg[]>(OPENING_MSG);
   const [typing, setTyping]     = useState(false);
   const chatContainerRef         = useRef<HTMLDivElement>(null);
   const userInitiatedRef         = useRef(false);
