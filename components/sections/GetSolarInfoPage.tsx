@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Script from 'next/script';
 
 // ─────────────────────────────────────────────────────────────────
@@ -364,16 +364,20 @@ export default function GetSolarInfoPage() {
     setStep(3);
   }
 
-  function goResult() {
-    if (!step3OK) return;
-    setPageState('qualified');
-    // Defer scroll until after React commits the new DOM — firing scrollTo
-    // synchronously misses the render cycle and the viewport stays wherever
-    // the form left it. rAF runs after paint, guaranteeing the qualified
-    // state is in the DOM before we reset scroll position.
+  // Scroll to top whenever the qualified/booking state becomes active.
+  // useEffect runs after React commits, and rAF defers until after paint —
+  // the most reliable point to reset scroll regardless of how the transition
+  // was triggered (click handler, Enter key, or any future path).
+  useEffect(() => {
+    if (pageState !== 'qualified') return;
     requestAnimationFrame(() => {
       window.scrollTo({ top: 0, behavior: 'instant' });
     });
+  }, [pageState]);
+
+  function goResult() {
+    if (!step3OK) return;
+    setPageState('qualified');
     // ── TODO: POST lead to /api/submit-lead here ─────────────────
     // Payload shape matches LeadPayload in lib/types.ts.
     // Wire up after GHL calendar is connected so the booking
