@@ -68,7 +68,7 @@ export default function Nav() {
             </li>
           ))}
         </ul>
-        <LinkButton href="#qualify" size="sm" className="hidden md:inline-flex ml-2">
+        <LinkButton href="/get-solar-info?source=nav" size="sm" className="hidden md:inline-flex ml-2">
           Get Your Free Analysis →
         </LinkButton>
 
@@ -105,7 +105,7 @@ export default function Nav() {
           ))}
         </ul>
         <div className="px-6 py-4">
-          <LinkButton href="#qualify" full onClick={close}>Get Your Free Analysis →</LinkButton>
+          <LinkButton href="/get-solar-info?source=mobile-nav" full onClick={close}>Get Your Free Analysis →</LinkButton>
         </div>
       </div>
     </nav>

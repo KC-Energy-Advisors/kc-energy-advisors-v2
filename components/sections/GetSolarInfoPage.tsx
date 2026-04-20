@@ -1,0 +1,679 @@
+'use client';
+import { useState } from 'react';
+import Script from 'next/script';
+
+// ─────────────────────────────────────────────────────────────────
+//  Types — local to this page, not shared with other components
+// ─────────────────────────────────────────────────────────────────
+
+type FormStep  = 1 | 2 | 3;
+type PageState = 'form' | 'qualified' | 'disqualified';
+
+type BillCode    = '' | 'under-100' | '100-150' | '150-200' | '200-plus';
+type RoofCode    = '' | 'asphalt'   | 'metal'   | 'tile'    | 'unsure';
+type TimelineCode= '' | 'exploring' | 'interested' | 'ready';
+
+interface FormData {
+  // Step 1
+  firstName : string;
+  phone     : string;
+  address   : string;
+  // Step 2
+  ownsHome  : '' | 'yes' | 'no';
+  monthlyBill: BillCode;
+  roofType  : RoofCode;
+  // Step 3
+  timeline  : TimelineCode;
+}
+
+const EMPTY_FORM: FormData = {
+  firstName: '', phone: '', address: '',
+  ownsHome: '', monthlyBill: '', roofType: '',
+  timeline: '',
+};
+
+// ─────────────────────────────────────────────────────────────────
+//  Micro-components — page-scoped, not exported
+// ─────────────────────────────────────────────────────────────────
+
+function StepIndicator({ current }: { current: FormStep }) {
+  return (
+    <div className="flex items-center gap-3 mb-8">
+      {([1, 2, 3] as FormStep[]).map((s, i) => (
+        <div key={s} className="flex items-center gap-3">
+          <div
+            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+              s < current
+                ? 'bg-brand-teal text-white'
+                : s === current
+                  ? 'bg-brand-blue text-white ring-4 ring-brand-blue/20'
+                  : 'bg-white/[0.08] text-white/30'
+            }`}
+          >
+            {s < current ? '✓' : s}
+          </div>
+          {i < 2 && (
+            <div
+              className={`h-px w-10 transition-all duration-500 ${
+                s < current ? 'bg-brand-teal' : 'bg-white/[0.10]'
+              }`}
+            />
+          )}
+        </div>
+      ))}
+      <span className="ml-1 text-[11px] font-bold uppercase tracking-widest text-white/25">
+        Step {current} of 3
+      </span>
+    </div>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <label className="block text-[11px] font-bold uppercase tracking-widest text-white/45 mb-2">
+      {children}
+    </label>
+  );
+}
+
+function TextInput({
+  placeholder,
+  value,
+  onChange,
+  type = 'text',
+}: {
+  placeholder: string;
+  value      : string;
+  onChange   : (v: string) => void;
+  type?      : string;
+}) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full bg-white/[0.05] border border-white/[0.10] rounded-xl px-4 py-3.5
+                 text-white text-[13.5px] placeholder-white/20
+                 focus:outline-none focus:border-brand-blue/60 focus:bg-white/[0.08]
+                 transition-all duration-200"
+    />
+  );
+}
+
+function ChoiceCard({
+  selected,
+  onClick,
+  label,
+  sublabel,
+  badge,
+}: {
+  selected  : boolean;
+  onClick   : () => void;
+  label     : string;
+  sublabel? : string;
+  badge?    : string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${
+        selected
+          ? 'border-brand-blue bg-brand-blue/[0.14] text-white'
+          : 'border-white/[0.09] bg-white/[0.03] text-white/55 hover:border-white/[0.18] hover:bg-white/[0.06] hover:text-white/75'
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <span className="text-[13.5px] font-semibold block leading-tight">{label}</span>
+          {sublabel && (
+            <span className="text-[11.5px] text-white/35 mt-0.5 block">{sublabel}</span>
+          )}
+        </div>
+        {badge && (
+          <span className="text-[10px] font-bold uppercase tracking-wider text-brand-gold bg-brand-gold/10 border border-brand-gold/20 px-2 py-0.5 rounded-full flex-shrink-0">
+            {badge}
+          </span>
+        )}
+      </div>
+    </button>
+  );
+}
+
+function PrimaryBtn({
+  onClick,
+  disabled = false,
+  children,
+}: {
+  onClick  : () => void;
+  disabled?: boolean;
+  children : React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-full py-4 rounded-xl font-bold text-[15px] transition-all duration-200 ${
+        disabled
+          ? 'bg-white/[0.07] text-white/20 cursor-not-allowed'
+          : 'bg-brand-blue text-white hover:bg-[#1D4ED8] active:scale-[0.985]'
+      }`}
+      style={
+        disabled
+          ? undefined
+          : { boxShadow: '0 4px 24px rgba(37,99,235,0.32)' }
+      }
+    >
+      {children}
+    </button>
+  );
+}
+
+function BackBtn({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="text-white/30 hover:text-white/55 text-[13px] transition-colors flex items-center gap-1.5 mx-auto"
+    >
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+        <path d="M8 10L4 6l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      Back
+    </button>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Shared sub-sections (used in both form and result views)
+// ─────────────────────────────────────────────────────────────────
+
+function ExpectationSection() {
+  const items = [
+    {
+      icon : '📋',
+      title: 'We review your current energy usage',
+      body : 'Your actual Evergy bill — real numbers specific to your home, not national averages.',
+    },
+    {
+      icon : '🏡',
+      title: 'We show you what solar looks like on your home',
+      body : 'System design based on your roof, your usage, and your goals. No guesswork.',
+    },
+    {
+      icon : '📊',
+      title: 'We give you honest numbers — whatever they are',
+      body : "If solar doesn't make financial sense for your home, we'll say so. No pitch.",
+    },
+  ];
+
+  return (
+    <section className="w-full max-w-[580px] mx-auto px-6 py-10">
+      <div className="text-center mb-7">
+        <p className="text-[10.5px] font-bold uppercase tracking-widest text-white/30 mb-3">
+          What happens at the consultation
+        </p>
+        <h3 className="text-display-sm font-black text-white">
+          No surprises. Here's exactly<br className="hidden sm:block" /> what to expect.
+        </h3>
+      </div>
+      <div className="flex flex-col gap-3">
+        {items.map((item, i) => (
+          <div
+            key={i}
+            className="flex gap-4 p-5 rounded-2xl border border-white/[0.07]"
+            style={{ background: 'rgba(255,255,255,0.022)' }}
+          >
+            <span className="text-xl flex-shrink-0 mt-0.5" aria-hidden>{item.icon}</span>
+            <div>
+              <p className="text-[13.5px] font-bold text-white mb-1">{item.title}</p>
+              <p className="text-[12.5px] text-white/40 leading-relaxed">{item.body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function TrustSection() {
+  const items = [
+    { stat: '500+', label: 'KC homeowners served' },
+    { stat: '25yr',  label: 'Panel warranty' },
+    { stat: '$0',    label: 'Down options available' },
+  ];
+
+  return (
+    <section className="w-full max-w-[580px] mx-auto px-6 pb-16">
+      <div
+        className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-12 py-8 px-6 rounded-2xl border border-white/[0.07]"
+        style={{ background: 'rgba(255,255,255,0.018)' }}
+      >
+        {items.map((item, i) => (
+          <div key={i} className="flex flex-col items-center gap-1 text-center">
+            <span className="text-[30px] font-black text-white tracking-tight leading-none">
+              {item.stat}
+            </span>
+            <span className="text-[11.5px] font-medium text-white/35 tracking-wide">
+              {item.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Page background wrapper
+// ─────────────────────────────────────────────────────────────────
+
+function PageShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen relative overflow-x-hidden" style={{ background: '#0C1322' }}>
+      {/* Dot-grid texture */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(circle,rgba(37,99,235,0.055) 1px,transparent 1px)',
+          backgroundSize : '32px 32px',
+          zIndex: 0,
+        }}
+        aria-hidden
+      />
+      {/* Ambient glow — top-right */}
+      <div
+        className="fixed pointer-events-none"
+        style={{
+          top    : '-200px',
+          right  : '-120px',
+          width  : '700px',
+          height : '700px',
+          borderRadius: '50%',
+          background  : 'rgba(37,99,235,0.08)',
+          filter      : 'blur(100px)',
+          zIndex: 0,
+        }}
+        aria-hidden
+      />
+      {/* Ambient glow — bottom-left */}
+      <div
+        className="fixed pointer-events-none"
+        style={{
+          bottom : '-100px',
+          left   : '-80px',
+          width  : '480px',
+          height : '480px',
+          borderRadius: '50%',
+          background  : 'rgba(245,158,11,0.05)',
+          filter      : 'blur(80px)',
+          zIndex: 0,
+        }}
+        aria-hidden
+      />
+      {/* Content */}
+      <div className="relative z-10">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Main exported component
+// ─────────────────────────────────────────────────────────────────
+
+export default function GetSolarInfoPage() {
+  const [pageState, setPageState] = useState<PageState>('form');
+  const [step, setStep]           = useState<FormStep>(1);
+  const [form, setForm]           = useState<FormData>(EMPTY_FORM);
+
+  const set = <K extends keyof FormData>(key: K, value: FormData[K]) =>
+    setForm(prev => ({ ...prev, [key]: value }));
+
+  // Per-step validation
+  const step1OK = form.firstName.trim().length >= 2 &&
+                  form.phone.replace(/\D/g, '').length >= 10;
+  const step2OK = form.ownsHome !== '' &&
+                  form.monthlyBill !== '' &&
+                  form.roofType !== '';
+  const step3OK = form.timeline !== '';
+
+  function goStep2() {
+    if (!step1OK) return;
+    setStep(2);
+  }
+
+  function goStep3() {
+    if (!step2OK) return;
+    if (form.ownsHome === 'no') { setPageState('disqualified'); return; }
+    setStep(3);
+  }
+
+  function goResult() {
+    if (!step3OK) return;
+    setPageState('qualified');
+    // ── TODO: POST lead to /api/submit-lead here ─────────────────
+    // Payload shape matches LeadPayload in lib/types.ts.
+    // Wire up after GHL calendar is connected so the booking
+    // confirmation can reference the same contact record.
+    // ─────────────────────────────────────────────────────────────
+  }
+
+  // ── DISQUALIFIED ─────────────────────────────────────────────
+  if (pageState === 'disqualified') {
+    return (
+      <PageShell>
+        <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 py-20 text-center">
+          <div
+            className="w-14 h-14 rounded-full border border-white/[0.12] flex items-center justify-center mb-6"
+            style={{ background: 'rgba(255,255,255,0.04)' }}
+          >
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
+              <circle cx="11" cy="11" r="9" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5"/>
+              <path d="M11 7v5M11 15.5h.01" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <h2 className="text-display-sm font-black text-white mb-3">
+            {form.firstName ? `Thanks, ${form.firstName}.` : 'Thanks for letting us know.'}
+          </h2>
+          <p className="text-white/50 text-[15px] leading-relaxed max-w-[380px] mb-8">
+            Solar really only works for homeowners — the system needs to be tied to a property you own.
+            If your situation ever changes, we&rsquo;d be glad to take another look.
+          </p>
+          <a
+            href="/"
+            className="text-[13.5px] font-semibold text-brand-blue hover:text-brand-blue-lt transition-colors"
+          >
+            ← Back to home
+          </a>
+        </div>
+      </PageShell>
+    );
+  }
+
+  // ── QUALIFIED → BOOKING ────────────────────────────────────────
+  if (pageState === 'qualified') {
+    return (
+      <PageShell>
+        {/* Success header */}
+        <section className="pt-16 pb-8 px-6 flex flex-col items-center text-center">
+          <div
+            className="w-14 h-14 rounded-full border border-brand-teal/40 flex items-center justify-center mb-6"
+            style={{ background: 'rgba(13,148,136,0.12)' }}
+          >
+            <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden>
+              <path
+                d="M4.5 13.5L10.5 19.5L21.5 7"
+                stroke="#0D9488" strokeWidth="2.5"
+                strokeLinecap="round" strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <h2 className="text-display-sm font-black text-white mb-3">
+            {form.firstName
+              ? `${form.firstName}, your home looks like a great fit.`
+              : 'Your home looks like a great fit.'}
+          </h2>
+          <p className="text-white/55 text-[15px] leading-relaxed max-w-[420px]">
+            Based on your answers, it looks like your home may qualify for a solar
+            consultation. Pick a time below — this is a quick, no-pressure walkthrough
+            of your options.
+          </p>
+        </section>
+
+        {/* Calendar section */}
+        <section className="px-6 pb-4 flex justify-center" style={{ marginTop: '40px' }}>
+          <div className="w-full max-w-[800px]">
+            <p className="text-[15px] font-semibold text-white/70 mb-6 text-center leading-snug">
+              Pick a time that works best — this is a quick, no-pressure walkthrough of your options.
+            </p>
+
+            {/* ── GHL CALENDAR EMBED ─────────────────────────────────── */}
+            <div
+              id="ghl-calendar-embed"
+              className="w-full rounded-2xl border border-white/[0.08] overflow-hidden"
+              style={{
+                background : 'rgba(255,255,255,0.022)',
+                minHeight  : '650px',
+                boxShadow  : '0 8px 40px rgba(0,0,0,0.28)',
+              }}
+            >
+              <iframe
+                src="https://api.leadconnectorhq.com/widget/booking/0fu9WVucPWOYhM0tSEGE"
+                id="0fu9WVucPWOYhM0tSEGE_1776708128843"
+                scrolling="no"
+                style={{
+                  width     : '100%',
+                  minHeight : '650px',
+                  border    : 'none',
+                  overflow  : 'hidden',
+                  display   : 'block',
+                }}
+              />
+            </div>
+
+            {/* GHL widget script — loads after page is interactive */}
+            <Script
+              src="https://link.msgsndr.com/js/form_embed.js"
+              strategy="afterInteractive"
+            />
+          </div>
+        </section>
+
+        <ExpectationSection />
+        <TrustSection />
+      </PageShell>
+    );
+  }
+
+  // ── MULTI-STEP FORM ────────────────────────────────────────────
+  return (
+    <PageShell>
+      {/* ── SECTION 1: HERO ───────────────────────────────────── */}
+      <section className="pt-14 pb-8 text-center px-6">
+        <div className="inline-flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-widest text-white/65 bg-white/[0.07] border border-white/[0.09] px-3.5 py-1.5 rounded-full mb-6">
+          Free Consultation &nbsp;·&nbsp; No Obligation
+        </div>
+        <h1 className="text-display-md font-black text-white mb-4">
+          See If Solar Makes Sense<br />
+          <span className="text-brand-gold">For Your Home</span>
+        </h1>
+        <p className="text-[17px] text-white/55 max-w-[400px] mx-auto leading-relaxed mb-3">
+          Takes 30 seconds. We&rsquo;ll only schedule if it actually benefits you.
+        </p>
+        <p className="text-[12.5px] text-white/30 font-medium tracking-wide">
+          No pressure.&nbsp; No obligation.&nbsp; Just clarity.
+        </p>
+      </section>
+
+      {/* ── SECTION 2: QUALIFICATION FORM ─────────────────────── */}
+      <section className="px-6 pb-8 flex justify-center">
+        <div
+          className="w-full max-w-[480px] rounded-2xl border border-white/[0.08] p-7 sm:p-8"
+          style={{ background: 'rgba(255,255,255,0.028)', backdropFilter: 'blur(12px)' }}
+        >
+          <StepIndicator current={step} />
+
+          {/* ── STEP 1: Contact info ──────────────────────────── */}
+          {step === 1 && (
+            <div className="animate-step-slide">
+              <h2 className="text-[20px] font-black text-white mb-1">Tell us about yourself</h2>
+              <p className="text-[12.5px] text-white/35 mb-7">
+                We&rsquo;ll reach out to confirm your consultation.
+              </p>
+
+              <div className="flex flex-col gap-4 mb-7">
+                <div>
+                  <FieldLabel>First Name</FieldLabel>
+                  <TextInput
+                    placeholder="Your first name"
+                    value={form.firstName}
+                    onChange={v => set('firstName', v)}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>Phone Number</FieldLabel>
+                  <TextInput
+                    placeholder="(816) 000-0000"
+                    value={form.phone}
+                    onChange={v => set('phone', v)}
+                    type="tel"
+                  />
+                </div>
+                <div>
+                  <FieldLabel>Property Address</FieldLabel>
+                  <TextInput
+                    placeholder="123 Main St, Kansas City, MO"
+                    value={form.address}
+                    onChange={v => set('address', v)}
+                  />
+                </div>
+              </div>
+
+              <PrimaryBtn onClick={goStep2} disabled={!step1OK}>
+                Continue →
+              </PrimaryBtn>
+              <p className="text-center text-[11px] text-white/20 mt-4">
+                Your information is never sold or shared.
+              </p>
+            </div>
+          )}
+
+          {/* ── STEP 2: Home qualification ────────────────────── */}
+          {step === 2 && (
+            <div className="animate-step-slide">
+              <h2 className="text-[20px] font-black text-white mb-1">Quick home check</h2>
+              <p className="text-[12.5px] text-white/35 mb-7">
+                Helps us know if solar is a fit before we talk.
+              </p>
+
+              <div className="flex flex-col gap-6 mb-7">
+                {/* Own the home? */}
+                <div>
+                  <FieldLabel>Do you own the home?</FieldLabel>
+                  <div className="grid grid-cols-2 gap-2">
+                    <ChoiceCard
+                      selected={form.ownsHome === 'yes'}
+                      onClick={() => set('ownsHome', 'yes')}
+                      label="Yes, I own it"
+                    />
+                    <ChoiceCard
+                      selected={form.ownsHome === 'no'}
+                      onClick={() => set('ownsHome', 'no')}
+                      label="No, I rent"
+                    />
+                  </div>
+                </div>
+
+                {/* Monthly electric bill */}
+                <div>
+                  <FieldLabel>Average monthly electric bill</FieldLabel>
+                  <div className="flex flex-col gap-2">
+                    {([
+                      { code: 'under-100', label: 'Under $100 / month'    },
+                      { code: '100-150',   label: '$100 – $150 / month'   },
+                      { code: '150-200',   label: '$150 – $200 / month',  badge: 'Strong fit' },
+                      { code: '200-plus',  label: '$200+ / month',        badge: 'Priority'  },
+                    ] as { code: BillCode; label: string; badge?: string }[]).map(opt => (
+                      <ChoiceCard
+                        key={opt.code}
+                        selected={form.monthlyBill === opt.code}
+                        onClick={() => set('monthlyBill', opt.code)}
+                        label={opt.label}
+                        badge={opt.badge}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Roof type */}
+                <div>
+                  <FieldLabel>Roof type</FieldLabel>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { code: 'asphalt', label: 'Asphalt shingle' },
+                      { code: 'metal',   label: 'Metal'           },
+                      { code: 'tile',    label: 'Tile'            },
+                      { code: 'unsure',  label: 'Not sure'        },
+                    ] as { code: RoofCode; label: string }[]).map(opt => (
+                      <ChoiceCard
+                        key={opt.code}
+                        selected={form.roofType === opt.code}
+                        onClick={() => set('roofType', opt.code)}
+                        label={opt.label}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <PrimaryBtn onClick={goStep3} disabled={!step2OK}>
+                Continue →
+              </PrimaryBtn>
+              <div className="mt-4 flex justify-center">
+                <BackBtn onClick={() => setStep(1)} />
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 3: Timeline / intent ─────────────────────── */}
+          {step === 3 && (
+            <div className="animate-step-slide">
+              <h2 className="text-[20px] font-black text-white mb-1">One last thing</h2>
+              <p className="text-[12.5px] text-white/35 mb-7">
+                Helps us come prepared to your consultation.
+              </p>
+
+              <div className="mb-7">
+                <FieldLabel>Where are you in the decision process?</FieldLabel>
+                <div className="flex flex-col gap-2">
+                  {([
+                    {
+                      code    : 'exploring',
+                      label   : 'Just exploring',
+                      sublabel: 'Curious — not in a rush',
+                    },
+                    {
+                      code    : 'interested',
+                      label   : 'I\'m interested',
+                      sublabel: 'Want to understand my real options',
+                    },
+                    {
+                      code    : 'ready',
+                      label   : 'Ready if it makes sense',
+                      sublabel: 'Looking to move forward soon',
+                    },
+                  ] as { code: TimelineCode; label: string; sublabel: string }[]).map(opt => (
+                    <ChoiceCard
+                      key={opt.code}
+                      selected={form.timeline === opt.code}
+                      onClick={() => set('timeline', opt.code)}
+                      label={opt.label}
+                      sublabel={opt.sublabel}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <PrimaryBtn onClick={goResult} disabled={!step3OK}>
+                See My Options →
+              </PrimaryBtn>
+              <div className="mt-4 flex justify-center">
+                <BackBtn onClick={() => setStep(2)} />
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── SECTION 4: EXPECTATION SETTING ────────────────────── */}
+      <ExpectationSection />
+
+      {/* ── SECTION 5: TRUST ──────────────────────────────────── */}
+      <TrustSection />
+    </PageShell>
+  );
+}

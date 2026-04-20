@@ -127,7 +127,7 @@ export default function Reviews() {
         </div>
 
         <RevealSection className="text-center">
-          <LinkButton href="#qualify" size="lg">
+          <LinkButton href="/get-solar-info?source=reviews" size="lg">
             See What I&apos;d Save →
           </LinkButton>
         </RevealSection>

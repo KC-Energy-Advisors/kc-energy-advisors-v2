@@ -117,7 +117,7 @@ export default function Hero() {
         >
           {/* Primary CTA with pulse glow */}
           <motion.a
-            href="#qualify"
+            href="/get-solar-info?source=hero"
             className="inline-flex items-center gap-2 px-8 py-4 rounded-lg font-semibold text-white text-[16px] transition-colors hover:bg-blue-700"
             style={{ background: '#2563EB', borderRadius: 8 }}
             variants={ctaGlow}

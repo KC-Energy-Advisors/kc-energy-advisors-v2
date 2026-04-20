@@ -84,7 +84,7 @@ export default function Calculator() {
             {/* CTA */}
             <div className="bg-white/[0.04] border border-white/[0.09] rounded-2xl p-5">
               <p className="text-sm text-slate-400 mb-3 leading-relaxed">Ready for your personalized savings report?</p>
-              <LinkButton href="#qualify" full>Get My Exact Numbers →</LinkButton>
+              <LinkButton href="/get-solar-info?source=calculator" full>Get My Exact Numbers →</LinkButton>
             </div>
           </div>
 

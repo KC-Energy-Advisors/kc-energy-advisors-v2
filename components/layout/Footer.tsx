@@ -4,7 +4,7 @@ const NAV_LINKS = [
   { href: '#how-it-works', label: 'How It Works'          },
   { href: '#why-solar',    label: 'Why Solar'             },
   { href: '#reviews',      label: 'Reviews'               },
-  { href: '#qualify',      label: 'Get a Savings Report'  },
+  { href: '/get-solar-info?source=footer', label: 'Get a Savings Report'  },
   { href: '/privacy',      label: 'Privacy Policy'        },
   { href: '/terms',        label: 'Terms'                 },
 ];

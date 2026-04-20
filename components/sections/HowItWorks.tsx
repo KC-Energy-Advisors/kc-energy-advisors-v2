@@ -91,7 +91,7 @@ export default function HowItWorks() {
             Total time from first call to live system: typically 3–4 weeks.
             Most homeowners are surprised by how straightforward it is.
           </p>
-          <LinkButton href="#qualify">
+          <LinkButton href="/get-solar-info?source=how-it-works">
             Get My Free Savings Report →
           </LinkButton>
         </div>
