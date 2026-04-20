@@ -271,9 +271,18 @@ function TrustSection() {
 //  Page background wrapper
 // ─────────────────────────────────────────────────────────────────
 
-function PageShell({ children }: { children: React.ReactNode }) {
+function PageShell({
+  children,
+  topAligned = false,
+}: {
+  children   : React.ReactNode;
+  topAligned?: boolean;
+}) {
   return (
-    <div className="min-h-screen relative overflow-x-hidden" style={{ background: '#0C1322' }}>
+    <div
+      className={`${topAligned ? 'flex flex-col items-start' : 'min-h-screen'} relative overflow-x-hidden`}
+      style={{ background: '#0C1322' }}
+    >
       {/* Dot-grid texture */}
       <div
         className="fixed inset-0 pointer-events-none"
@@ -315,7 +324,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
         aria-hidden
       />
       {/* Content */}
-      <div className="relative z-10">
+      <div className={`relative z-10 ${topAligned ? 'w-full' : ''}`}>
         {children}
       </div>
     </div>
@@ -455,9 +464,9 @@ export default function GetSolarInfoPage() {
       `https://api.leadconnectorhq.com/widget/booking/0fu9WVucPWOYhM0tSEGE?${_p.toString()}`;
 
     return (
-      <PageShell>
+      <PageShell topAligned>
         {/* Booking confirmation — single compact inline row, no stacked icon block */}
-        <div className="pt-3 pb-2 px-6 flex items-center justify-center gap-2">
+        <div className="pt-8 pb-2 px-6 flex items-center justify-center gap-2">
           <svg width="15" height="15" viewBox="0 0 26 26" fill="none" aria-hidden className="flex-shrink-0">
             <path
               d="M4.5 13.5L10.5 19.5L21.5 7"
