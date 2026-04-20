@@ -47,7 +47,7 @@ function StepIndicator({ current }: { current: FormStep }) {
                 ? 'bg-brand-teal text-white'
                 : s === current
                   ? 'bg-brand-blue text-white ring-4 ring-brand-blue/20'
-                  : 'bg-white/[0.08] text-white/30'
+                  : 'bg-gray-100 text-gray-400'
             }`}
           >
             {s < current ? '✓' : s}
@@ -55,13 +55,13 @@ function StepIndicator({ current }: { current: FormStep }) {
           {i < 2 && (
             <div
               className={`h-px w-10 transition-all duration-500 ${
-                s < current ? 'bg-brand-teal' : 'bg-white/[0.10]'
+                s < current ? 'bg-brand-teal' : 'bg-gray-200'
               }`}
             />
           )}
         </div>
       ))}
-      <span className="ml-1 text-[11px] font-bold uppercase tracking-widest text-white/25">
+      <span className="ml-1 text-[11px] font-bold uppercase tracking-widest text-gray-400">
         Step {current} of 3
       </span>
     </div>
@@ -70,7 +70,7 @@ function StepIndicator({ current }: { current: FormStep }) {
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block text-[11px] font-bold uppercase tracking-widest text-white/45 mb-2">
+    <label className="block text-[11.5px] font-semibold uppercase tracking-widest text-[#111827] mb-3">
       {children}
     </label>
   );
@@ -93,10 +93,11 @@ function TextInput({
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full bg-white/[0.05] border border-white/[0.10] rounded-xl px-4 py-3.5
-                 text-white text-[13.5px] placeholder-white/20
-                 focus:outline-none focus:border-brand-blue/60 focus:bg-white/[0.08]
+      className="w-full min-h-[52px] bg-[#f9fafb] border border-[#d1d5db] rounded-xl px-4 py-[14px]
+                 text-[#111827] text-[14.5px] placeholder-[#6b7280]
+                 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30
                  transition-all duration-200"
+      style={{ boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)' }}
     />
   );
 }
@@ -120,15 +121,15 @@ function ChoiceCard({
       onClick={onClick}
       className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${
         selected
-          ? 'border-brand-blue bg-brand-blue/[0.14] text-white'
-          : 'border-white/[0.09] bg-white/[0.03] text-white/55 hover:border-white/[0.18] hover:bg-white/[0.06] hover:text-white/75'
+          ? 'border-blue-500 bg-blue-50 text-[#1e40af]'
+          : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'
       }`}
     >
       <div className="flex items-center justify-between gap-3">
         <div>
           <span className="text-[13.5px] font-semibold block leading-tight">{label}</span>
           {sublabel && (
-            <span className="text-[11.5px] text-white/35 mt-0.5 block">{sublabel}</span>
+            <span className="text-[11.5px] text-[#6b7280] mt-0.5 block">{sublabel}</span>
           )}
         </div>
         {badge && (
@@ -155,15 +156,15 @@ function PrimaryBtn({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`w-full py-4 rounded-xl font-bold text-[15px] transition-all duration-200 ${
+      className={`w-full py-[15px] rounded-xl font-bold text-[16px] tracking-wide transition-all duration-200 ${
         disabled
-          ? 'bg-white/[0.07] text-white/20 cursor-not-allowed'
-          : 'bg-brand-blue text-white hover:bg-[#1D4ED8] active:scale-[0.985]'
+          ? 'bg-[#e5e7eb] text-[#9ca3af] cursor-not-allowed'
+          : 'bg-[#2563eb] text-white hover:bg-[#1D4ED8] hover:scale-[1.01] active:scale-[0.985]'
       }`}
       style={
         disabled
           ? undefined
-          : { boxShadow: '0 4px 24px rgba(37,99,235,0.32)' }
+          : { boxShadow: '0 8px 32px rgba(37,99,235,0.52)' }
       }
     >
       {children}
@@ -176,7 +177,7 @@ function BackBtn({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="text-white/30 hover:text-white/55 text-[13px] transition-colors flex items-center gap-1.5 mx-auto"
+      className="text-[#6b7280] hover:text-[#374151] text-[13px] transition-colors flex items-center gap-1.5 mx-auto"
     >
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
         <path d="M8 10L4 6l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -292,7 +293,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
           width  : '700px',
           height : '700px',
           borderRadius: '50%',
-          background  : 'rgba(37,99,235,0.08)',
+          background  : 'rgba(37,99,235,0.05)',
           filter      : 'blur(100px)',
           zIndex: 0,
         }}
@@ -492,20 +493,20 @@ export default function GetSolarInfoPage() {
       {/* ── SECTION 2: QUALIFICATION FORM ─────────────────────── */}
       <section className="px-6 pb-8 flex justify-center">
         <div
-          className="w-full max-w-[480px] rounded-2xl border border-white/[0.08] p-7 sm:p-8"
-          style={{ background: 'rgba(255,255,255,0.028)', backdropFilter: 'blur(12px)' }}
+          className="w-full max-w-[480px] rounded-2xl border border-black/[0.07] p-7 sm:p-8"
+          style={{ background: '#ffffff', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}
         >
           <StepIndicator current={step} />
 
           {/* ── STEP 1: Contact info ──────────────────────────── */}
           {step === 1 && (
             <div className="animate-step-slide">
-              <h2 className="text-[20px] font-black text-white mb-1">Tell us about yourself</h2>
-              <p className="text-[12.5px] text-white/35 mb-7">
+              <h2 className="text-[21px] font-black text-[#0f172a] mb-2">Tell us about yourself</h2>
+              <p className="text-[13px] text-[#4b5563] mb-8">
                 We&rsquo;ll reach out to confirm your consultation.
               </p>
 
-              <div className="flex flex-col gap-4 mb-7">
+              <div className="flex flex-col gap-5 mb-8">
                 <div>
                   <FieldLabel>First Name</FieldLabel>
                   <TextInput
@@ -536,7 +537,7 @@ export default function GetSolarInfoPage() {
               <PrimaryBtn onClick={goStep2} disabled={!step1OK}>
                 Continue →
               </PrimaryBtn>
-              <p className="text-center text-[11px] text-white/20 mt-4">
+              <p className="text-center text-[11px] text-[#9ca3af] mt-4">
                 Your information is never sold or shared.
               </p>
             </div>
@@ -545,12 +546,12 @@ export default function GetSolarInfoPage() {
           {/* ── STEP 2: Home qualification ────────────────────── */}
           {step === 2 && (
             <div className="animate-step-slide">
-              <h2 className="text-[20px] font-black text-white mb-1">Quick home check</h2>
-              <p className="text-[12.5px] text-white/35 mb-7">
+              <h2 className="text-[21px] font-black text-[#0f172a] mb-2">Quick home check</h2>
+              <p className="text-[13px] text-[#4b5563] mb-8">
                 Helps us know if solar is a fit before we talk.
               </p>
 
-              <div className="flex flex-col gap-6 mb-7">
+              <div className="flex flex-col gap-7 mb-8">
                 {/* Own the home? */}
                 <div>
                   <FieldLabel>Do you own the home?</FieldLabel>
@@ -622,8 +623,8 @@ export default function GetSolarInfoPage() {
           {/* ── STEP 3: Timeline / intent ─────────────────────── */}
           {step === 3 && (
             <div className="animate-step-slide">
-              <h2 className="text-[20px] font-black text-white mb-1">One last thing</h2>
-              <p className="text-[12.5px] text-white/35 mb-7">
+              <h2 className="text-[21px] font-black text-[#0f172a] mb-2">One last thing</h2>
+              <p className="text-[13px] text-[#4b5563] mb-8">
                 Helps us come prepared to your consultation.
               </p>
 
