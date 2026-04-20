@@ -334,6 +334,17 @@ export default function GetSolarInfoPage() {
   const set = <K extends keyof FormData>(key: K, value: FormData[K]) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
+  // Enter-key handler factory — reuses existing step functions, no logic duplication.
+  // Skips when Enter is on a <button> (buttons already self-handle Enter/Space).
+  const stepEnter = (action: () => void, valid: boolean) =>
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== 'Enter') return;
+      if ((e.target as HTMLElement).tagName === 'BUTTON') return;
+      if (!valid) return;
+      e.preventDefault();
+      action();
+    };
+
   // Per-step validation
   const step1OK = form.name.trim().length >= 2 &&
                   form.phone.replace(/\D/g, '').length >= 10;
@@ -434,36 +445,26 @@ export default function GetSolarInfoPage() {
 
     return (
       <PageShell>
-        {/* Success header — minimal vertical footprint so calendar lands in first viewport */}
-        <section className="pt-4 pb-2 px-6 flex flex-col items-center text-center">
-          <div
-            className="w-9 h-9 rounded-full border border-brand-teal/40 flex items-center justify-center mb-2"
-            style={{ background: 'rgba(13,148,136,0.12)' }}
-          >
-            <svg width="17" height="17" viewBox="0 0 26 26" fill="none" aria-hidden>
-              <path
-                d="M4.5 13.5L10.5 19.5L21.5 7"
-                stroke="#0D9488" strokeWidth="2.5"
-                strokeLinecap="round" strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <h2 className="text-[20px] font-black text-white mb-1">
+        {/* Booking confirmation — single compact inline row, no stacked icon block */}
+        <div className="pt-3 pb-2 px-6 flex items-center justify-center gap-2">
+          <svg width="15" height="15" viewBox="0 0 26 26" fill="none" aria-hidden className="flex-shrink-0">
+            <path
+              d="M4.5 13.5L10.5 19.5L21.5 7"
+              stroke="#0D9488" strokeWidth="2.8"
+              strokeLinecap="round" strokeLinejoin="round"
+            />
+          </svg>
+          <p className="text-[15px] font-semibold text-white leading-tight">
             {form.name
               ? `${form.name}, your home looks like a great fit.`
               : 'Your home looks like a great fit.'}
-          </h2>
-          <p className="text-white/50 text-[13px] leading-snug max-w-[420px]">
-            Pick a time below — a quick, no-pressure walkthrough of your options.
+            <span className="text-white/45 font-normal"> Pick a time below.</span>
           </p>
-        </section>
+        </div>
 
-        {/* Calendar section — top-aligned, tight gap so calendar is visible without scrolling */}
-        <section className="px-6 pb-10 flex justify-center" style={{ marginTop: '8px' }}>
+        {/* Calendar — immediately below the confirmation line */}
+        <section className="px-6 pb-10 flex justify-center" style={{ marginTop: '6px' }}>
           <div className="w-full max-w-[800px]">
-            <p className="text-[12px] font-medium text-white/40 mb-2 text-center leading-snug">
-              Select a date and time that works for you →
-            </p>
 
             {/* ── GHL CALENDAR EMBED ─────────────────────────────────── */}
             <div
@@ -533,7 +534,7 @@ export default function GetSolarInfoPage() {
 
           {/* ── STEP 1: Contact info ──────────────────────────── */}
           {step === 1 && (
-            <div className="animate-step-slide">
+            <div className="animate-step-slide" onKeyDown={stepEnter(goStep2, step1OK)}>
               <h2 className="text-[21px] font-black text-[#0f172a] mb-2">Tell us about yourself</h2>
               <p className="text-[13px] text-[#4b5563] mb-8">
                 We&rsquo;ll reach out to confirm your consultation.
@@ -578,7 +579,7 @@ export default function GetSolarInfoPage() {
 
           {/* ── STEP 2: Home qualification ────────────────────── */}
           {step === 2 && (
-            <div className="animate-step-slide">
+            <div className="animate-step-slide" onKeyDown={stepEnter(goStep3, step2OK)}>
               <h2 className="text-[21px] font-black text-[#0f172a] mb-2">Quick home check</h2>
               <p className="text-[13px] text-[#4b5563] mb-8">
                 Helps us know if solar is a fit before we talk.
@@ -655,7 +656,7 @@ export default function GetSolarInfoPage() {
 
           {/* ── STEP 3: Timeline / intent ─────────────────────── */}
           {step === 3 && (
-            <div className="animate-step-slide">
+            <div className="animate-step-slide" onKeyDown={stepEnter(goResult, step3OK)}>
               <h2 className="text-[21px] font-black text-[#0f172a] mb-2">One last thing</h2>
               <p className="text-[13px] text-[#4b5563] mb-8">
                 Helps us come prepared to your consultation.
