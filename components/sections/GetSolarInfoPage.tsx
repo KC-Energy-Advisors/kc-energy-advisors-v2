@@ -463,64 +463,123 @@ export default function GetSolarInfoPage() {
     const _calendarSrc =
       `https://api.leadconnectorhq.com/widget/booking/0fu9WVucPWOYhM0tSEGE?${_p.toString()}`;
 
+    // ── Booking view — standalone wrapper, no PageShell ──────────────
+    // Uses inline styles so display:block is guaranteed at highest CSS
+    // specificity. No Tailwind class resolution, no upstream flex override.
     return (
-      <PageShell topAligned>
-        {/* Booking confirmation — single compact inline row, no stacked icon block */}
-        <div className="pt-8 pb-2 px-6 flex items-center justify-center gap-2">
-          <svg width="15" height="15" viewBox="0 0 26 26" fill="none" aria-hidden className="flex-shrink-0">
-            <path
-              d="M4.5 13.5L10.5 19.5L21.5 7"
-              stroke="#0D9488" strokeWidth="2.8"
-              strokeLinecap="round" strokeLinejoin="round"
-            />
-          </svg>
-          <p className="text-[15px] font-semibold text-white leading-tight">
-            {form.name
-              ? `${form.name}, your home looks like a great fit.`
-              : 'Your home looks like a great fit.'}
-            <span className="text-white/45 font-normal"> Pick a time below.</span>
-          </p>
-        </div>
+      <div
+        style={{
+          display    : 'block',
+          background : '#0C1322',
+          position   : 'relative',
+          overflowX  : 'hidden',
+        }}
+      >
+        {/* Dot-grid texture — fixed, renders to viewport regardless of parent */}
+        <div
+          style={{
+            position        : 'fixed',
+            inset           : 0,
+            pointerEvents   : 'none',
+            backgroundImage : 'radial-gradient(circle,rgba(37,99,235,0.055) 1px,transparent 1px)',
+            backgroundSize  : '32px 32px',
+            zIndex          : 0,
+          }}
+          aria-hidden
+        />
+        {/* Ambient glow — top-right */}
+        <div
+          style={{
+            position     : 'fixed',
+            pointerEvents: 'none',
+            top          : '-200px',
+            right        : '-120px',
+            width        : '700px',
+            height       : '700px',
+            borderRadius : '50%',
+            background   : 'rgba(37,99,235,0.05)',
+            filter       : 'blur(100px)',
+            zIndex       : 0,
+          }}
+          aria-hidden
+        />
+        {/* Ambient glow — bottom-left */}
+        <div
+          style={{
+            position     : 'fixed',
+            pointerEvents: 'none',
+            bottom       : '-100px',
+            left         : '-80px',
+            width        : '480px',
+            height       : '480px',
+            borderRadius : '50%',
+            background   : 'rgba(245,158,11,0.05)',
+            filter       : 'blur(80px)',
+            zIndex       : 0,
+          }}
+          aria-hidden
+        />
 
-        {/* Calendar — immediately below the confirmation line */}
-        <section className="px-6 pb-10 flex justify-center" style={{ marginTop: '6px' }}>
-          <div className="w-full max-w-[800px]">
+        {/* All booking content — block-stacked from top, z above backgrounds */}
+        <div style={{ position: 'relative', zIndex: 10, paddingTop: '32px' }}>
 
-            {/* ── GHL CALENDAR EMBED ─────────────────────────────────── */}
-            <div
-              id="ghl-calendar-embed"
-              className="w-full rounded-2xl border border-white/[0.08] overflow-hidden"
-              style={{
-                background : 'rgba(255,255,255,0.022)',
-                minHeight  : '650px',
-                boxShadow  : '0 8px 40px rgba(0,0,0,0.28)',
-              }}
-            >
-              <iframe
-                src={_calendarSrc}
-                id="0fu9WVucPWOYhM0tSEGE_1776708128843"
-                scrolling="no"
+          {/* Booking confirmation — single compact inline row */}
+          <div className="pb-2 px-6 flex items-center justify-center gap-2">
+            <svg width="15" height="15" viewBox="0 0 26 26" fill="none" aria-hidden className="flex-shrink-0">
+              <path
+                d="M4.5 13.5L10.5 19.5L21.5 7"
+                stroke="#0D9488" strokeWidth="2.8"
+                strokeLinecap="round" strokeLinejoin="round"
+              />
+            </svg>
+            <p className="text-[15px] font-semibold text-white leading-tight">
+              {form.name
+                ? `${form.name}, your home looks like a great fit.`
+                : 'Your home looks like a great fit.'}
+              <span className="text-white/45 font-normal"> Pick a time below.</span>
+            </p>
+          </div>
+
+          {/* Calendar — immediately below the confirmation line */}
+          <section className="px-6 pb-10 flex justify-center" style={{ marginTop: '6px' }}>
+            <div className="w-full max-w-[800px]">
+
+              {/* ── GHL CALENDAR EMBED ─────────────────────────────────── */}
+              <div
+                id="ghl-calendar-embed"
+                className="w-full rounded-2xl border border-white/[0.08] overflow-hidden"
                 style={{
-                  width     : '100%',
-                  minHeight : '650px',
-                  border    : 'none',
-                  overflow  : 'hidden',
-                  display   : 'block',
+                  background : 'rgba(255,255,255,0.022)',
+                  minHeight  : '650px',
+                  boxShadow  : '0 8px 40px rgba(0,0,0,0.28)',
                 }}
+              >
+                <iframe
+                  src={_calendarSrc}
+                  id="0fu9WVucPWOYhM0tSEGE_1776708128843"
+                  scrolling="no"
+                  style={{
+                    width     : '100%',
+                    minHeight : '650px',
+                    border    : 'none',
+                    overflow  : 'hidden',
+                    display   : 'block',
+                  }}
+                />
+              </div>
+
+              {/* GHL widget script — loads after page is interactive */}
+              <Script
+                src="https://link.msgsndr.com/js/form_embed.js"
+                strategy="afterInteractive"
               />
             </div>
+          </section>
 
-            {/* GHL widget script — loads after page is interactive */}
-            <Script
-              src="https://link.msgsndr.com/js/form_embed.js"
-              strategy="afterInteractive"
-            />
-          </div>
-        </section>
-
-        <ExpectationSection />
-        <TrustSection />
-      </PageShell>
+          <ExpectationSection />
+          <TrustSection />
+        </div>
+      </div>
     );
   }
 
