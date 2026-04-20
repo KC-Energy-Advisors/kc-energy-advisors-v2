@@ -367,6 +367,13 @@ export default function GetSolarInfoPage() {
   function goResult() {
     if (!step3OK) return;
     setPageState('qualified');
+    // Defer scroll until after React commits the new DOM — firing scrollTo
+    // synchronously misses the render cycle and the viewport stays wherever
+    // the form left it. rAF runs after paint, guaranteeing the qualified
+    // state is in the DOM before we reset scroll position.
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    });
     // ── TODO: POST lead to /api/submit-lead here ─────────────────
     // Payload shape matches LeadPayload in lib/types.ts.
     // Wire up after GHL calendar is connected so the booking
