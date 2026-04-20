@@ -15,7 +15,7 @@ type TimelineCode= '' | 'exploring' | 'interested' | 'ready';
 
 interface FormData {
   // Step 1
-  firstName : string;
+  name      : string;
   phone     : string;
   address   : string;
   // Step 2
@@ -27,7 +27,7 @@ interface FormData {
 }
 
 const EMPTY_FORM: FormData = {
-  firstName: '', phone: '', address: '',
+  name: '', phone: '', address: '',
   ownsHome: '', monthlyBill: '', roofType: '',
   timeline: '',
 };
@@ -335,7 +335,7 @@ export default function GetSolarInfoPage() {
     setForm(prev => ({ ...prev, [key]: value }));
 
   // Per-step validation
-  const step1OK = form.firstName.trim().length >= 2 &&
+  const step1OK = form.name.trim().length >= 2 &&
                   form.phone.replace(/\D/g, '').length >= 10;
   const step2OK = form.ownsHome !== '' &&
                   form.monthlyBill !== '' &&
@@ -378,7 +378,7 @@ export default function GetSolarInfoPage() {
             </svg>
           </div>
           <h2 className="text-display-sm font-black text-white mb-3">
-            {form.firstName ? `Thanks, ${form.firstName}.` : 'Thanks for letting us know.'}
+            {form.name ? `Thanks, ${form.name}.` : 'Thanks for letting us know.'}
           </h2>
           <p className="text-white/50 text-[15px] leading-relaxed max-w-[380px] mb-8">
             Solar really only works for homeowners — the system needs to be tied to a property you own.
@@ -397,15 +397,50 @@ export default function GetSolarInfoPage() {
 
   // ── QUALIFIED → BOOKING ────────────────────────────────────────
   if (pageState === 'qualified') {
+    // ── Prefill GHL calendar with Step 1 data ─────────────────────
+    // GHL booking widget reads these URL params and pre-populates its
+    // own contact form, so the user only needs to pick a time slot.
+    const _p = new URLSearchParams();
+
+    // name / first_name / last_name → GHL checks all three formats
+    // Split on whitespace so "Mike Smith" → first="Mike", last="Smith"
+    if (form.name) {
+      const parts = form.name.trim().split(/\s+/);
+      const first = parts[0] ?? '';
+      const last  = parts.slice(1).join(' ');
+      _p.set('name',       form.name.trim()); // full-name field
+      _p.set('first_name', first);                 // split first-name field
+      if (last) _p.set('last_name', last);         // split last-name field (if provided)
+    }
+
+    // phone → E.164 format (+1XXXXXXXXXX for US)
+    // Handles: (816) 319-0932 / 816-319-0932 / 8163190932 / 18163190932
+    if (form.phone) {
+      const digits = form.phone.replace(/\D/g, '');
+      const e164 =
+        digits.length === 10                          ? `+1${digits}`  // 10-digit US number
+        : digits.length === 11 && digits[0] === '1'  ? `+${digits}`   // already has country code
+        : `+1${digits}`;                                               // fallback: prepend +1
+      _p.set('phone', e164);
+    }
+
+    // address → no standard booking-widget param exists for this field.
+    // To prefill it you need the custom field's UUID key from GHL:
+    //   GHL → Settings → Custom Fields → copy the field "key" value
+    //   Then add: _p.set('<field-uuid-key>', form.address);
+
+    const _calendarSrc =
+      `https://api.leadconnectorhq.com/widget/booking/0fu9WVucPWOYhM0tSEGE?${_p.toString()}`;
+
     return (
       <PageShell>
-        {/* Success header */}
-        <section className="pt-16 pb-8 px-6 flex flex-col items-center text-center">
+        {/* Success header — minimal vertical footprint so calendar lands in first viewport */}
+        <section className="pt-4 pb-2 px-6 flex flex-col items-center text-center">
           <div
-            className="w-14 h-14 rounded-full border border-brand-teal/40 flex items-center justify-center mb-6"
+            className="w-9 h-9 rounded-full border border-brand-teal/40 flex items-center justify-center mb-2"
             style={{ background: 'rgba(13,148,136,0.12)' }}
           >
-            <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden>
+            <svg width="17" height="17" viewBox="0 0 26 26" fill="none" aria-hidden>
               <path
                 d="M4.5 13.5L10.5 19.5L21.5 7"
                 stroke="#0D9488" strokeWidth="2.5"
@@ -413,23 +448,21 @@ export default function GetSolarInfoPage() {
               />
             </svg>
           </div>
-          <h2 className="text-display-sm font-black text-white mb-3">
-            {form.firstName
-              ? `${form.firstName}, your home looks like a great fit.`
+          <h2 className="text-[20px] font-black text-white mb-1">
+            {form.name
+              ? `${form.name}, your home looks like a great fit.`
               : 'Your home looks like a great fit.'}
           </h2>
-          <p className="text-white/55 text-[15px] leading-relaxed max-w-[420px]">
-            Based on your answers, it looks like your home may qualify for a solar
-            consultation. Pick a time below — this is a quick, no-pressure walkthrough
-            of your options.
+          <p className="text-white/50 text-[13px] leading-snug max-w-[420px]">
+            Pick a time below — a quick, no-pressure walkthrough of your options.
           </p>
         </section>
 
-        {/* Calendar section */}
-        <section className="px-6 pb-4 flex justify-center" style={{ marginTop: '40px' }}>
+        {/* Calendar section — top-aligned, tight gap so calendar is visible without scrolling */}
+        <section className="px-6 pb-10 flex justify-center" style={{ marginTop: '8px' }}>
           <div className="w-full max-w-[800px]">
-            <p className="text-[15px] font-semibold text-white/70 mb-6 text-center leading-snug">
-              Pick a time that works best — this is a quick, no-pressure walkthrough of your options.
+            <p className="text-[12px] font-medium text-white/40 mb-2 text-center leading-snug">
+              Select a date and time that works for you →
             </p>
 
             {/* ── GHL CALENDAR EMBED ─────────────────────────────────── */}
@@ -443,7 +476,7 @@ export default function GetSolarInfoPage() {
               }}
             >
               <iframe
-                src="https://api.leadconnectorhq.com/widget/booking/0fu9WVucPWOYhM0tSEGE"
+                src={_calendarSrc}
                 id="0fu9WVucPWOYhM0tSEGE_1776708128843"
                 scrolling="no"
                 style={{
@@ -508,11 +541,11 @@ export default function GetSolarInfoPage() {
 
               <div className="flex flex-col gap-5 mb-8">
                 <div>
-                  <FieldLabel>First Name</FieldLabel>
+                  <FieldLabel>Full Name</FieldLabel>
                   <TextInput
-                    placeholder="Your first name"
-                    value={form.firstName}
-                    onChange={v => set('firstName', v)}
+                    placeholder="Your full name"
+                    value={form.name}
+                    onChange={v => set('name', v)}
                   />
                 </div>
                 <div>
