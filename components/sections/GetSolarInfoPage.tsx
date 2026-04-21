@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Script from 'next/script';
 
 // ─────────────────────────────────────────────────────────────────
 //  Types — local to this page, not shared with other components
@@ -384,6 +383,23 @@ export default function GetSolarInfoPage() {
     });
   }, [pageState]);
 
+  useEffect(() => {
+    const fixScroll = () => {
+      window.scrollTo({ top: 0, behavior: 'instant' })
+    }
+    // run immediately
+    fixScroll()
+    // run multiple times to override iframe scroll behavior
+    const t1 = setTimeout(fixScroll, 300)
+    const t2 = setTimeout(fixScroll, 800)
+    const t3 = setTimeout(fixScroll, 1500)
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+      clearTimeout(t3)
+    }
+  }, [])
+
   function goResult() {
     if (!step3OK) return;
     setPageState('qualified');
@@ -513,11 +529,6 @@ export default function GetSolarInfoPage() {
               />
             </div>
 
-            {/* GHL widget script — loads after page is interactive */}
-            <Script
-              src="https://link.msgsndr.com/js/form_embed.js"
-              strategy="afterInteractive"
-            />
           </div>
 
           <ExpectationSection />
