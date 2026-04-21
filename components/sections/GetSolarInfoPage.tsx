@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { CalendarSlot } from '@/lib/types';
 
 // ─────────────────────────────────────────────────────────────────
@@ -366,6 +366,10 @@ export default function GetSolarInfoPage() {
   const [submitError, setSubmitError] = useState<string>('');
   const [bookedSlot,  setBookedSlot]  = useState<CalendarSlot | null>(null);
 
+  // Prevents re-firing the Step 1 partial upsert if the user navigates
+  // back to Step 1 and clicks Continue again. One upsert per session.
+  const step1UpsertFired = useRef(false);
+
   const set = <K extends keyof FormData>(key: K, value: FormData[K]) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
@@ -391,7 +395,63 @@ export default function GetSolarInfoPage() {
 
   function goStep2() {
     if (!step1OK) return;
-    setStep(2);
+    setStep(2); // ← immediate — user is never blocked
+
+    // ── Background partial upsert — non-blocking ──────────────────────────
+    // Fires as soon as Step 1 is complete (name + phone + address + consent).
+    // Captures this lead in GHL immediately so no data is lost if they drop off
+    // at Steps 2 or 3. goResult() will update the same contact via phone dedup.
+    if (step1UpsertFired.current) return;
+    step1UpsertFired.current = true;
+
+    const phone     = toE164(form.phone);
+    const nameParts = form.name.trim().split(/\s+/);
+    const firstName = nameParts[0] ?? '';
+    const lastName  = nameParts.slice(1).join(' ');
+
+    fetch('/api/submit-lead', {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({
+        locationId:            process.env.NEXT_PUBLIC_LOCATION_ID || 'GzCNeSvcjSom5bMGtmt6',
+        firstName,
+        lastName,
+        phone,
+        email:                 '',
+        address:               form.address,
+        // Qualification fields not yet captured — GHL will update these in goResult()
+        is_owner:              '',
+        location_ok:           'yes',
+        bill_amount:           '',
+        bill_label:            '',
+        bill_midpoint:         '0',
+        tags:                  ['partial-lead-step1'],
+        utm_source:            (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_source'))   || '',
+        utm_medium:            (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_medium'))   || '',
+        utm_campaign:          (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_campaign')) || '',
+        utm_content:           (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_content'))  || '',
+        utm_term:              (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_term'))     || '',
+        formVersion:           'get-solar-info-v2',
+        submittedAt:           new Date().toISOString(),
+        source:                typeof window !== 'undefined'
+          ? (new URLSearchParams(window.location.search).get('source') || 'direct')
+          : 'direct',
+        sms_consent:           'yes',
+        sms_consent_timestamp: new Date().toISOString(),
+        sms_consent_language:  'TCPA-v2-2026',
+        qualified:             false,
+      }),
+    })
+      .then(r => r.json())
+      .then((data: { contactId?: string | null }) => {
+        // Store contactId so goResult() can reference the same GHL record
+        if (data.contactId) setContactId(data.contactId);
+      })
+      .catch(err =>
+        // Non-critical — goResult() will upsert the full record and GHL will
+        // dedup on phone number, so the lead is never lost even on failure.
+        console.warn('[GetSolarInfoPage] Step 1 partial upsert failed (non-critical):', err)
+      );
   }
 
   function goStep3() {
@@ -433,6 +493,9 @@ export default function GetSolarInfoPage() {
 
     const payload = {
       locationId:   process.env.NEXT_PUBLIC_LOCATION_ID || 'GzCNeSvcjSom5bMGtmt6',
+      // Pass contactId if Step 1 partial upsert already created the record.
+      // The API route uses this to update in place rather than re-upsert on phone.
+      ...(contactId ? { contactId } : {}),
       firstName,
       lastName,
       phone,
