@@ -60,6 +60,10 @@ export interface LeadPayload {
   formVersion:    string;
   submittedAt:    string;       // ISO 8601
   source:         string;
+  // TCPA consent record — optional so all existing callsites compile unchanged
+  sms_consent?:           string;  // 'yes' | 'no'
+  sms_consent_timestamp?: string;  // ISO 8601 datetime of acceptance
+  sms_consent_language?:  string;  // version string, e.g. 'TCPA-v2-2026'
 }
 
 export interface SavingsResult {
@@ -74,4 +78,28 @@ export interface ChatMessage {
   from:  'michael' | 'user';
   text:  string;
   delay: number;  // ms before this message appears
+}
+
+// ── Booking flow ─────────────────────────────────────────────────────────────
+
+export interface CalendarSlot {
+  startTime: string;  // ISO 8601, e.g. "2026-04-22T09:00:00-05:00"
+  endTime:   string;  // ISO 8601, e.g. "2026-04-22T09:30:00-05:00"
+}
+
+/** Keys are date strings "YYYY-MM-DD" in the contact's timezone */
+export type SlotsByDate = Record<string, CalendarSlot[]>;
+
+export interface BookingRequest {
+  contactId : string;
+  startTime : string;  // ISO 8601
+  endTime   : string;  // ISO 8601
+  name      : string;  // display name on calendar event
+  timezone  : string;  // IANA tz, e.g. "America/Chicago"
+}
+
+export interface BookingResponse {
+  success       : boolean;
+  appointmentId?: string;
+  error?        : string;
 }

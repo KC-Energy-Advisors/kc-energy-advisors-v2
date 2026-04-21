@@ -160,6 +160,19 @@ export default function Hero() {
           <div className="w-px h-8 bg-white/10" />
           <StatItem to={25} suffix=" yr" label="Panel warranty included" />
         </motion.div>
+
+        {/* Rate increase source footnote */}
+        <motion.p
+          className="text-[10px] mt-6"
+          style={{ color: 'rgba(255,255,255,0.2)' }}
+          initial={false}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5, duration: 0.6 }}
+        >
+          † Rate filing references: MO PSC Case No. ER-2023-0351 and prior dockets.
+          Solar loan/lease payment is fixed at origination; does not eliminate grid connection fees.
+        </motion.p>
+
       </div>
 
       {/* Scroll hint */}

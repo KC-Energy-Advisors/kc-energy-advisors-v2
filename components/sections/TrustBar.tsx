@@ -1,10 +1,10 @@
 import RevealSection from '@/components/ui/RevealSection';
 
 const LOGOS = [
-  { name: 'Google', badge: '★★★★★  4.9 · 127 reviews' },
-  { name: 'BBB',    badge: 'A+ Accredited Business'    },
-  { name: 'NABCEP', badge: 'Certified Installer'       },
-  { name: 'Evergy', badge: 'Approved Partner'          },
+  { name: 'Google',    badge: '★★★★★  4.9 · 127 reviews'   },
+  { name: 'BBB',       badge: 'A+ Accredited Business'      },
+  { name: 'Installer', badge: 'State Licensed Installer'    },
+  { name: 'Licensed',  badge: 'MO & KS Licensed Contractor' },
 ];
 
 const STATS = [
@@ -34,10 +34,10 @@ export default function TrustBar() {
             <div key={l.name} className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5">
               {/* Logo placeholder — solid colored squares in brand palette */}
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black text-white flex-shrink-0
-                ${l.name === 'Google' ? 'bg-[#4285F4]' :
-                  l.name === 'BBB'    ? 'bg-[#003087]' :
-                  l.name === 'NABCEP' ? 'bg-brand-blue' :
-                                        'bg-[#005BAC]'}`}
+                ${l.name === 'Google'    ? 'bg-[#4285F4]'  :
+                  l.name === 'BBB'       ? 'bg-[#003087]'  :
+                  l.name === 'Installer' ? 'bg-brand-blue' :
+                                           'bg-[#0D9488]'}`}
               >
                 {l.name.slice(0,2)}
               </div>

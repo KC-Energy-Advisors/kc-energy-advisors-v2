@@ -170,6 +170,13 @@ export default function QualifyForm() {
       formVersion: 'nextjs-v1',
       submittedAt: new Date().toISOString(),
       source: 'website-qualify-form',
+      // ── TCPA consent record ──────────────────────────────────────
+      // Consent is always 'yes' here — handleSubmit() blocks submission
+      // if form.consent is false (line ~145), so we only reach this
+      // point when the checkbox has been checked.
+      sms_consent:           'yes',
+      sms_consent_timestamp: new Date().toISOString(),
+      sms_consent_language:  'TCPA-v2-2026',
     };
 
     setLoading(true);
@@ -385,8 +392,8 @@ export default function QualifyForm() {
                       className="mt-0.5 w-4 h-4 accent-brand-blue flex-shrink-0 cursor-pointer"
                     />
                     <label htmlFor="consent" className="text-[11px] text-white/38 leading-relaxed cursor-pointer">
-                      By checking this box, I agree to receive SMS messages from KC Energy Advisors regarding my solar estimate. Message &amp; data rates may apply. Reply STOP to opt out at any time.{' '}
-                      <a href="/privacy" className="text-white/55 underline hover:text-white transition-colors">Privacy Policy</a>.
+                      By checking this box, I agree to receive <strong className="text-white/55">automated</strong> text messages from KC Energy Advisors at the number above regarding my solar estimate. Message frequency varies. Msg &amp; data rates may apply. Reply STOP to opt out. Reply HELP for help. Consent is not a condition of purchase.{' '}
+                      <a href="/privacy" className="text-white/55 underline hover:text-white transition-colors">Privacy Policy</a>
                     </label>
                   </div>
 

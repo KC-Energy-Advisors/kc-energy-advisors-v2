@@ -103,7 +103,7 @@ export default function Calculator() {
               <ResultCard
                 label="Federal Tax Credit" value={fmt(r.credit)}
                 className="bg-brand-gold/[0.07] border-brand-gold-lt/[0.28]"
-                sub="30% ITC — expires soon"
+                sub="30% ITC locked through 2032"
               />
               <ResultCard label="System Size" value={`${r.kwSize} kW`} className="bg-white/[0.05] border-white/[0.09]" />
             </div>

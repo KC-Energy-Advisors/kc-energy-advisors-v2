@@ -127,6 +127,12 @@ export default function Reviews() {
         </div>
 
         <RevealSection className="text-center">
+          <p className="text-[11px] text-slate-400 max-w-2xl mx-auto mb-8 leading-relaxed px-4">
+            * Results shown are from real KC Energy Advisors customers and reflect their individual
+            systems, usage patterns, and utility rates. Savings vary by home. Tax credit amounts
+            depend on individual tax liability — consult a qualified tax professional.
+            No reviewer was compensated for their review.
+          </p>
           <LinkButton href="/get-solar-info?source=reviews" size="lg">
             See What I&apos;d Save →
           </LinkButton>

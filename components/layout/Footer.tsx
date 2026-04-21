@@ -11,8 +11,8 @@ const NAV_LINKS = [
 
 const TRUST_SEALS = [
   '★★★★★ Google Reviews',
-  'NABCEP Certified',
-  'Licensed MO + KS',
+  'State Licensed Installer (MO + KS)',
+  'Licensed Contractor MO + KS',
   '25-Year Warranty',
 ];
 

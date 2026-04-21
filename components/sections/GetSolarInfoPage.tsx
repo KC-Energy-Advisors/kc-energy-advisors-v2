@@ -1,12 +1,14 @@
 'use client';
 import { useState, useEffect } from 'react';
+import SlotPicker from '@/components/ui/SlotPicker';
+import type { CalendarSlot } from '@/lib/types';
 
 // ─────────────────────────────────────────────────────────────────
 //  Types — local to this page, not shared with other components
 // ─────────────────────────────────────────────────────────────────
 
 type FormStep  = 1 | 2 | 3;
-type PageState = 'form' | 'qualified' | 'disqualified';
+type PageState = 'form' | 'submitting' | 'booking' | 'booked' | 'disqualified';
 
 type BillCode    = '' | 'under-100' | '100-150' | '150-200' | '200-plus';
 type RoofCode    = '' | 'asphalt'   | 'metal'   | 'tile'    | 'unsure';
@@ -17,6 +19,7 @@ interface FormData {
   name      : string;
   phone     : string;
   address   : string;
+  consent   : boolean;   // TCPA SMS consent — required before Step 1 can advance
   // Step 2
   ownsHome  : '' | 'yes' | 'no';
   monthlyBill: BillCode;
@@ -26,7 +29,7 @@ interface FormData {
 }
 
 const EMPTY_FORM: FormData = {
-  name: '', phone: '', address: '',
+  name: '', phone: '', address: '', consent: false,
   ownsHome: '', monthlyBill: '', roofType: '',
   timeline: '',
 };
@@ -331,13 +334,38 @@ function PageShell({
 }
 
 // ─────────────────────────────────────────────────────────────────
+//  Helpers — phone formatting
+// ─────────────────────────────────────────────────────────────────
+
+function toE164(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length === 10)                         return `+1${digits}`;
+  if (digits.length === 11 && digits[0] === '1')    return `+${digits}`;
+  return `+1${digits}`;
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Bill code → label / midpoint map
+// ─────────────────────────────────────────────────────────────────
+
+const BILL_META: Record<string, { label: string; midpoint: number }> = {
+  'under-100': { label: 'Under $100/mo',  midpoint: 75  },
+  '100-150':   { label: '$100–$150/mo',   midpoint: 125 },
+  '150-200':   { label: '$150–$200/mo',   midpoint: 175 },
+  '200-plus':  { label: '$200+/mo',       midpoint: 250 },
+};
+
+// ─────────────────────────────────────────────────────────────────
 //  Main exported component
 // ─────────────────────────────────────────────────────────────────
 
 export default function GetSolarInfoPage() {
-  const [pageState, setPageState] = useState<PageState>('form');
-  const [step, setStep]           = useState<FormStep>(1);
-  const [form, setForm]           = useState<FormData>(EMPTY_FORM);
+  const [pageState,   setPageState]   = useState<PageState>('form');
+  const [step,        setStep]        = useState<FormStep>(1);
+  const [form,        setForm]        = useState<FormData>(EMPTY_FORM);
+  const [contactId,   setContactId]   = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string>('');
+  const [bookedSlot,  setBookedSlot]  = useState<CalendarSlot | null>(null);
 
   const set = <K extends keyof FormData>(key: K, value: FormData[K]) =>
     setForm(prev => ({ ...prev, [key]: value }));
@@ -355,7 +383,8 @@ export default function GetSolarInfoPage() {
 
   // Per-step validation
   const step1OK = form.name.trim().length >= 2 &&
-                  form.phone.replace(/\D/g, '').length >= 10;
+                  form.phone.replace(/\D/g, '').length >= 10 &&
+                  form.consent === true;
   const step2OK = form.ownsHome !== '' &&
                   form.monthlyBill !== '' &&
                   form.roofType !== '';
@@ -372,11 +401,10 @@ export default function GetSolarInfoPage() {
     setStep(3);
   }
 
-  // Scroll to top when the qualified/booking state becomes active.
-  // Double-rAF ensures we fire after React has painted the new layout —
-  // single rAF can still fire mid-commit on some browsers.
+  // Scroll to top when the booking state becomes active.
+  // Double-rAF ensures we fire after React has painted the new layout.
   useEffect(() => {
-    if (pageState !== 'qualified') return;
+    if (pageState !== 'booking') return;
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         window.scrollTo({ top: 0, behavior: 'instant' });
@@ -384,14 +412,84 @@ export default function GetSolarInfoPage() {
     });
   }, [pageState]);
 
-  function goResult() {
+  // ── Submit lead + transition to booking ────────────────────────
+  async function goResult() {
     if (!step3OK) return;
-    setPageState('qualified');
-    // ── TODO: POST lead to /api/submit-lead here ─────────────────
-    // Payload shape matches LeadPayload in lib/types.ts.
-    // Wire up after GHL calendar is connected so the booking
-    // confirmation can reference the same contact record.
-    // ─────────────────────────────────────────────────────────────
+    setSubmitError('');
+    setPageState('submitting');
+
+    // ── Build payload ─────────────────────────────────────────────
+    const phone = toE164(form.phone);
+    const nameParts = form.name.trim().split(/\s+/);
+    const firstName = nameParts[0] ?? '';
+    const lastName  = nameParts.slice(1).join(' ');
+    const billMeta  = BILL_META[form.monthlyBill] ?? { label: form.monthlyBill, midpoint: 0 };
+
+    // Read UTM params if stored by homepage
+    const utmSource   = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_source'))   || '';
+    const utmMedium   = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_medium'))   || '';
+    const utmCampaign = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_campaign')) || '';
+    const utmContent  = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_content'))  || '';
+    const utmTerm     = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_term'))     || '';
+
+    const payload = {
+      locationId:   process.env.NEXT_PUBLIC_LOCATION_ID || 'GzCNeSvcjSom5bMGtmt6',
+      firstName,
+      lastName,
+      phone,
+      email:        '',
+      is_owner:     form.ownsHome as 'yes' | 'no',
+      location_ok:  'yes' as const,
+      bill_amount:  form.monthlyBill,
+      bill_label:   billMeta.label,
+      bill_midpoint: String(billMeta.midpoint),
+      tags:         [`bill-${form.monthlyBill}`, `roof-${form.roofType}`, `timeline-${form.timeline}`],
+      utm_source:   utmSource,
+      utm_medium:   utmMedium,
+      utm_campaign: utmCampaign,
+      utm_content:  utmContent,
+      utm_term:     utmTerm,
+      formVersion:  'get-solar-info-v2',
+      submittedAt:  new Date().toISOString(),
+      source:       typeof window !== 'undefined'
+        ? (new URLSearchParams(window.location.search).get('source') || 'direct')
+        : 'direct',
+      // ── TCPA consent record ────────────────────────────────────
+      // form.consent is guaranteed true here — step1OK blocks
+      // goStep2() if consent is false, so this code is only reached
+      // after the checkbox has been checked.
+      sms_consent:           'yes',
+      sms_consent_timestamp: new Date().toISOString(),
+      sms_consent_language:  'TCPA-v2-2026',
+    };
+
+    try {
+      const res  = await fetch('/api/submit-lead', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+      const data = await res.json() as {
+        success?: boolean;
+        contactId?: string | null;
+        error?: string;
+        dev_mode?: boolean;
+      };
+
+      if (!res.ok && !data.dev_mode) {
+        // Soft-fail: show booking anyway, contactId will be null so SlotPicker falls back to iframe
+        console.error('[GetSolarInfoPage] submit-lead failed:', data.error);
+        setContactId(null);
+      } else {
+        setContactId(data.contactId ?? null);
+      }
+    } catch (err) {
+      console.error('[GetSolarInfoPage] submit-lead network error:', err);
+      setContactId(null);
+    }
+
+    // Always transition to booking — even if submission failed, we show the picker
+    setPageState('booking');
   }
 
   // ── DISQUALIFIED ─────────────────────────────────────────────
@@ -426,55 +524,84 @@ export default function GetSolarInfoPage() {
     );
   }
 
-  // ── QUALIFIED → BOOKING ────────────────────────────────────────
-  if (pageState === 'qualified') {
-    // ── Prefill GHL calendar with Step 1 data ─────────────────────
-    // GHL booking widget reads these URL params and pre-populates its
-    // own contact form, so the user only needs to pick a time slot.
-    const _p = new URLSearchParams();
+  // ── SUBMITTING — brief loading screen while we POST the lead ───
+  if (pageState === 'submitting') {
+    return (
+      <div style={{ display: 'block', width: '100%', background: '#0C1322', minHeight: '60vh' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 20 }}>
+          <div style={{ width: 40, height: 40, border: '3px solid rgba(255,255,255,0.12)', borderTopColor: '#2563EB', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 15 }}>Setting things up…</p>
+        </div>
+      </div>
+    );
+  }
 
-    // name / first_name / last_name → GHL checks all three formats
-    // Split on whitespace so "Mike Smith" → first="Mike", last="Smith"
-    if (form.name) {
-      const parts = form.name.trim().split(/\s+/);
-      const first = parts[0] ?? '';
-      const last  = parts.slice(1).join(' ');
-      _p.set('name',       form.name.trim()); // full-name field
-      _p.set('first_name', first);                 // split first-name field
-      if (last) _p.set('last_name', last);         // split last-name field (if provided)
-    }
+  // ── BOOKED — confirmation screen ──────────────────────────────
+  if (pageState === 'booked' && bookedSlot) {
+    const startDate = new Date(bookedSlot.startTime);
+    const dateLine  = startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const timeLine  = startDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
-    // phone → E.164 format (+1XXXXXXXXXX for US)
-    // Handles: (816) 319-0932 / 816-319-0932 / 8163190932 / 18163190932
-    if (form.phone) {
-      const digits = form.phone.replace(/\D/g, '');
-      const e164 =
-        digits.length === 10                          ? `+1${digits}`  // 10-digit US number
-        : digits.length === 11 && digits[0] === '1'  ? `+${digits}`   // already has country code
-        : `+1${digits}`;                                               // fallback: prepend +1
-      _p.set('phone', e164);
-    }
+    return (
+      <div style={{ display: 'block', width: '100%', background: '#0C1322' }}>
+        <div style={{ maxWidth: 540, margin: '0 auto', padding: '64px 24px 80px', textAlign: 'center' }}>
 
-    // address → no standard booking-widget param exists for this field.
-    // To prefill it you need the custom field's UUID key from GHL:
-    //   GHL → Settings → Custom Fields → copy the field "key" value
-    //   Then add: _p.set('<field-uuid-key>', form.address);
+          {/* Check circle */}
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(13,148,136,0.15)', border: '2px solid rgba(13,148,136,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden>
+              <path d="M6 14l6 6 10-10" stroke="#0D9488" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
 
-    const _calendarSrc =
-      `https://api.leadconnectorhq.com/widget/booking/0fu9WVucPWOYhM0tSEGE?${_p.toString()}`;
+          <h2 style={{ color: '#ffffff', fontSize: 28, fontWeight: 900, marginBottom: 12, lineHeight: 1.2 }}>
+            You're booked{form.name ? `, ${form.name.split(' ')[0]}` : ''}!
+          </h2>
 
-    // ── Booking view — plain top-anchored block, no PageShell, no flex ──
+          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: '20px 24px', marginBottom: 28 }}>
+            <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 17, fontWeight: 700, marginBottom: 4 }}>{dateLine}</p>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 15 }}>{timeLine}</p>
+          </div>
+
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 14, lineHeight: 1.6, marginBottom: 32 }}>
+            We'll send a confirmation text to {toE164(form.phone)}.
+            Our team will reach out to confirm the details.
+          </p>
+
+          {submitError && (
+            <p style={{ color: '#fbbf24', fontSize: 13, marginBottom: 16 }}>
+              Note: {submitError}
+            </p>
+          )}
+
+          <a
+            href="/"
+            style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, textDecoration: 'none' }}
+          >
+            ← Back to home
+          </a>
+        </div>
+        <ExpectationSection />
+        <TrustSection />
+      </div>
+    );
+  }
+
+  // ── BOOKING — slot picker ─────────────────────────────────────
+  if (pageState === 'booking') {
+    const phone = toE164(form.phone);
+
     return (
       <div style={{ display: 'block', width: '100%', background: '#0C1322', margin: 0, padding: 0 }}>
         <div style={{ display: 'block', width: '100%', paddingTop: '24px', paddingBottom: '64px' }}>
 
-          {/* Status line — sits directly above the calendar card */}
+          {/* Status line */}
           <p style={{
             textAlign   : 'center',
             fontSize    : '15px',
             fontWeight  : 600,
             color       : '#ffffff',
-            marginBottom: '12px',
+            marginBottom: '20px',
             paddingLeft : '16px',
             paddingRight: '16px',
             lineHeight  : 1.4,
@@ -486,39 +613,34 @@ export default function GetSolarInfoPage() {
             {' '}<span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: 400 }}>Pick a time below.</span>
           </p>
 
-          {/* Calendar card — centred horizontally by margin, not flex */}
-          <div style={{ width: '100%', maxWidth: '960px', margin: '0 auto', padding: '0 16px' }}>
-
-            {/* ── GHL CALENDAR EMBED ─────────────────────────────────── */}
+          {/* Slot picker card */}
+          <div style={{ width: '100%', maxWidth: '640px', margin: '0 auto', padding: '0 16px' }}>
             <div
-              id="ghl-calendar-embed"
-              className="w-full rounded-2xl border border-white/[0.08] overflow-hidden"
+              className="w-full rounded-2xl border border-white/[0.08]"
               style={{
                 background : 'rgba(255,255,255,0.022)',
-                minHeight  : '650px',
                 boxShadow  : '0 8px 40px rgba(0,0,0,0.28)',
+                padding    : '28px 24px',
               }}
             >
-              <iframe
-                src={_calendarSrc}
-                id="0fu9WVucPWOYhM0tSEGE_1776708128843"
-                scrolling="no"
-                onLoad={() => window.scrollTo({ top: 0, behavior: 'instant' })}
-                style={{
-                  width     : '100%',
-                  minHeight : '650px',
-                  border    : 'none',
-                  overflow  : 'hidden',
-                  display   : 'block',
+              <SlotPicker
+                contactId={contactId}
+                name={form.name}
+                phone={phone}
+                onBooked={(appointmentId, slot) => {
+                  console.log('[GetSolarInfoPage] booked:', appointmentId);
+                  setBookedSlot(slot);
+                  setPageState('booked');
                 }}
+                onError={msg => console.error('[GetSolarInfoPage] booking error:', msg)}
               />
             </div>
-
           </div>
 
-          <ExpectationSection />
-          <TrustSection />
         </div>
+
+        <ExpectationSection />
+        <TrustSection />
       </div>
     );
   }
@@ -584,6 +706,28 @@ export default function GetSolarInfoPage() {
                     value={form.address}
                     onChange={v => set('address', v)}
                   />
+                </div>
+
+                {/* ── TCPA SMS Consent ───────────────────────────── */}
+                <div className="flex items-start gap-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-xl p-4">
+                  <input
+                    type="checkbox"
+                    id="gsi-consent"
+                    checked={form.consent}
+                    onChange={e => set('consent', e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-blue-600 flex-shrink-0 cursor-pointer"
+                  />
+                  <label htmlFor="gsi-consent" className="text-[11px] text-[#6b7280] leading-relaxed cursor-pointer">
+                    By checking this box, I agree to receive{' '}
+                    <strong className="text-[#374151]">automated</strong> text messages from
+                    KC Energy Advisors at the number above regarding my solar estimate.
+                    Message frequency varies. Msg &amp; data rates may apply.
+                    Reply STOP to opt out. Reply HELP for help.
+                    Consent is not a condition of purchase.{' '}
+                    <a href="/privacy" className="underline hover:text-[#111827] transition-colors">
+                      Privacy Policy
+                    </a>
+                  </label>
                 </div>
               </div>
 
