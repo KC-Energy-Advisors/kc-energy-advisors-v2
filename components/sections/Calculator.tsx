@@ -101,9 +101,9 @@ export default function Calculator() {
               <ResultCard label="5-Year Savings"   value={fmt(r.yr5)}   className="bg-white/[0.05] border-white/[0.09]" />
               <ResultCard label="25-Year Savings"  value={fmt(r.yr25)}  className="bg-white/[0.05] border-white/[0.09]" />
               <ResultCard
-                label="Federal Tax Credit" value={fmt(r.credit)}
+                label="First Year — $0 Payments" value="$0"
                 className="bg-brand-gold/[0.07] border-brand-gold-lt/[0.28]"
-                sub="30% ITC locked through 2032"
+                sub="No upfront cost. Most homeowners qualify for $0 payments in year one."
               />
               <ResultCard label="System Size" value={`${r.kwSize} kW`} className="bg-white/[0.05] border-white/[0.09]" />
             </div>

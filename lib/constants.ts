@@ -106,8 +106,6 @@ export const FAQ_ITEMS = [
 ] as const;
 
 // ── Benefits (8 cards) ────────────────────────────────────────────
-// Updated: replaced "30% Federal Tax Credit" card (expired Dec 31 2025)
-// with "Rate Increase Protection" — the actual value prop in 2026.
 export const BENEFITS = [
   {
     title: '$0 Down.',
