@@ -384,19 +384,30 @@ export default function GetSolarInfoPage() {
   }, [pageState]);
 
   useEffect(() => {
-    const fixScroll = () => {
-      window.scrollTo({ top: 0, behavior: 'instant' })
+    const handleLoad = () => {
+      window.scrollTo(0, 0)
     }
     // run immediately
-    fixScroll()
-    // run multiple times to override iframe scroll behavior
-    const t1 = setTimeout(fixScroll, 300)
-    const t2 = setTimeout(fixScroll, 800)
-    const t3 = setTimeout(fixScroll, 1500)
+    window.scrollTo(0, 0)
+    // find iframe
+    const iframe = document.querySelector('iframe')
+    if (iframe) {
+      iframe.addEventListener('load', handleLoad)
+    }
+    // fallback: keep forcing top briefly
+    let count = 0
+    const forceTop = () => {
+      window.scrollTo(0, 0)
+      count++
+      if (count < 30) {
+        requestAnimationFrame(forceTop)
+      }
+    }
+    forceTop()
     return () => {
-      clearTimeout(t1)
-      clearTimeout(t2)
-      clearTimeout(t3)
+      if (iframe) {
+        iframe.removeEventListener('load', handleLoad)
+      }
     }
   }, [])
 
