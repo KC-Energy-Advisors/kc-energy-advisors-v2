@@ -7,11 +7,20 @@ import RevealSection from '@/components/ui/RevealSection';
 const PRESETS = [100, 175, 250, 350];
 
 function ResultCard({ label, value, className = '', sub }: { label: string; value: string; className?: string; sub?: string }) {
+  const hi = value === '$0';
   return (
-    <div className={`rounded-2xl p-5 border ${className}`}>
-      <div className="text-[10.5px] font-bold text-white/45 uppercase tracking-wider mb-1">{label}</div>
-      <div className="text-[28px] font-black text-white leading-none tracking-tighter">{value}</div>
-      {sub && <div className="text-[11.5px] text-white/38 mt-1">{sub}</div>}
+    <div className={`rounded-2xl p-5 border transition-all duration-200 ${className}`}>
+      <div className={`text-[10.5px] font-bold uppercase tracking-wider mb-1 ${hi ? 'text-white/75' : 'text-white/45'}`}>
+        {label}
+      </div>
+      <div className={`font-black text-white leading-none tracking-tighter ${hi ? 'text-[38px]' : 'text-[28px]'}`}>
+        {value}
+      </div>
+      {sub && (
+        <div className={`mt-1 leading-snug ${hi ? 'text-[11.5px] text-white/62' : 'text-[11.5px] text-white/38'}`}>
+          {sub}
+        </div>
+      )}
     </div>
   );
 }
@@ -101,9 +110,9 @@ export default function Calculator() {
               <ResultCard label="5-Year Savings"   value={fmt(r.yr5)}   className="bg-white/[0.05] border-white/[0.09]" />
               <ResultCard label="25-Year Savings"  value={fmt(r.yr25)}  className="bg-white/[0.05] border-white/[0.09]" />
               <ResultCard
-                label="First Year — $0 Payments" value="$0"
-                className="bg-brand-gold/[0.07] border-brand-gold-lt/[0.28]"
-                sub="No upfront cost. Most homeowners qualify for $0 payments in year one."
+                label="Start with $0 Payments" value="$0"
+                className="bg-[linear-gradient(145deg,#0f1f3d_0%,#162952_55%,#1e3a8a_100%)] border-blue-500/45 shadow-[0_0_22px_rgba(37,99,235,0.20)] motion-safe:hover:-translate-y-0.5 hover:shadow-[0_0_32px_rgba(37,99,235,0.32)] hover:border-blue-400/60"
+                sub="No upfront cost. Most homeowners start with $0 payments for the first year."
               />
               <ResultCard label="System Size" value={`${r.kwSize} kW`} className="bg-white/[0.05] border-white/[0.09]" />
             </div>
