@@ -88,8 +88,7 @@ export default function Footer() {
           <p className="mb-3">
             Savings estimates are based on average KC utility rates and projected 3.4% annual rate increase per EIA historical data.
             Individual results vary based on system size, roof orientation, local utility rates, and usage patterns.
-            Not all homeowners qualify. Subject to credit approval. 30% federal tax credit eligibility depends on your individual
-            tax situation — consult a qualified tax professional.
+            Not all homeowners qualify. Subject to credit approval. Individual results vary based on home, roof, and energy usage.
           </p>
           <p>© {new Date().getFullYear()} KC Energy Advisors · Kansas City, MO · All rights reserved.</p>
         </div>
