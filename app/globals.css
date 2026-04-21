@@ -14,6 +14,13 @@ html, body {
   overflow-anchor: none;
 }
 
+/* Disable scroll anchoring globally — prevents the browser from
+   compensating for layout shifts (e.g. iframe resize on load) by
+   scrolling the viewport to keep a visible element in place. */
+* {
+  overflow-anchor: none;
+}
+
 /* ── Layout guardrails ───────────────────────────────────────── */
 /* Ensure page structural elements use normal document flow.
    Prevents any injected or inherited flex from vertically centering

@@ -83,22 +83,26 @@ export default function Reviews() {
           </h2>
         </RevealSection>
 
-        {/* Aggregate rating */}
-        <RevealSection delay={1} className="flex items-center justify-center gap-4 mb-14">
+        {/* Value props — free value · low barrier · long-term protection · quick process */}
+        <RevealSection delay={1} className="flex flex-wrap items-center justify-center gap-4 mb-14">
           <div className="text-center">
-            <div className="text-[48px] font-black text-slate-900 leading-none">4.9</div>
-            <Stars n={5} />
-            <div className="text-[11px] text-slate-500 mt-1 font-medium">127 Google Reviews</div>
+            <div className="text-[48px] font-black text-slate-900 leading-none">Free</div>
+            <div className="text-[11px] text-slate-500 mt-1 font-medium">Personalized Savings Report</div>
           </div>
-          <div className="w-px h-16 bg-slate-200" />
+          <div className="w-px h-16 bg-slate-200 hidden sm:block" />
           <div className="text-center">
-            <div className="text-[48px] font-black text-slate-900 leading-none">98%</div>
-            <div className="text-[11px] text-slate-500 font-medium mt-1">Satisfaction Rate</div>
+            <div className="text-[48px] font-black text-slate-900 leading-none">$0</div>
+            <div className="text-[11px] text-slate-500 font-medium mt-1">$0 Down Options Available</div>
           </div>
-          <div className="w-px h-16 bg-slate-200" />
+          <div className="w-px h-16 bg-slate-200 hidden sm:block" />
           <div className="text-center">
-            <div className="text-[48px] font-black text-slate-900 leading-none">A+</div>
-            <div className="text-[11px] text-slate-500 font-medium mt-1">BBB Rating</div>
+            <div className="text-[48px] font-black text-slate-900 leading-none">25yr</div>
+            <div className="text-[11px] text-slate-500 font-medium mt-1">25-Year Panel Warranty</div>
+          </div>
+          <div className="w-px h-16 bg-slate-200 hidden sm:block" />
+          <div className="text-center">
+            <div className="text-[48px] font-black text-slate-900 leading-none">30min</div>
+            <div className="text-[11px] text-slate-500 font-medium mt-1">30-Minute Consultation</div>
           </div>
         </RevealSection>
 

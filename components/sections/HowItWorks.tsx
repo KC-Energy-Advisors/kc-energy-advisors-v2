@@ -1,24 +1,31 @@
 'use client';
 import { useIntersection } from '@/hooks/useIntersection';
 import { LinkButton } from '@/components/ui/Button';
+import { track } from '@/hooks/useTracking';
+
+function scrollToQualify() {
+  const el = document.getElementById('qualify');
+  if (!el) return;
+  window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+}
 
 const STEPS = [
   {
     num:      '01',
     title:    'We Run Your Numbers.',
-    body:     'Free. No obligation. We review your utility bill, roof size, and location to build your custom Savings Report. If it doesn\'t work out for your home, we\'ll tell you — before you\'ve committed to anything.',
-    timeline: '60-minute consultation',
+    body:     'Enter your address so we can estimate your roof, sun exposure, and current energy usage. You\'ll see exactly what solar would save you — before you\'ve committed to anything.',
+    timeline: '30-minute consultation',
   },
   {
     num:      '02',
     title:    'We Handle Everything.',
-    body:     'Design, permits, utility coordination, installation — all us. You approve the system design. We do the rest.',
+    body:     'We calculate what solar would actually cost vs what you\'re currently paying Evergy. Design, permits, utility coordination, installation — all handled for you.',
     timeline: '2–3 weeks',
   },
   {
     num:      '03',
     title:    'Your Panels Go Live. Your Bill Drops.',
-    body:     "First month of production = first month of savings. Your solar payment is fixed. Your Evergy bill drops to near zero for most of the year.",
+    body:     "If it makes sense, we walk you through your options. If it doesn't, we'll tell you that too. First month of production = first month of savings.",
     timeline: '1 install day',
   },
 ] as const;
@@ -87,12 +94,22 @@ export default function HowItWorks() {
 
         {/* Below steps */}
         <div className="mt-16 pt-10 border-t" style={{ borderColor: '#F3F4F6' }}>
-          <p className="text-[16px] italic mb-6" style={{ color: '#374151' }}>
+          <p className="text-[16px] italic mb-3" style={{ color: '#374151' }}>
             Total time from first call to live system: typically 3–4 weeks.
             Most homeowners are surprised by how straightforward it is.
           </p>
-          <LinkButton href="/get-solar-info?source=how-it-works">
-            Get My Free Savings Report →
+          <p className="text-[14px] mb-6" style={{ color: '#6B7280' }}>
+            We&apos;re not here to &ldquo;sell&rdquo; you solar — we&apos;re here to show you if it actually makes financial sense.
+          </p>
+          <LinkButton
+            href="#qualify"
+            onClick={(e) => {
+              e.preventDefault();
+              track('cta_click', { source: 'how-it-works' });
+              scrollToQualify();
+            }}
+          >
+            See My Real Numbers →
           </LinkButton>
         </div>
       </div>

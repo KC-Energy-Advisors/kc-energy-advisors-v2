@@ -2,6 +2,13 @@
 import { motion } from 'framer-motion';
 import { PHONE_DISPLAY, PHONE_HREF } from '@/lib/constants';
 import { fadeUp, stagger, ctaGlow, viewport } from '@/lib/motion';
+import { track } from '@/hooks/useTracking';
+
+function scrollToQualify() {
+  const el = document.getElementById('qualify');
+  if (!el) return;
+  window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+}
 
 export default function FinalCTA() {
   return (
@@ -68,16 +75,31 @@ export default function FinalCTA() {
         {/* Primary CTA — with continuous glow pulse */}
         <motion.div variants={fadeUp}>
           <motion.a
-            href="/get-solar-info?source=final-cta"
+            href="#qualify"
             className="inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-white text-[17px] mb-5"
             style={{ background: '#2563EB', borderRadius: 8 }}
             variants={ctaGlow}
             animate="animate"
             whileHover={{ scale: 1.03, backgroundColor: '#1D4ED8', transition: { duration: 0.15 } }}
             whileTap={{ scale: 0.97 }}
+            onClick={(e) => {
+              e.preventDefault();
+              track('cta_click', { source: 'final-cta' });
+              scrollToQualify();
+            }}
           >
-            Get My Free Savings Report →
+            See My Real Numbers →
           </motion.a>
+        </motion.div>
+
+        {/* What-happens-next — removes hesitation at the last conversion point */}
+        <motion.div className="mt-4 mb-2" variants={fadeUp}>
+          <p className="text-[14px] font-medium" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            Takes about 30 seconds. We&apos;ll show you real numbers based on your home.
+          </p>
+          <p className="text-[12.5px] mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>
+            No pressure — if it doesn&apos;t make financial sense, we&apos;ll tell you.
+          </p>
         </motion.div>
 
         {/* Secondary — phone */}

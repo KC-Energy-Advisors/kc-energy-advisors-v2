@@ -14,15 +14,19 @@ import Reviews           from '@/components/sections/Reviews';
 import QualifyForm       from '@/components/sections/QualifyForm';
 import FAQ               from '@/components/sections/FAQ';
 import FinalCTA          from '@/components/sections/FinalCTA';
+import ExitIntentBanner  from '@/components/ui/ExitIntentBanner';
+import ThisIsForYou      from '@/components/sections/ThisIsForYou';
 
 export default function HomePage() {
   return (
     <>
       <AnnouncementBar />
       <Nav />
+      <ExitIntentBanner />
       <main>
         <Hero />
         <TrustBar />
+        <ThisIsForYou />
         <ProblemSection />
         <SolutionSection />
         <HowItWorks />

@@ -10,10 +10,10 @@ const NAV_LINKS = [
 ];
 
 const TRUST_SEALS = [
-  '★★★★★ Google Reviews',
-  'State Licensed Installer (MO + KS)',
-  'Licensed Contractor MO + KS',
-  '25-Year Warranty',
+  'Kansas City Homeowner-Focused',
+  'State Licensed Installer · MO + KS',
+  'Licensed Contractor · MO + KS',
+  '25-Year Panel Warranty',
 ];
 
 export default function Footer() {
@@ -35,7 +35,7 @@ export default function Footer() {
               </span>
             </a>
             <p className="text-[14px] leading-relaxed" style={{ color: '#6B7280' }}>
-              Helping Kansas City homeowners own their energy.
+              Helping Kansas City homeowners take control of their energy — without pressure or guesswork.
             </p>
           </div>
 
@@ -71,7 +71,7 @@ export default function Footer() {
 
           {/* Col 4 — Trust seals */}
           <div>
-            <h3 className="text-[13px] font-semibold uppercase tracking-widest mb-4" style={{ color: '#F59E0B' }}>Credentials</h3>
+            <h3 className="text-[13px] font-semibold uppercase tracking-widest mb-4" style={{ color: '#F59E0B' }}>Our Commitment</h3>
             <ul className="flex flex-col gap-2">
               {TRUST_SEALS.map(seal => (
                 <li key={seal} className="text-[14px] flex items-center gap-2" style={{ color: '#6B7280' }}>

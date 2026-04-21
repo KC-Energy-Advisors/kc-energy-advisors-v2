@@ -1,10 +1,10 @@
 import RevealSection from '@/components/ui/RevealSection';
 
 const LOGOS = [
-  { name: 'Google',    badge: '★★★★★  4.9 · 127 reviews'   },
-  { name: 'BBB',       badge: 'A+ Accredited Business'      },
-  { name: 'Installer', badge: 'State Licensed Installer'    },
-  { name: 'Licensed',  badge: 'MO & KS Licensed Contractor' },
+  { name: 'KC Focus',   badge: 'Kansas City Homeowner-Focused'   },
+  { name: 'Clarity',    badge: 'Numbers First. Sales Second.'    },
+  { name: 'No Pressure', badge: 'No-Pressure Consultations'     },
+  { name: 'Licensed',   badge: 'Licensed Contractor (MO + KS)'  },
 ];
 
 const STATS = [
@@ -29,15 +29,14 @@ export default function TrustBar() {
 
         {/* Logo trust row */}
         <RevealSection delay={1} className="flex flex-wrap items-center justify-center gap-8">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mr-2">Trusted &amp; Verified</span>
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mr-2">Built for Kansas City</span>
           {LOGOS.map(l => (
             <div key={l.name} className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5">
-              {/* Logo placeholder — solid colored squares in brand palette */}
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black text-white flex-shrink-0
-                ${l.name === 'Google'    ? 'bg-[#4285F4]'  :
-                  l.name === 'BBB'       ? 'bg-[#003087]'  :
-                  l.name === 'Installer' ? 'bg-brand-blue' :
-                                           'bg-[#0D9488]'}`}
+                ${l.name === 'KC Focus'    ? 'bg-[#F59E0B]'  :
+                  l.name === 'Clarity'     ? 'bg-brand-blue' :
+                  l.name === 'No Pressure' ? 'bg-[#0D9488]'  :
+                                             'bg-[#1E3A5F]'}`}
               >
                 {l.name.slice(0,2)}
               </div>

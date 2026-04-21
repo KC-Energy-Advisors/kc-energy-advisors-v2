@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { BILL_OPTIONS } from '@/lib/constants';
 import { toE164 } from '@/lib/solar-calc';
@@ -7,6 +7,8 @@ import { useUTM, getStoredUTMs } from '@/hooks/useUTM';
 import { LinkButton } from '@/components/ui/Button';
 import type { FormState, LeadPayload } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { track, useScrollTracking } from '@/hooks/useTracking';
+import { saveContact, loadContact, clearContact } from '@/hooks/useFormPersist';
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -40,7 +42,8 @@ function StepLabel({ step, total }: { step: Step; total: number }) {
 
 export default function QualifyForm() {
   const router = useRouter();
-  useUTM(); // writes UTMs from URL → sessionStorage on mount
+  useUTM();           // writes UTMs from URL → sessionStorage on mount
+  useScrollTracking(); // fires scroll_50 event once at 50% page depth
 
   const [fs, setFs] = useState<FormState>({
     step: 1,
@@ -51,13 +54,40 @@ export default function QualifyForm() {
     billMidpoint: null,
   });
 
-  const [form, setForm] = useState<FormData>({
-    firstName: '',
-    lastName: '',
-    phone: '',
-    email: '',
-    consent: false,
+  // ── Pre-fill contact fields from previous session ────────────────
+  const [form, setForm] = useState<FormData>(() => {
+    const saved = loadContact();
+    return {
+      firstName: saved.firstName,
+      lastName:  saved.lastName,
+      phone:     saved.phone,
+      email:     saved.email,
+      consent:   false,  // Never pre-check consent — TCPA requires fresh opt-in
+    };
   });
+
+  // ── Persist contact fields as user types ─────────────────────────
+  useEffect(() => {
+    saveContact({
+      firstName: form.firstName,
+      lastName:  form.lastName,
+      phone:     form.phone,
+      email:     form.email,
+    });
+  }, [form.firstName, form.lastName, form.phone, form.email]);
+
+  // ── Abandon tracking ─────────────────────────────────────────────
+  // Fires form_abandon if user leaves mid-funnel (step 2+, not submitted).
+  const submittedRef = useRef(false);
+  useEffect(() => {
+    const onUnload = () => {
+      if (!submittedRef.current && fs.step > 1) {
+        track('form_abandon', { step: fs.step });
+      }
+    };
+    window.addEventListener('beforeunload', onUnload);
+    return () => window.removeEventListener('beforeunload', onUnload);
+  }, [fs.step]);
 
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
@@ -69,6 +99,7 @@ export default function QualifyForm() {
 
   // ── Step 1: Ownership ────────────────────────────────────────────
   const handleOwnership = useCallback((owns: boolean) => {
+    track('form_start', { owns: String(owns) }); // first funnel interaction
     if (!owns) {
       // Renter — soft disqualify (fire-and-forget, no personal info to send)
       submitToAPI({
@@ -182,6 +213,9 @@ export default function QualifyForm() {
     setLoading(true);
     try {
       await submitToAPI(payload, true);
+      submittedRef.current = true;
+      track('form_complete', { bill: fs.billLabel ?? '' });
+      clearContact(); // clear pre-fill data after successful submission
       console.log('[QualifyForm] ✅ submission succeeded — redirecting to /thank-you');
       router.push('/thank-you');
     } catch (err) {
@@ -217,10 +251,15 @@ export default function QualifyForm() {
             </p>
             {/* Urgency — distinct from Hero copy */}
             <p className="text-[14px] font-medium" style={{ color: '#F59E0B' }}>
-              → Takes 60 seconds.{' '}
+              → Takes 30 seconds.{' '}
               <span style={{ color: '#94A3B8' }}>Michael texts you within minutes with your custom numbers.</span>
             </p>
           </div>
+
+          {/* Micro-commitment — sets low stakes before the card appears */}
+          <p className="text-center text-[14px] font-medium mb-5" style={{ color: 'rgba(255,255,255,0.40)' }}>
+            Let&apos;s see if your home qualifies — this takes less than a minute.
+          </p>
 
           {/* Form card */}
           <div ref={topRef} className="rounded-3xl p-8 border border-white/10" style={{ background: 'rgba(30,45,69,0.7)', boxShadow: '0 4px 32px rgba(0,0,0,0.4)' }}>

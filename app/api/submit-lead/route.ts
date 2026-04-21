@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendLeadToGHL } from '@/lib/ghl';
+import { sendLeadToGHL, upsertGHLContact } from '@/lib/ghl';
 import type { LeadPayload } from '@/lib/types';
 
 // Simple in-memory rate limiter (resets on cold start — good enough for a landing page)
@@ -123,26 +123,46 @@ export async function POST(req: NextRequest) {
     }
     console.warn('[submit-lead] ⚠️  GHL_WEBHOOK_URL not set — dev mode, returning mock success');
     console.warn('[submit-lead] payload that would have been sent:', JSON.stringify(payload, null, 2));
-    return NextResponse.json({ success: true, qualified, ghl_ok: false, python_ok: false, dev_mode: true });
+    return NextResponse.json({ success: true, qualified, ghl_ok: false, python_ok: false, dev_mode: true, contactId: null });
   }
 
-  // ── Fire both webhooks in parallel, independently ─────────────────
+  // ── Fire webhook + upsert + Python in parallel ────────────────────
   // Each has its own try/catch so one failure never blocks the other.
+  // Belt-and-suspenders: webhook keeps existing GHL automations firing;
+  // upsert gives us back a contactId for the slot-picker booking flow.
 
   const results = await Promise.allSettled([
 
-    // ── 1. GHL webhook ───────────────────────────────────────────────
+    // ── 1. GHL inbound webhook (keeps automations alive) ────────────
     (async () => {
       try {
         await sendLeadToGHL(payload as LeadPayload);
         console.log(`[submit-lead] ✅ GHL webhook succeeded — phone: ${payload.phone}`);
       } catch (err) {
         console.error(`[submit-lead] ❌ GHL webhook failed — phone: ${payload.phone}`, err);
-        throw err; // re-throw so Promise.allSettled marks this as rejected
+        throw err;
       }
     })(),
 
-    // ── 2. Python AI webhook ─────────────────────────────────────────
+    // ── 2. GHL contact upsert (returns contactId) ────────────────────
+    (async (): Promise<string | null> => {
+      const p = payload as LeadPayload;
+      const contactId = await upsertGHLContact({
+        firstName: p.firstName,
+        lastName:  p.lastName,
+        phone:     p.phone,
+        email:     p.email,
+        tags:      p.tags,
+      });
+      if (contactId) {
+        console.log(`[submit-lead] ✅ GHL upsert succeeded — contactId: ${contactId}`);
+      } else {
+        console.warn(`[submit-lead] ⚠️  GHL upsert returned no contactId — phone: ${p.phone}`);
+      }
+      return contactId;
+    })(),
+
+    // ── 3. Python AI webhook ─────────────────────────────────────────
     // Only fires for qualified leads (disqualified leads don't need Michael)
     (async () => {
       if (!qualified) {
@@ -150,8 +170,6 @@ export async function POST(req: NextRequest) {
         return;
       }
 
-      // ── URL source of truth: https://michael-agent-2uov.onrender.com/webhook/inbound
-      // Set PYTHON_INBOUND_URL in Vercel env vars.  Never use GHL_WEBHOOK_URL here.
       const pythonUrl = process.env.PYTHON_INBOUND_URL ||
         'https://michael-agent-2uov.onrender.com/webhook/inbound';
 
@@ -197,39 +215,41 @@ export async function POST(req: NextRequest) {
             `[submit-lead] ❌ Python webhook threw — phone: ${pythonPayload.phone}`, err,
           );
         }
-        throw err; // re-throw so Promise.allSettled marks this as rejected
+        throw err;
       }
     })(),
 
   ]);
 
   // ── Determine response ────────────────────────────────────────────
-  const [ghlResult, pythonResult] = results;
+  const [ghlResult, upsertResult, pythonResult] = results;
 
   const ghlOk    = ghlResult.status    === 'fulfilled';
   const pythonOk = pythonResult.status === 'fulfilled';
+  const contactId = upsertResult.status === 'fulfilled'
+    ? (upsertResult.value as string | null)
+    : null;
 
-  // GHL is authoritative — if it fails, return 502 to the browser
-  // (the form catches this and shows an error to the user)
+  // GHL webhook is authoritative — if it fails, return 502
   if (!ghlOk) {
     return NextResponse.json(
       {
-        error:        'Failed to submit lead. Please try again.',
-        ghl_ok:       false,
-        python_ok:    pythonOk,
+        error:      'Failed to submit lead. Please try again.',
+        ghl_ok:     false,
+        python_ok:  pythonOk,
+        contactId:  null,
       },
       { status: 502 },
     );
   }
 
-  // GHL succeeded — return 200 even if Python had an issue
-  // (Michael will still be triggered via GHL; Python failure is non-fatal)
+  // GHL webhook succeeded — return 200 even if Python had an issue
   return NextResponse.json({
-    success:   true,
+    success:    true,
     qualified,
-    ghl_ok:    true,
-    python_ok: pythonOk,
-    // Surface python failure in response so you can debug in Vercel logs
+    ghl_ok:     true,
+    python_ok:  pythonOk,
+    contactId,  // may be null if upsert failed — SlotPicker handles gracefully
     ...(pythonOk ? {} : { python_warning: 'Python webhook did not succeed — check server logs' }),
   });
 }

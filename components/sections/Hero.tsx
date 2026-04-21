@@ -10,6 +10,13 @@ import {
   heroStats,
   ctaGlow,
 } from '@/lib/motion';
+import { track } from '@/hooks/useTracking';
+
+function scrollToQualify() {
+  const el = document.getElementById('qualify');
+  if (!el) return;
+  window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+}
 
 function StatItem({ to, suffix, label }: { to: number; suffix: string; label: string }) {
   const { ref, visible } = useIntersection<HTMLDivElement>({ threshold: 0.5 });
@@ -110,22 +117,27 @@ export default function Hero() {
 
         {/* CTAs */}
         <motion.div
-          className="flex flex-wrap gap-3 mb-14"
+          className="flex flex-wrap gap-3 mb-4"
           variants={heroCTA}
           initial={false}
           animate="visible"
         >
-          {/* Primary CTA with pulse glow */}
+          {/* Primary CTA with pulse glow — scrolls to #qualify on same page */}
           <motion.a
-            href="/get-solar-info?source=hero"
+            href="#qualify"
             className="inline-flex items-center gap-2 px-8 py-4 rounded-lg font-semibold text-white text-[16px] transition-colors hover:bg-blue-700"
             style={{ background: '#2563EB', borderRadius: 8 }}
             variants={ctaGlow}
             animate="animate"
             whileHover={{ scale: 1.02, transition: { duration: 0.15 } }}
             whileTap={{ scale: 0.98 }}
+            onClick={(e) => {
+              e.preventDefault();
+              track('cta_click', { source: 'hero' });
+              scrollToQualify();
+            }}
           >
-            Get My Free Savings Report
+            See My Real Numbers
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
               <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -145,6 +157,21 @@ export default function Hero() {
           >
             Meet Michael, Our AI Advisor
           </motion.a>
+        </motion.div>
+
+        {/* What-happens-next lines — remove uncertainty at the moment of click */}
+        <motion.div
+          className="mb-10"
+          variants={heroSub}
+          initial={false}
+          animate="visible"
+        >
+          <p className="text-[13.5px] font-medium" style={{ color: 'rgba(255,255,255,0.55)' }}>
+            Takes about 30 seconds. We&apos;ll show you real numbers based on your home.
+          </p>
+          <p className="text-[12px] mt-1.5" style={{ color: 'rgba(255,255,255,0.30)' }}>
+            No pressure — if it doesn&apos;t make financial sense, we&apos;ll tell you.
+          </p>
         </motion.div>
 
         {/* Stat trust strip */}
