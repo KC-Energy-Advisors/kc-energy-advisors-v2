@@ -15,7 +15,7 @@ export default function GetSolarInfoRoute() {
     <>
       <AnnouncementBar />
       <Nav />
-      <main className="block w-full min-h-0">
+      <main style={{ display: 'block', width: '100%', minHeight: 0, alignItems: 'unset', justifyContent: 'unset' }}>
         <GetSolarInfoPage />
       </main>
       <Footer />

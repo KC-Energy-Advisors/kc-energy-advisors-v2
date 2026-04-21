@@ -372,44 +372,17 @@ export default function GetSolarInfoPage() {
     setStep(3);
   }
 
-  // Scroll to top whenever the qualified/booking state becomes active.
-  // useEffect runs after React commits, and rAF defers until after paint —
-  // the most reliable point to reset scroll regardless of how the transition
-  // was triggered (click handler, Enter key, or any future path).
+  // Scroll to top when the qualified/booking state becomes active.
+  // Double-rAF ensures we fire after React has painted the new layout —
+  // single rAF can still fire mid-commit on some browsers.
   useEffect(() => {
     if (pageState !== 'qualified') return;
     requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, behavior: 'instant' });
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      });
     });
   }, [pageState]);
-
-  useEffect(() => {
-    const handleLoad = () => {
-      window.scrollTo(0, 0)
-    }
-    // run immediately
-    window.scrollTo(0, 0)
-    // find iframe
-    const iframe = document.querySelector('iframe')
-    if (iframe) {
-      iframe.addEventListener('load', handleLoad)
-    }
-    // fallback: keep forcing top briefly
-    let count = 0
-    const forceTop = () => {
-      window.scrollTo(0, 0)
-      count++
-      if (count < 30) {
-        requestAnimationFrame(forceTop)
-      }
-    }
-    forceTop()
-    return () => {
-      if (iframe) {
-        iframe.removeEventListener('load', handleLoad)
-      }
-    }
-  }, [])
 
   function goResult() {
     if (!step3OK) return;
@@ -490,29 +463,10 @@ export default function GetSolarInfoPage() {
     const _calendarSrc =
       `https://api.leadconnectorhq.com/widget/booking/0fu9WVucPWOYhM0tSEGE?${_p.toString()}`;
 
-    // ── Booking view — isolated top-anchored block, no PageShell, no flex ──
+    // ── Booking view — plain top-anchored block, no PageShell, no flex ──
     return (
-      <div style={{
-        display        : 'block',
-        width          : '100%',
-        background     : '#0C1322',
-        position       : 'relative',
-        top            : 0,
-        left           : 0,
-        margin         : 0,
-        padding        : 0,
-        alignItems     : 'unset',
-        justifyContent : 'unset',
-        minHeight      : 0,
-      }}>
-        <div style={{
-          display        : 'block',
-          width          : '100%',
-          paddingTop     : '24px',
-          paddingBottom  : '64px',
-          alignItems     : 'unset',
-          justifyContent : 'unset',
-        }}>
+      <div style={{ display: 'block', width: '100%', background: '#0C1322', margin: 0, padding: 0 }}>
+        <div style={{ display: 'block', width: '100%', paddingTop: '24px', paddingBottom: '64px' }}>
 
           {/* Status line — sits directly above the calendar card */}
           <p style={{
@@ -549,6 +503,7 @@ export default function GetSolarInfoPage() {
                 src={_calendarSrc}
                 id="0fu9WVucPWOYhM0tSEGE_1776708128843"
                 scrolling="no"
+                onLoad={() => window.scrollTo({ top: 0, behavior: 'instant' })}
                 style={{
                   width     : '100%',
                   minHeight : '650px',

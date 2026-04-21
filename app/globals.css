@@ -13,6 +13,18 @@ html {
 html, body {
   overflow-anchor: none;
 }
+
+/* ── Layout guardrails ───────────────────────────────────────── */
+/* Ensure page structural elements use normal document flow.
+   Prevents any injected or inherited flex from vertically centering
+   page sections. These override Tailwind preflight just for safety. */
+html, body { display: block; }
+main        { display: block; min-height: 0; }
+
+/* Scope scroll-margin-top to navigation anchors only —
+   the global [id] rule was hitting #ghl-calendar-embed and the
+   iframe's id, causing scroll-snap / scrollIntoView to offset them. */
+#ghl-calendar-embed { scroll-margin-top: 0; }
 /* Smooth scroll ONLY after user interaction */
 /*html:focus-within {
   scroll-behavior: smooth;
