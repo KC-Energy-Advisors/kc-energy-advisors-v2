@@ -17,7 +17,10 @@ function ResultCard({ label, value, className = '', sub }: { label: string; valu
         {value}
       </div>
       {sub && (
-        <div className={`mt-1 leading-snug ${hi ? 'text-[11.5px] text-white/62' : 'text-[11.5px] text-white/38'}`}>
+        <div className={hi
+          ? 'mt-2 text-[12.5px] text-white/80 leading-relaxed max-w-[168px]'
+          : 'mt-1 text-[11.5px] text-white/38 leading-snug'
+        }>
           {sub}
         </div>
       )}
@@ -112,7 +115,7 @@ export default function Calculator() {
               <ResultCard
                 label="Start with $0 Payments" value="$0"
                 className="bg-[linear-gradient(145deg,#0f1f3d_0%,#162952_55%,#1e3a8a_100%)] border-blue-500/45 shadow-[0_0_22px_rgba(37,99,235,0.20)] motion-safe:hover:-translate-y-0.5 hover:shadow-[0_0_32px_rgba(37,99,235,0.32)] hover:border-blue-400/60"
-                sub="No upfront cost. Most homeowners start with $0 payments for the first year."
+                sub="No upfront cost. Payments begin after year one — most homeowners start at $0."
               />
               <ResultCard label="System Size" value={`${r.kwSize} kW`} className="bg-white/[0.05] border-white/[0.09]" />
             </div>
