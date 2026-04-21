@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect } from 'react';
-import SlotPicker from '@/components/ui/SlotPicker';
 import type { CalendarSlot } from '@/lib/types';
 
 // ─────────────────────────────────────────────────────────────────
@@ -623,16 +622,11 @@ export default function GetSolarInfoPage() {
                 padding    : '28px 24px',
               }}
             >
-              <SlotPicker
-                contactId={contactId}
-                name={form.name}
-                phone={phone}
-                onBooked={(appointmentId, slot) => {
-                  console.log('[GetSolarInfoPage] booked:', appointmentId);
-                  setBookedSlot(slot);
-                  setPageState('booked');
-                }}
-                onError={msg => console.error('[GetSolarInfoPage] booking error:', msg)}
+              {/* SlotPicker (Phase 2) — temporarily replaced with GHL iframe until SlotPicker is deployed */}
+              <iframe
+                src={`https://api.leadconnectorhq.com/widget/booking/0fu9WVucPWOYhM0tSEGE?name=${encodeURIComponent(form.name)}&phone=${encodeURIComponent(phone)}`}
+                style={{ width: '100%', minHeight: 520, border: 'none', borderRadius: 8, display: 'block' }}
+                title="Schedule your free solar consultation"
               />
             </div>
           </div>
