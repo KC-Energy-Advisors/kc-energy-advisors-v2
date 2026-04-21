@@ -490,10 +490,29 @@ export default function GetSolarInfoPage() {
     const _calendarSrc =
       `https://api.leadconnectorhq.com/widget/booking/0fu9WVucPWOYhM0tSEGE?${_p.toString()}`;
 
-    // ── Booking view — plain block wrapper, no PageShell, no flex, no min-h ──
+    // ── Booking view — isolated top-anchored block, no PageShell, no flex ──
     return (
-      <div style={{ background: '#0C1322' }}>
-        <div style={{ width: '100%', paddingTop: '24px', paddingBottom: '64px' }}>
+      <div style={{
+        display        : 'block',
+        width          : '100%',
+        background     : '#0C1322',
+        position       : 'relative',
+        top            : 0,
+        left           : 0,
+        margin         : 0,
+        padding        : 0,
+        alignItems     : 'unset',
+        justifyContent : 'unset',
+        minHeight      : 0,
+      }}>
+        <div style={{
+          display        : 'block',
+          width          : '100%',
+          paddingTop     : '24px',
+          paddingBottom  : '64px',
+          alignItems     : 'unset',
+          justifyContent : 'unset',
+        }}>
 
           {/* Status line — sits directly above the calendar card */}
           <p style={{
