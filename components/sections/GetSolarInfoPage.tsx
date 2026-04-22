@@ -929,16 +929,12 @@ export default function GetSolarInfoPage() {
                 <div>
                   <FieldLabel>Do you own the home?</FieldLabel>
                   <div className="grid grid-cols-2 gap-2">
-                    <ChoiceCard
-                      selected={form.ownsHome === 'yes'}
-                      onClick={() => { console.error('[S2] ownsHome=yes'); setForm(prev => ({ ...prev, ownsHome: 'yes' })); }}
-                      label="Yes, I own it"
-                    />
-                    <ChoiceCard
-                      selected={form.ownsHome === 'no'}
-                      onClick={() => { console.error('[S2] ownsHome=no'); setForm(prev => ({ ...prev, ownsHome: 'no' })); }}
-                      label="No, I rent"
-                    />
+                    <div onClick={() => { console.error('[S2 CLICK] ownsHome yes'); setForm(prev => ({ ...prev, ownsHome: 'yes' })); }} style={{ cursor: 'pointer' }}>
+                      <ChoiceCard selected={form.ownsHome === 'yes'} label="Yes, I own it" onClick={() => {}} />
+                    </div>
+                    <div onClick={() => { console.error('[S2 CLICK] ownsHome no'); setForm(prev => ({ ...prev, ownsHome: 'no' })); }} style={{ cursor: 'pointer' }}>
+                      <ChoiceCard selected={form.ownsHome === 'no'} label="No, I rent" onClick={() => {}} />
+                    </div>
                   </div>
                 </div>
 
@@ -952,13 +948,9 @@ export default function GetSolarInfoPage() {
                       { code: '150-200',   label: '$150 – $200 / month',  badge: 'Strong fit' },
                       { code: '200-plus',  label: '$200+ / month',        badge: 'Priority'  },
                     ] as { code: BillCode; label: string; badge?: string }[]).map(opt => (
-                      <ChoiceCard
-                        key={opt.code}
-                        selected={form.monthlyBill === opt.code}
-                        onClick={() => { console.error('[S2] monthlyBill=' + opt.code); setForm(prev => ({ ...prev, monthlyBill: opt.code })); }}
-                        label={opt.label}
-                        badge={opt.badge}
-                      />
+                      <div key={opt.code} onClick={() => { console.error('[S2 CLICK] monthlyBill=' + opt.code); setForm(prev => ({ ...prev, monthlyBill: opt.code })); }} style={{ cursor: 'pointer' }}>
+                        <ChoiceCard selected={form.monthlyBill === opt.code} label={opt.label} badge={opt.badge} onClick={() => {}} />
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -973,12 +965,9 @@ export default function GetSolarInfoPage() {
                       { code: 'tile',    label: 'Tile'            },
                       { code: 'unsure',  label: 'Not sure'        },
                     ] as { code: RoofCode; label: string }[]).map(opt => (
-                      <ChoiceCard
-                        key={opt.code}
-                        selected={form.roofType === opt.code}
-                        onClick={() => { console.error('[S2] roofType=' + opt.code); setForm(prev => ({ ...prev, roofType: opt.code })); }}
-                        label={opt.label}
-                      />
+                      <div key={opt.code} onClick={() => { console.error('[S2 CLICK] roofType=' + opt.code); setForm(prev => ({ ...prev, roofType: opt.code })); }} style={{ cursor: 'pointer' }}>
+                        <ChoiceCard selected={form.roofType === opt.code} label={opt.label} onClick={() => {}} />
+                      </div>
                     ))}
                   </div>
                 </div>
