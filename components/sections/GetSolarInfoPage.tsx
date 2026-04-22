@@ -482,12 +482,7 @@ export default function GetSolarInfoPage() {
   }
 
   function goStep3() {
-    console.log('[STEP2 CLICKED] goStep3 fired', {
-      step2OK,
-      ownsHome:    form.ownsHome,
-      monthlyBill: form.monthlyBill,
-      roofType:    form.roofType,
-    });
+    console.log('[STEP2 CLICKED] goStep3 fired');
     if (!step2OK) return;
     if (form.ownsHome === 'no') { setPageState('disqualified'); return; }
     setStep(3);
@@ -986,10 +981,11 @@ export default function GetSolarInfoPage() {
 
               {/* DIAGNOSTIC — fires on every render of Step 2 */}
               {(() => {
-                console.log('[DIAG] Step2 btn rendering — step:2, disabled:', !step2OK, {
-                  ownsHomeSelected: form.ownsHome !== '',
-                  billSelected:     form.monthlyBill !== '',
-                  roofSelected:     form.roofType !== '',
+                console.log('[DIAG] Step2 render', {
+                  ownsHome:     form.ownsHome,
+                  monthlyBill:  form.monthlyBill,
+                  roofType:     form.roofType,
+                  step2Disabled: !form.ownsHome || !form.monthlyBill || !form.roofType,
                 });
                 return null;
               })()}
