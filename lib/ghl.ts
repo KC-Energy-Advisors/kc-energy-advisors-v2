@@ -105,12 +105,18 @@ export async function upsertGHLContact(params: {
 
   try {
     const data = JSON.parse(rawText) as {
-      contact?: { id?: string };
-      id?:      string;
+      contact?:   { id?: string };
+      id?:        string;
+      data?:      { id?: string };
+      contactId?: string;
     };
-    // GHL v2021-07-28 returns { contact: { id: '...' } }
-    // Some older versions return { id: '...' } at root
-    const contactId = data?.contact?.id ?? data?.id ?? null;
+    // Check all known GHL response shapes across API versions
+    const contactId =
+      data?.contact?.id ||
+      data?.id ||
+      data?.data?.id ||
+      data?.contactId ||
+      null;
     console.error('[GHL] upsertGHLContact extracted contactId:', contactId);
     return contactId;
   } catch {
