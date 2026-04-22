@@ -482,7 +482,12 @@ export default function GetSolarInfoPage() {
   }
 
   function goStep3() {
-    console.log('[STEP2 CLICKED] goStep3 fired');
+    console.error('[HARD DEBUG] STEP 2 CLICK', {
+      step2OK,
+      ownsHome:    form.ownsHome,
+      monthlyBill: form.monthlyBill,
+      roofType:    form.roofType,
+    });
     if (!step2OK) return;
     if (form.ownsHome === 'no') { setPageState('disqualified'); return; }
     setStep(3);
@@ -914,7 +919,7 @@ export default function GetSolarInfoPage() {
           {/* ── STEP 2: Home qualification ────────────────────── */}
           {step === 2 && (
             <div className="animate-step-slide" onKeyDown={stepEnter(goStep3, step2OK)}>
-              <h2 className="text-[21px] font-black text-[#0f172a] mb-2">Quick home check</h2>
+              <h2 className="text-[21px] font-black text-[#0f172a] mb-2">Quick home check [DEBUG LIVE]</h2>
               <p className="text-[13px] text-[#4b5563] mb-8">
                 Helps us know if solar is a fit before we talk.
               </p>
@@ -979,16 +984,39 @@ export default function GetSolarInfoPage() {
                 </div>
               </div>
 
-              {/* DIAGNOSTIC — fires on every render of Step 2 */}
+              {/* ── VISUAL PROOF MARKER — remove after diagnosis ─────── */}
+              <div style={{ background: '#dc2626', color: '#ffffff', fontWeight: 700, fontSize: '16px', width: '100%', padding: '14px', marginBottom: '16px', borderRadius: '6px', textAlign: 'center' }}>
+                LIVE STEP 2 DEBUG MARKER
+              </div>
+              {/* ── END VISUAL PROOF MARKER ──────────────────────────── */}
+
+              {/* ── HARD DEBUG BANNER — remove after diagnosis ──────── */}
               {(() => {
-                console.log('[DIAG] Step2 render', {
-                  ownsHome:     form.ownsHome,
-                  monthlyBill:  form.monthlyBill,
-                  roofType:     form.roofType,
-                  step2Disabled: !form.ownsHome || !form.monthlyBill || !form.roofType,
+                console.error('[HARD DEBUG] STEP 2 RENDER', {
+                  ownsHome:    form.ownsHome,
+                  monthlyBill: form.monthlyBill,
+                  roofType:    form.roofType,
+                  step2OK,
                 });
                 return null;
               })()}
+              <div style={{
+                background:   '#dc2626',
+                color:        '#ffffff',
+                borderRadius: '8px',
+                padding:      '12px 16px',
+                marginBottom: '16px',
+                fontSize:     '13px',
+                fontWeight:   700,
+                lineHeight:   1.6,
+              }}>
+                DEBUG STEP 2 LIVE<br />
+                ownsHome: {form.ownsHome || '(empty)'}<br />
+                monthlyBill: {form.monthlyBill || '(empty)'}<br />
+                roofType: {form.roofType || '(empty)'}<br />
+                step2OK: {step2OK ? 'true' : 'false'}
+              </div>
+              {/* ── END HARD DEBUG BANNER ────────────────────────────── */}
               <PrimaryBtn onClick={goStep3} disabled={!step2OK}>
                 Continue →
               </PrimaryBtn>
