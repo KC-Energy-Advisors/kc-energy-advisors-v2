@@ -371,6 +371,11 @@ export default function GetSolarInfoPage() {
   // back to Step 1 and clicks Continue again. One upsert per session.
   const step1UpsertFired = useRef(false);
 
+  // Log every time contactId transitions so we can trace it through the funnel.
+  useEffect(() => {
+    console.error('[FUNNEL] contactId changed:', contactId ?? 'null');
+  }, [contactId]);
+
   const set = <K extends keyof FormData>(key: K, value: FormData[K]) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
@@ -484,6 +489,7 @@ export default function GetSolarInfoPage() {
   // ── Submit lead + transition to booking ────────────────────────
   async function goResult() {
     if (!step3OK) return;
+    console.error('[FUNNEL] goResult — contactId at call time:', contactId ?? 'null');
     setSubmitError('');
     setPageState('submitting');
 
@@ -567,10 +573,17 @@ export default function GetSolarInfoPage() {
       }
 
       // ── Soft success — GHL webhook succeeded ──────────────────────
-      // contactId may be null if the upsert call failed independently,
-      // but the lead IS captured in GHL via the webhook. SlotPicker's
-      // iframe fallback handles null contactId correctly.
-      setContactId(data.contactId ?? null);
+      // Prefer the fresh contactId from the full submit; fall back to the
+      // one captured at Step 1. Block booking entirely if neither resolved.
+      const resolvedId = data.contactId ?? contactId ?? null;
+      console.error('[FUNNEL] resolved contactId after full submit:', resolvedId ?? 'null');
+      if (!resolvedId) {
+        console.error('[FUNNEL] blocking booking — contactId is null after full submit');
+        setSubmitError('Could not confirm your profile. Please try again.');
+        setPageState('submit-error');
+        return;
+      }
+      setContactId(resolvedId);
       setPageState('booking');
 
     } catch (err) {
@@ -731,6 +744,7 @@ export default function GetSolarInfoPage() {
 
   // ── BOOKING — slot picker ─────────────────────────────────────
   if (pageState === 'booking') {
+    console.error('[FUNNEL] booking page rendering — contactId:', contactId ?? 'null');
     const phone = toE164(form.phone);
 
     return (
@@ -1011,9 +1025,14 @@ export default function GetSolarInfoPage() {
                 </div>
               </div>
 
-              <PrimaryBtn onClick={goResult} disabled={!step3OK}>
+              <PrimaryBtn onClick={goResult} disabled={!step3OK || !contactId}>
                 See My Options →
               </PrimaryBtn>
+              {!contactId && (
+                <p className="text-center text-[11px] text-[#9ca3af] mt-2">
+                  Setting up your profile…
+                </p>
+              )}
               <div className="mt-4 flex justify-center">
                 <BackBtn onClick={() => setStep(2)} />
               </div>
