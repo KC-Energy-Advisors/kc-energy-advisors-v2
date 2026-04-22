@@ -370,11 +370,44 @@ export default function GetSolarInfoPage() {
   // Prevents re-firing the Step 1 partial upsert if the user navigates
   // back to Step 1 and clicks Continue again. One upsert per session.
   const step1UpsertFired = useRef(false);
+  const step2Ref = useRef<HTMLDivElement>(null);
 
   // ── DIAGNOSTIC: confirm latest code is loaded ─────────────────────────────
   useEffect(() => {
-    console.log('[DIAG] GetSolarInfoPage MOUNTED — build v2026-04-21-A');
+    console.log('[DIAG] GetSolarInfoPage MOUNTED — build v2026-04-21-B');
   }, []);
+
+  // ── NATIVE CAPTURE-PHASE fallback for Step 2 ──────────────────────────────
+  // Bypasses React synthetic events entirely. If React's event delegation is
+  // broken (hydration mismatch from animate-step-slide opacity:0 start),
+  // this native listener attached directly to the DOM node still fires.
+  useEffect(() => {
+    if (step !== 2) return;
+    const el = step2Ref.current;
+    if (!el) {
+      console.error('[S2 NATIVE] step2Ref is null — ref not attached');
+      return;
+    }
+    console.error('[S2 NATIVE] attaching capture click listener to step2Ref');
+
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest('[data-s2-field]') as HTMLElement | null;
+      if (!btn) {
+        console.error('[S2 NATIVE] click hit wrapper but no [data-s2-field] ancestor', target.tagName);
+        return;
+      }
+      const field = btn.dataset.s2Field as keyof FormData;
+      const value = btn.dataset.s2Value ?? '';
+      console.error('[S2 NATIVE CLICK]', field, '=', value);
+      if (field === 'ownsHome')    setForm(prev => ({ ...prev, ownsHome:    value as '' | 'yes' | 'no' }));
+      if (field === 'monthlyBill') setForm(prev => ({ ...prev, monthlyBill: value as BillCode }));
+      if (field === 'roofType')    setForm(prev => ({ ...prev, roofType:    value as RoofCode }));
+    };
+
+    el.addEventListener('click', handler, true); // capture phase — fires before any bubbling
+    return () => el.removeEventListener('click', handler, true);
+  }, [step]); // re-attach whenever step changes
 
   const set = <K extends keyof FormData>(key: K, value: FormData[K]) =>
     setForm(prev => ({ ...prev, [key]: value }));
@@ -918,7 +951,11 @@ export default function GetSolarInfoPage() {
 
           {/* ── STEP 2: Home qualification ────────────────────── */}
           {step === 2 && (
-            <div className="relative z-[9999] pointer-events-auto animate-step-slide" onKeyDown={stepEnter(goStep3, step2OK)}>
+            <div
+              ref={step2Ref}
+              style={{ position: 'relative', zIndex: 9999, pointerEvents: 'auto' }}
+              onKeyDown={stepEnter(goStep3, step2OK)}
+            >
               <h2 className="text-[21px] font-black text-[#0f172a] mb-2">Quick home check [DEBUG LIVE]</h2>
               <p className="text-[13px] text-[#4b5563] mb-8">
                 Helps us know if solar is a fit before we talk.
@@ -931,14 +968,20 @@ export default function GetSolarInfoPage() {
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={(e) => { console.error('[S2 CLICK WORKING]'); console.log(e); setForm(prev => ({ ...prev, ownsHome: 'yes' })); }}
+                      data-s2-field="ownsHome"
+                      data-s2-value="yes"
+                      onClick={(e) => { console.error('[S2 CLICK WORKING] ownsHome=yes', e.type); setForm(prev => ({ ...prev, ownsHome: 'yes' })); }}
+                      style={{ pointerEvents: 'auto', cursor: 'pointer' }}
                       className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.ownsHome === 'yes' ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
                     >
                       <span className="text-[13.5px] font-semibold block leading-tight">Yes, I own it</span>
                     </button>
                     <button
                       type="button"
+                      data-s2-field="ownsHome"
+                      data-s2-value="no"
                       onClick={() => { console.error('[S2 CLICK] ownsHome=no'); setForm(prev => ({ ...prev, ownsHome: 'no' })); }}
+                      style={{ pointerEvents: 'auto', cursor: 'pointer' }}
                       className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.ownsHome === 'no' ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
                     >
                       <span className="text-[13.5px] font-semibold block leading-tight">No, I rent</span>
@@ -959,10 +1002,13 @@ export default function GetSolarInfoPage() {
                       <button
                         key={opt.code}
                         type="button"
+                        data-s2-field="monthlyBill"
+                        data-s2-value={opt.code}
                         onClick={() => { console.error('[S2 CLICK] monthlyBill=' + opt.code); setForm(prev => ({ ...prev, monthlyBill: opt.code })); }}
+                        style={{ pointerEvents: 'auto', cursor: 'pointer' }}
                         className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.monthlyBill === opt.code ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
                       >
-                        <span className="flex items-center justify-between gap-3">
+                        <span className="flex items-center justify-between gap-3" style={{ pointerEvents: 'none' }}>
                           <span className="text-[13.5px] font-semibold leading-tight">{opt.label}</span>
                           {opt.badge && (
                             <span className="text-[10px] font-bold uppercase tracking-wider text-brand-gold bg-brand-gold/10 border border-brand-gold/20 px-2 py-0.5 rounded-full flex-shrink-0">{opt.badge}</span>
@@ -986,10 +1032,13 @@ export default function GetSolarInfoPage() {
                       <button
                         key={opt.code}
                         type="button"
+                        data-s2-field="roofType"
+                        data-s2-value={opt.code}
                         onClick={() => { console.error('[S2 CLICK] roofType=' + opt.code); setForm(prev => ({ ...prev, roofType: opt.code })); }}
+                        style={{ pointerEvents: 'auto', cursor: 'pointer' }}
                         className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.roofType === opt.code ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
                       >
-                        <span className="text-[13.5px] font-semibold leading-tight">{opt.label}</span>
+                        <span className="text-[13.5px] font-semibold leading-tight" style={{ pointerEvents: 'none' }}>{opt.label}</span>
                       </button>
                     ))}
                   </div>
