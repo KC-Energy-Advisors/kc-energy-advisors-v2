@@ -66,30 +66,31 @@ export async function upsertGHLContact(params: {
     return null;
   }
 
-  // GHL v1 REST API — compatible with Location API Keys (private integration keys).
-  // Does not require Version header. locationId is inferred from the key itself.
-  const endpoint = 'https://rest.gohighlevel.com/v1/contacts/';
+  // GHL v2 API — private integration Bearer token + Version: 2021-07-28.
+  const endpoint = 'https://services.leadconnectorhq.com/contacts/upsert';
 
   const body: Record<string, unknown> = {
-    firstName: params.firstName,
-    lastName:  params.lastName,
-    phone:     params.phone,
-    email:     params.email,
-    tags:      params.tags ?? [],
+    locationId: process.env.GHL_LOCATION_ID,
+    firstName:  params.firstName,
+    lastName:   params.lastName,
+    phone:      params.phone,
+    email:      params.email,
+    tags:       params.tags ?? [],
   };
 
   if (params.address) {
     body.address1 = params.address;
   }
 
-  console.error('[GHL] upsertGHLContact →', endpoint, '| apiKey set:', !!GHL_API_KEY, '| phone:', params.phone);
+  console.error('[GHL REQUEST] Using endpoint:', endpoint);
 
   let res: Response;
   try {
     res = await fetch(endpoint, {
       method:  'POST',
       headers: {
-        'Authorization': `Bearer ${GHL_API_KEY}`,
+        'Authorization': `Bearer ${process.env.GHL_API_KEY}`,
+        'Version':       '2021-07-28',
         'Content-Type':  'application/json',
       },
       body:    JSON.stringify(body),
@@ -100,8 +101,9 @@ export async function upsertGHLContact(params: {
     return null;
   }
 
+  console.error('[GHL RESPONSE STATUS]', res.status);
   const raw = await res.text();
-  console.error('[GHL] upsertGHLContact ← status:', res.status, '| body:', raw);
+  console.error('[GHL RAW BODY]', raw);
 
   if (!res.ok) {
     console.error(`[GHL] upsertGHLContact failed: ${res.status} — ${raw}`);
