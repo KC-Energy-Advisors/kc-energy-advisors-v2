@@ -95,16 +95,16 @@ export async function upsertGHLContact(params: {
     return null;
   }
 
-  const rawText = await res.text().catch(() => '');
-  console.error(`[GHL] upsertGHLContact raw response — status: ${res.status} body: ${rawText}`);
+  const raw = await res.text();
+  console.error('[GHL RAW BODY]', raw);
 
   if (!res.ok) {
-    console.error(`[GHL] upsertGHLContact failed: ${res.status} — ${rawText}`);
+    console.error(`[GHL] upsertGHLContact failed: ${res.status} — ${raw}`);
     return null;
   }
 
   try {
-    const data = JSON.parse(rawText) as {
+    const data = JSON.parse(raw) as {
       contact?:   { id?: string };
       id?:        string;
       data?:      { id?: string };
