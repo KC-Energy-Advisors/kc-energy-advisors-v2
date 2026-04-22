@@ -401,9 +401,7 @@ export default function GetSolarInfoPage() {
     };
 
     const handler = (e: MouseEvent) => {
-      console.error('[S2 CLICK TARGET]', e.target);
-      const elAtPoint = document.elementFromPoint(e.clientX, e.clientY);
-      console.error('[S2 TOP ELEMENT]', elAtPoint);
+      console.error('[S2 EVENT]', e.type, e.target, document.elementFromPoint(e.clientX, e.clientY));
       const target = e.target as HTMLElement;
 
       // ── Path 1: direct / bubbled hit ─────────────────────────────────────
@@ -423,7 +421,6 @@ export default function GetSolarInfoPage() {
             e.clientY >= r.top  && e.clientY <= r.bottom) {
           const field = (btn as HTMLElement).dataset.s2Field ?? '';
           const value = (btn as HTMLElement).dataset.s2Value ?? '';
-          // Log the intercepting element so we can identify it
           console.error('[S2 DOC COORD] overlay intercepting click — target was:',
             target.tagName,
             target.id   || '(no-id)',
@@ -444,8 +441,14 @@ export default function GetSolarInfoPage() {
       }
     };
 
-    document.addEventListener('click', handler, true);
-    return () => document.removeEventListener('click', handler, true);
+    document.addEventListener('pointerdown', handler, true);
+    document.addEventListener('mousedown',   handler, true);
+    document.addEventListener('click',       handler, true);
+    return () => {
+      document.removeEventListener('pointerdown', handler, true);
+      document.removeEventListener('mousedown',   handler, true);
+      document.removeEventListener('click',       handler, true);
+    };
   }, [step]);
 
   const set = <K extends keyof FormData>(key: K, value: FormData[K]) =>
