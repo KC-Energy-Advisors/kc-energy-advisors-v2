@@ -918,7 +918,7 @@ export default function GetSolarInfoPage() {
 
           {/* ── STEP 2: Home qualification ────────────────────── */}
           {step === 2 && (
-            <div className="animate-step-slide" onKeyDown={stepEnter(goStep3, step2OK)}>
+            <div className="relative z-[9999] pointer-events-auto animate-step-slide" onKeyDown={stepEnter(goStep3, step2OK)}>
               <h2 className="text-[21px] font-black text-[#0f172a] mb-2">Quick home check [DEBUG LIVE]</h2>
               <p className="text-[13px] text-[#4b5563] mb-8">
                 Helps us know if solar is a fit before we talk.
@@ -931,21 +931,17 @@ export default function GetSolarInfoPage() {
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => { console.error('[S2 CLICK] ownsHome=yes'); setForm(prev => ({ ...prev, ownsHome: 'yes' })); }}
+                      onClick={(e) => { console.error('[S2 CLICK WORKING]'); console.log(e); setForm(prev => ({ ...prev, ownsHome: 'yes' })); }}
                       className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.ownsHome === 'yes' ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <div><span className="text-[13.5px] font-semibold block leading-tight">Yes, I own it</span></div>
-                      </div>
+                      <span className="text-[13.5px] font-semibold block leading-tight">Yes, I own it</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => { console.error('[S2 CLICK] ownsHome=no'); setForm(prev => ({ ...prev, ownsHome: 'no' })); }}
                       className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.ownsHome === 'no' ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <div><span className="text-[13.5px] font-semibold block leading-tight">No, I rent</span></div>
-                      </div>
+                      <span className="text-[13.5px] font-semibold block leading-tight">No, I rent</span>
                     </button>
                   </div>
                 </div>
@@ -966,12 +962,12 @@ export default function GetSolarInfoPage() {
                         onClick={() => { console.error('[S2 CLICK] monthlyBill=' + opt.code); setForm(prev => ({ ...prev, monthlyBill: opt.code })); }}
                         className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.monthlyBill === opt.code ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
                       >
-                        <div className="flex items-center justify-between gap-3">
-                          <div><span className="text-[13.5px] font-semibold block leading-tight">{opt.label}</span></div>
+                        <span className="flex items-center justify-between gap-3">
+                          <span className="text-[13.5px] font-semibold leading-tight">{opt.label}</span>
                           {opt.badge && (
                             <span className="text-[10px] font-bold uppercase tracking-wider text-brand-gold bg-brand-gold/10 border border-brand-gold/20 px-2 py-0.5 rounded-full flex-shrink-0">{opt.badge}</span>
                           )}
-                        </div>
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -993,9 +989,7 @@ export default function GetSolarInfoPage() {
                         onClick={() => { console.error('[S2 CLICK] roofType=' + opt.code); setForm(prev => ({ ...prev, roofType: opt.code })); }}
                         className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.roofType === opt.code ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
                       >
-                        <div className="flex items-center justify-between gap-3">
-                          <div><span className="text-[13.5px] font-semibold block leading-tight">{opt.label}</span></div>
-                        </div>
+                        <span className="text-[13.5px] font-semibold leading-tight">{opt.label}</span>
                       </button>
                     ))}
                   </div>
