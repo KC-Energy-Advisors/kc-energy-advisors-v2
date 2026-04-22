@@ -435,9 +435,8 @@ export default function GetSolarInfoPage() {
         utm_term:              (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_term'))     || '',
         formVersion:           'get-solar-info-v2',
         submittedAt:           new Date().toISOString(),
-        source:                typeof window !== 'undefined'
-          ? (new URLSearchParams(window.location.search).get('source') || 'direct')
-          : 'direct',
+        source:                'website',
+        stage:                 'step1',
         sms_consent:           'yes',
         sms_consent_timestamp: new Date().toISOString(),
         sms_consent_language:  'TCPA-v2-2026',
@@ -512,9 +511,8 @@ export default function GetSolarInfoPage() {
       utm_term:     utmTerm,
       formVersion:  'get-solar-info-v2',
       submittedAt:  new Date().toISOString(),
-      source:       typeof window !== 'undefined'
-        ? (new URLSearchParams(window.location.search).get('source') || 'direct')
-        : 'direct',
+      source:       'website',
+      stage:        'complete',
       // ── TCPA consent record ────────────────────────────────────
       // form.consent is guaranteed true here — step1OK blocks
       // goStep2() if consent is false, so this code is only reached

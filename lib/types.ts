@@ -60,6 +60,7 @@ export interface LeadPayload {
   formVersion:    string;
   submittedAt:    string;       // ISO 8601
   source:         string;
+  stage?:         string;       // funnel stage at time of submission, e.g. 'step1' | 'complete'
   // TCPA consent record — optional so all existing callsites compile unchanged
   sms_consent?:           string;  // 'yes' | 'no'
   sms_consent_timestamp?: string;  // ISO 8601 datetime of acceptance
