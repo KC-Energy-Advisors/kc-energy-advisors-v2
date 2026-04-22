@@ -66,27 +66,32 @@ export async function upsertGHLContact(params: {
     return null;
   }
 
+  // GHL v1 REST API — compatible with Location API Keys (private integration keys).
+  // Does not require Version header. locationId is inferred from the key itself.
+  const endpoint = 'https://rest.gohighlevel.com/v1/contacts/';
+
   const body: Record<string, unknown> = {
-    locationId: GHL_LOCATION_ID,
-    firstName:  params.firstName,
-    lastName:   params.lastName,
-    phone:      params.phone,
-    email:      params.email,
-    tags:       params.tags ?? [],
+    firstName: params.firstName,
+    lastName:  params.lastName,
+    phone:     params.phone,
+    email:     params.email,
+    tags:      params.tags ?? [],
   };
 
-  // Map free-text address to GHL's address1 field
   if (params.address) {
     body.address1 = params.address;
   }
 
-  console.error('[GHL] upsertGHLContact sending:', JSON.stringify(body));
+  console.error('[GHL] upsertGHLContact →', endpoint, '| apiKey set:', !!GHL_API_KEY, '| phone:', params.phone);
 
   let res: Response;
   try {
-    res = await fetch(`${GHL_API_BASE}/contacts/upsert`, {
+    res = await fetch(endpoint, {
       method:  'POST',
-      headers: GHL_HEADERS(),
+      headers: {
+        'Authorization': `Bearer ${GHL_API_KEY}`,
+        'Content-Type':  'application/json',
+      },
       body:    JSON.stringify(body),
       cache:   'no-store',
     });
@@ -96,7 +101,7 @@ export async function upsertGHLContact(params: {
   }
 
   const raw = await res.text();
-  console.error('[GHL RAW BODY]', raw);
+  console.error('[GHL] upsertGHLContact ← status:', res.status, '| body:', raw);
 
   if (!res.ok) {
     console.error(`[GHL] upsertGHLContact failed: ${res.status} — ${raw}`);
