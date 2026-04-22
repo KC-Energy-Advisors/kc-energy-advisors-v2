@@ -374,40 +374,76 @@ export default function GetSolarInfoPage() {
 
   // ── DIAGNOSTIC: confirm latest code is loaded ─────────────────────────────
   useEffect(() => {
-    console.log('[DIAG] GetSolarInfoPage MOUNTED — build v2026-04-21-B');
+    console.log('[DIAG] GetSolarInfoPage MOUNTED — build v2026-04-21-C');
   }, []);
 
-  // ── NATIVE CAPTURE-PHASE fallback for Step 2 ──────────────────────────────
-  // Bypasses React synthetic events entirely. If React's event delegation is
-  // broken (hydration mismatch from animate-step-slide opacity:0 start),
-  // this native listener attached directly to the DOM node still fires.
+  // ── DOCUMENT-LEVEL CAPTURE LISTENER for Step 2 ────────────────────────────
+  // Attached to `document` rather than step2Ref so it survives any React
+  // reconciliation that might replace the step2 DOM node (e.g. the contactId
+  // state update from the background fetch triggers a re-render; if React
+  // creates a fresh node the element-level listener ends up orphaned on the
+  // detached old node, but the document-level listener always fires).
+  //
+  // Path 1 – direct hit: target or ancestor is [data-s2-field] → update state.
+  // Path 2 – coordinate hit: an invisible overlay intercepted the click but
+  //   the coordinates fall inside a step2 button rect → update state + log
+  //   the intercepting element so we can remove it later.
+  // Path 3 – miss inside step2 area: logs the actual target for diagnosis.
   useEffect(() => {
     if (step !== 2) return;
-    const el = step2Ref.current;
-    if (!el) {
-      console.error('[S2 NATIVE] step2Ref is null — ref not attached');
-      return;
-    }
-    console.error('[S2 NATIVE] attaching capture click listener to step2Ref');
+    console.error('[S2 DOC] attaching document-level capture listener — build v2026-04-21-C');
 
-    const handler = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const btn = target.closest('[data-s2-field]') as HTMLElement | null;
-      if (!btn) {
-        console.error('[S2 NATIVE] click hit wrapper but no [data-s2-field] ancestor', target.tagName);
-        return;
-      }
-      const field = btn.dataset.s2Field as keyof FormData;
-      const value = btn.dataset.s2Value ?? '';
-      console.error('[S2 NATIVE CLICK]', field, '=', value);
+    const applyField = (field: string, value: string) => {
+      console.error('[S2 DOC APPLY]', field, '=', value);
       if (field === 'ownsHome')    setForm(prev => ({ ...prev, ownsHome:    value as '' | 'yes' | 'no' }));
       if (field === 'monthlyBill') setForm(prev => ({ ...prev, monthlyBill: value as BillCode }));
       if (field === 'roofType')    setForm(prev => ({ ...prev, roofType:    value as RoofCode }));
     };
 
-    el.addEventListener('click', handler, true); // capture phase — fires before any bubbling
-    return () => el.removeEventListener('click', handler, true);
-  }, [step]); // re-attach whenever step changes
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+
+      // ── Path 1: direct / bubbled hit ─────────────────────────────────────
+      const directBtn = target.closest?.('[data-s2-field]') as HTMLElement | null;
+      if (directBtn) {
+        applyField(directBtn.dataset.s2Field ?? '', directBtn.dataset.s2Value ?? '');
+        return;
+      }
+
+      // ── Path 2: coordinate match (overlay is blocking) ───────────────────
+      const el = step2Ref.current;
+      if (!el) return;
+      const allButtons = el.querySelectorAll('[data-s2-field]');
+      for (const btn of allButtons) {
+        const r = (btn as HTMLElement).getBoundingClientRect();
+        if (e.clientX >= r.left && e.clientX <= r.right &&
+            e.clientY >= r.top  && e.clientY <= r.bottom) {
+          const field = (btn as HTMLElement).dataset.s2Field ?? '';
+          const value = (btn as HTMLElement).dataset.s2Value ?? '';
+          // Log the intercepting element so we can identify it
+          console.error('[S2 DOC COORD] overlay intercepting click — target was:',
+            target.tagName,
+            target.id   || '(no-id)',
+            (target.className as string)?.substring?.(0, 60) || '(no-class)',
+          );
+          applyField(field, value);
+          return;
+        }
+      }
+
+      // ── Path 3: click was inside step2 area but no button matched ────────
+      const s2r = el.getBoundingClientRect();
+      if (s2r.width > 0 &&
+          e.clientX >= s2r.left && e.clientX <= s2r.right &&
+          e.clientY >= s2r.top  && e.clientY <= s2r.bottom) {
+        console.error('[S2 DOC MISSED] inside step2 area, no button. Target:',
+          target.tagName, target.id || '', (target.className as string)?.substring?.(0, 60) || '');
+      }
+    };
+
+    document.addEventListener('click', handler, true);
+    return () => document.removeEventListener('click', handler, true);
+  }, [step]);
 
   const set = <K extends keyof FormData>(key: K, value: FormData[K]) =>
     setForm(prev => ({ ...prev, [key]: value }));
