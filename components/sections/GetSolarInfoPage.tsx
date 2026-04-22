@@ -371,6 +371,11 @@ export default function GetSolarInfoPage() {
   // back to Step 1 and clicks Continue again. One upsert per session.
   const step1UpsertFired = useRef(false);
 
+  // ── DIAGNOSTIC: confirm latest code is loaded ─────────────────────────────
+  useEffect(() => {
+    console.log('[DIAG] GetSolarInfoPage MOUNTED — build v2026-04-21-A');
+  }, []);
+
   const set = <K extends keyof FormData>(key: K, value: FormData[K]) =>
     setForm(prev => ({ ...prev, [key]: value }));
 
@@ -477,6 +482,12 @@ export default function GetSolarInfoPage() {
   }
 
   function goStep3() {
+    console.log('[STEP2 CLICKED] goStep3 fired', {
+      step2OK,
+      ownsHome:    form.ownsHome,
+      monthlyBill: form.monthlyBill,
+      roofType:    form.roofType,
+    });
     if (!step2OK) return;
     if (form.ownsHome === 'no') { setPageState('disqualified'); return; }
     setStep(3);
@@ -887,6 +898,15 @@ export default function GetSolarInfoPage() {
                 </div>
               </div>
 
+              {/* DIAGNOSTIC — fires on every render of Step 1 */}
+              {(() => {
+                console.log('[DIAG] Step1 btn rendering — step:1, disabled:', !step1OK, {
+                  nameLengthOK: form.name.trim().length >= 2,
+                  phoneOK:      form.phone.replace(/\D/g,'').length >= 10,
+                  consent:      form.consent,
+                });
+                return null;
+              })()}
               <PrimaryBtn onClick={goStep2} disabled={!step1OK}>
                 Continue →
               </PrimaryBtn>
@@ -964,6 +984,15 @@ export default function GetSolarInfoPage() {
                 </div>
               </div>
 
+              {/* DIAGNOSTIC — fires on every render of Step 2 */}
+              {(() => {
+                console.log('[DIAG] Step2 btn rendering — step:2, disabled:', !step2OK, {
+                  ownsHomeSelected: form.ownsHome !== '',
+                  billSelected:     form.monthlyBill !== '',
+                  roofSelected:     form.roofType !== '',
+                });
+                return null;
+              })()}
               <PrimaryBtn onClick={goStep3} disabled={!step2OK}>
                 Continue →
               </PrimaryBtn>
