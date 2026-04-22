@@ -401,6 +401,9 @@ export default function GetSolarInfoPage() {
     };
 
     const handler = (e: MouseEvent) => {
+      console.error('[S2 CLICK TARGET]', e.target);
+      const elAtPoint = document.elementFromPoint(e.clientX, e.clientY);
+      console.error('[S2 TOP ELEMENT]', elAtPoint);
       const target = e.target as HTMLElement;
 
       // ── Path 1: direct / bubbled hit ─────────────────────────────────────
