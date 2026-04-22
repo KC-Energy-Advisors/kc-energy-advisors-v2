@@ -74,14 +74,19 @@ export async function upsertGHLContact(params: {
     firstName:  params.firstName,
     lastName:   params.lastName,
     phone:      params.phone,
-    email:      params.email,
     tags:       params.tags ?? [],
   };
+
+  const email = typeof params.email === 'string' ? params.email.trim() : '';
+  if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    body.email = email;
+  }
 
   if (params.address) {
     body.address1 = params.address;
   }
 
+  console.error('[GHL CLEAN BODY]', body);
   console.error('[GHL REQUEST] Using endpoint:', endpoint);
 
   let res: Response;
