@@ -403,7 +403,10 @@ export default function GetSolarInfoPage() {
     // Fires as soon as Step 1 is complete (name + phone + address + consent).
     // Captures this lead in GHL immediately so no data is lost if they drop off
     // at Steps 2 or 3. goResult() will update the same contact via phone dedup.
-    if (step1UpsertFired.current) return;
+    if (step1UpsertFired.current) {
+      console.error('[S1 UPSERT] dedup guard already fired — skipping');
+      return;
+    }
     step1UpsertFired.current = true;
 
     const phone     = toE164(form.phone);
@@ -411,44 +414,53 @@ export default function GetSolarInfoPage() {
     const firstName = nameParts[0] ?? '';
     const lastName  = nameParts.slice(1).join(' ');
 
+    const s1Payload = {
+      locationId:            process.env.NEXT_PUBLIC_LOCATION_ID || 'GzCNeSvcjSom5bMGtmt6',
+      firstName,
+      lastName,
+      phone,
+      email:                 '',
+      address:               form.address,
+      is_owner:              '',
+      location_ok:           'yes',
+      bill_amount:           '',
+      bill_label:            '',
+      bill_midpoint:         '0',
+      tags:                  ['partial-lead-step1'],
+      utm_source:            (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_source'))   || '',
+      utm_medium:            (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_medium'))   || '',
+      utm_campaign:          (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_campaign')) || '',
+      utm_content:           (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_content'))  || '',
+      utm_term:              (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_term'))     || '',
+      formVersion:           'get-solar-info-v2',
+      submittedAt:           new Date().toISOString(),
+      source:                'website',
+      stage:                 'step1',
+      sms_consent:           'yes',
+      sms_consent_timestamp: new Date().toISOString(),
+      sms_consent_language:  'TCPA-v2-2026',
+      qualified:             false,
+    };
+
+    console.error('[S1 UPSERT] firing — phone:', phone, 'firstName:', firstName, 'lastName:', lastName);
+    console.error('[S1 UPSERT] full payload:', JSON.stringify(s1Payload));
+
     fetch('/api/submit-lead', {
       method : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body   : JSON.stringify({
-        locationId:            process.env.NEXT_PUBLIC_LOCATION_ID || 'GzCNeSvcjSom5bMGtmt6',
-        firstName,
-        lastName,
-        phone,
-        email:                 '',
-        address:               form.address,
-        // Qualification fields not yet captured — GHL will update these in goResult()
-        is_owner:              '',
-        location_ok:           'yes',
-        bill_amount:           '',
-        bill_label:            '',
-        bill_midpoint:         '0',
-        tags:                  ['partial-lead-step1'],
-        utm_source:            (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_source'))   || '',
-        utm_medium:            (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_medium'))   || '',
-        utm_campaign:          (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_campaign')) || '',
-        utm_content:           (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_content'))  || '',
-        utm_term:              (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('utm_term'))     || '',
-        formVersion:           'get-solar-info-v2',
-        submittedAt:           new Date().toISOString(),
-        source:                'website',
-        stage:                 'step1',
-        sms_consent:           'yes',
-        sms_consent_timestamp: new Date().toISOString(),
-        sms_consent_language:  'TCPA-v2-2026',
-        qualified:             false,
-      }),
+      body   : JSON.stringify(s1Payload),
     })
-      .then(r => r.json())
+      .then(async r => {
+        const text = await r.text();
+        console.error('[S1 UPSERT] response status:', r.status, 'body:', text);
+        try { return JSON.parse(text); } catch { return {}; }
+      })
       .then((data: { contactId?: string | null }) => {
+        console.error('[S1 UPSERT] contactId returned:', data.contactId ?? 'null/missing');
         if (data.contactId) setContactId(data.contactId);
       })
       .catch(err => {
-        console.error('[STEP1 FETCH FAILED]', err);
+        console.error('[S1 UPSERT] fetch threw:', err);
       });
   }
 
