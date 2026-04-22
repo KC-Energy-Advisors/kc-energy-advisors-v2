@@ -931,12 +931,12 @@ export default function GetSolarInfoPage() {
                   <div className="grid grid-cols-2 gap-2">
                     <ChoiceCard
                       selected={form.ownsHome === 'yes'}
-                      onClick={() => set('ownsHome', 'yes')}
+                      onClick={() => { console.error('[S2] ownsHome=yes'); setForm(prev => ({ ...prev, ownsHome: 'yes' })); }}
                       label="Yes, I own it"
                     />
                     <ChoiceCard
                       selected={form.ownsHome === 'no'}
-                      onClick={() => set('ownsHome', 'no')}
+                      onClick={() => { console.error('[S2] ownsHome=no'); setForm(prev => ({ ...prev, ownsHome: 'no' })); }}
                       label="No, I rent"
                     />
                   </div>
@@ -955,7 +955,7 @@ export default function GetSolarInfoPage() {
                       <ChoiceCard
                         key={opt.code}
                         selected={form.monthlyBill === opt.code}
-                        onClick={() => set('monthlyBill', opt.code)}
+                        onClick={() => { console.error('[S2] monthlyBill=' + opt.code); setForm(prev => ({ ...prev, monthlyBill: opt.code })); }}
                         label={opt.label}
                         badge={opt.badge}
                       />
@@ -976,7 +976,7 @@ export default function GetSolarInfoPage() {
                       <ChoiceCard
                         key={opt.code}
                         selected={form.roofType === opt.code}
-                        onClick={() => set('roofType', opt.code)}
+                        onClick={() => { console.error('[S2] roofType=' + opt.code); setForm(prev => ({ ...prev, roofType: opt.code })); }}
                         label={opt.label}
                       />
                     ))}
