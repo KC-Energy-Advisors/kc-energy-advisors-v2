@@ -1,13 +1,14 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import type { CalendarSlot } from '@/lib/types';
+import { PHONE_DISPLAY, PHONE_HREF } from '@/lib/constants';
 
 // ─────────────────────────────────────────────────────────────────
 //  Types — local to this page, not shared with other components
 // ─────────────────────────────────────────────────────────────────
 
 type FormStep  = 1 | 2 | 3;
-type PageState = 'form' | 'submitting' | 'booking' | 'booked' | 'disqualified';
+type PageState = 'form' | 'submitting' | 'submit-error' | 'booking' | 'booked' | 'disqualified';
 
 type BillCode    = '' | 'under-100' | '100-150' | '150-200' | '200-plus';
 type RoofCode    = '' | 'asphalt'   | 'metal'   | 'tile'    | 'unsure';
@@ -394,20 +395,40 @@ export default function GetSolarInfoPage() {
   const step3OK = form.timeline !== '';
 
   function goStep2() {
-    if (!step1OK) return;
+    console.log('[STEP1 CLICKED] goStep2 fired');
+
+    if (!step1OK) {
+      // Log exactly which field is blocking so it shows up in DevTools
+      console.log('[STEP1 BLOCKED]', {
+        step1OK,
+        name:              form.name,
+        nameLengthOK:      form.name.trim().length >= 2,
+        phone:             form.phone,
+        phoneDigits:       form.phone.replace(/\D/g, '').length,
+        phoneOK:           form.phone.replace(/\D/g, '').length >= 10,
+        consent:           form.consent,
+      });
+      return;
+    }
+
     setStep(2); // ← immediate — user is never blocked
 
     // ── Background partial upsert — non-blocking ──────────────────────────
     // Fires as soon as Step 1 is complete (name + phone + address + consent).
     // Captures this lead in GHL immediately so no data is lost if they drop off
     // at Steps 2 or 3. goResult() will update the same contact via phone dedup.
-    if (step1UpsertFired.current) return;
+    if (step1UpsertFired.current) {
+      console.log('[STEP1 FETCH SKIPPED] step1UpsertFired already true — dedup guard active');
+      return;
+    }
     step1UpsertFired.current = true;
 
     const phone     = toE164(form.phone);
     const nameParts = form.name.trim().split(/\s+/);
     const firstName = nameParts[0] ?? '';
     const lastName  = nameParts.slice(1).join(' ');
+
+    console.log('[STEP1 FETCH ABOUT TO FIRE]', { firstName, lastName, phone });
 
     fetch('/api/submit-lead', {
       method : 'POST',
@@ -442,16 +463,17 @@ export default function GetSolarInfoPage() {
         qualified:             false,
       }),
     })
-      .then(r => r.json())
+      .then(r => {
+        console.log('[STEP1 FETCH STARTED] response status:', r.status);
+        return r.json();
+      })
       .then((data: { contactId?: string | null }) => {
-        // Store contactId so goResult() can reference the same GHL record
+        console.log('[STEP1 FETCH COMPLETE] contactId:', data.contactId ?? 'null');
         if (data.contactId) setContactId(data.contactId);
       })
-      .catch(err =>
-        // Non-critical — goResult() will upsert the full record and GHL will
-        // dedup on phone number, so the lead is never lost even on failure.
-        console.warn('[GetSolarInfoPage] Step 1 partial upsert failed (non-critical):', err)
-      );
+      .catch(err => {
+        console.error('[STEP1 FETCH FAILED]', err);
+      });
   }
 
   function goStep3() {
@@ -538,20 +560,42 @@ export default function GetSolarInfoPage() {
         dev_mode?: boolean;
       };
 
-      if (!res.ok && !data.dev_mode) {
-        // Soft-fail: show booking anyway, contactId will be null so SlotPicker falls back to iframe
-        console.error('[GetSolarInfoPage] submit-lead failed:', data.error);
+      // ── Dev mode (no GHL env vars configured locally) ────────────
+      // Proceed to booking with no contactId so the dev flow is testable.
+      if (data.dev_mode) {
         setContactId(null);
-      } else {
-        setContactId(data.contactId ?? null);
+        setPageState('booking');
+        return;
       }
-    } catch (err) {
-      console.error('[GetSolarInfoPage] submit-lead network error:', err);
-      setContactId(null);
-    }
 
-    // Always transition to booking — even if submission failed, we show the picker
-    setPageState('booking');
+      // ── Hard failure — GHL webhook did not succeed ─────────────────
+      // The lead is NOT confirmed in GHL. Block transition and show retry.
+      // The user keeps all their form data; goResult() can be called again.
+      if (!res.ok) {
+        const msg = data.error || 'Something went wrong submitting your info. Please try again.';
+        console.error('[GetSolarInfoPage] submit-lead hard failure:', res.status, msg);
+        setSubmitError(msg);
+        setPageState('submit-error');
+        return;
+      }
+
+      // ── Soft success — GHL webhook succeeded ──────────────────────
+      // contactId may be null if the upsert call failed independently,
+      // but the lead IS captured in GHL via the webhook. SlotPicker's
+      // iframe fallback handles null contactId correctly.
+      setContactId(data.contactId ?? null);
+      setPageState('booking');
+
+    } catch (err) {
+      // ── Network / parse error ────────────────────────────────────
+      // Cannot confirm GHL received the lead. Block and surface retry.
+      const msg = err instanceof Error && err.name === 'AbortError'
+        ? 'Request timed out. Please check your connection and try again.'
+        : 'Network error. Please check your connection and try again.';
+      console.error('[GetSolarInfoPage] submit-lead network error:', err);
+      setSubmitError(msg);
+      setPageState('submit-error');
+    }
   }
 
   // ── DISQUALIFIED ─────────────────────────────────────────────
@@ -581,6 +625,55 @@ export default function GetSolarInfoPage() {
           >
             ← Back to home
           </a>
+        </div>
+      </PageShell>
+    );
+  }
+
+  // ── SUBMIT ERROR — GHL or network failure; user can retry ────────
+  // All form data is still in state. goResult() re-runs the full submit.
+  // Not a full-page redesign — matches disqualified screen structure.
+  if (pageState === 'submit-error') {
+    return (
+      <PageShell>
+        <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 py-20 text-center">
+          {/* Warning icon — reuses same circle style as disqualified screen */}
+          <div
+            className="w-14 h-14 rounded-full border border-white/[0.12] flex items-center justify-center mb-6"
+            style={{ background: 'rgba(255,255,255,0.04)' }}
+          >
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
+              <circle cx="11" cy="11" r="9" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5"/>
+              <path d="M11 7v5M11 15.5h.01" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </div>
+
+          <h2 className="text-display-sm font-black text-white mb-3">
+            Something went wrong.
+          </h2>
+
+          <p className="text-white/50 text-[15px] leading-relaxed max-w-[380px] mb-2">
+            We weren&rsquo;t able to reach our system right now.
+            Your information is saved — tap below to try again.
+          </p>
+
+          {/* Show specific error only if it adds user value */}
+          {submitError && (
+            <p className="text-white/30 text-[12px] mb-8 max-w-[380px]">{submitError}</p>
+          )}
+
+          {/* Primary retry — re-runs full goResult() with existing form state */}
+          <PrimaryBtn onClick={goResult}>
+            Try Again →
+          </PrimaryBtn>
+
+          {/* Phone escape hatch */}
+          <p className="mt-6 text-white/35 text-[13px]">
+            Or call us directly:{' '}
+            <a href={PHONE_HREF} className="text-white/60 underline hover:text-white/80 transition-colors">
+              {PHONE_DISPLAY}
+            </a>
+          </p>
         </div>
       </PageShell>
     );
