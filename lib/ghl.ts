@@ -120,7 +120,7 @@ export async function upsertGHLContact(params: {
     console.error('[GHL] upsertGHLContact extracted contactId:', contactId);
     return contactId;
   } catch {
-    console.error('[GHL] upsertGHLContact: could not parse response JSON:', rawText);
+    console.error('[GHL] upsertGHLContact: could not parse response JSON:', raw);
     return null;
   }
 }
