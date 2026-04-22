@@ -370,86 +370,6 @@ export default function GetSolarInfoPage() {
   // Prevents re-firing the Step 1 partial upsert if the user navigates
   // back to Step 1 and clicks Continue again. One upsert per session.
   const step1UpsertFired = useRef(false);
-  const step2Ref = useRef<HTMLDivElement>(null);
-
-  // ── DIAGNOSTIC: confirm latest code is loaded ─────────────────────────────
-  useEffect(() => {
-    console.log('[DIAG] GetSolarInfoPage MOUNTED — build v2026-04-21-C');
-  }, []);
-
-  // ── DOCUMENT-LEVEL CAPTURE LISTENER for Step 2 ────────────────────────────
-  // Attached to `document` rather than step2Ref so it survives any React
-  // reconciliation that might replace the step2 DOM node (e.g. the contactId
-  // state update from the background fetch triggers a re-render; if React
-  // creates a fresh node the element-level listener ends up orphaned on the
-  // detached old node, but the document-level listener always fires).
-  //
-  // Path 1 – direct hit: target or ancestor is [data-s2-field] → update state.
-  // Path 2 – coordinate hit: an invisible overlay intercepted the click but
-  //   the coordinates fall inside a step2 button rect → update state + log
-  //   the intercepting element so we can remove it later.
-  // Path 3 – miss inside step2 area: logs the actual target for diagnosis.
-  useEffect(() => {
-    if (step !== 2) return;
-    console.error('[S2 DOC] attaching document-level capture listener — build v2026-04-21-C');
-
-    const applyField = (field: string, value: string) => {
-      console.error('[S2 DOC APPLY]', field, '=', value);
-      if (field === 'ownsHome')    setForm(prev => ({ ...prev, ownsHome:    value as '' | 'yes' | 'no' }));
-      if (field === 'monthlyBill') setForm(prev => ({ ...prev, monthlyBill: value as BillCode }));
-      if (field === 'roofType')    setForm(prev => ({ ...prev, roofType:    value as RoofCode }));
-    };
-
-    const handler = (e: MouseEvent) => {
-      console.error('[S2 EVENT]', e.type, e.target, document.elementFromPoint(e.clientX, e.clientY));
-      const target = e.target as HTMLElement;
-
-      // ── Path 1: direct / bubbled hit ─────────────────────────────────────
-      const directBtn = target.closest?.('[data-s2-field]') as HTMLElement | null;
-      if (directBtn) {
-        applyField(directBtn.dataset.s2Field ?? '', directBtn.dataset.s2Value ?? '');
-        return;
-      }
-
-      // ── Path 2: coordinate match (overlay is blocking) ───────────────────
-      const el = step2Ref.current;
-      if (!el) return;
-      const allButtons = Array.from(el.querySelectorAll('[data-s2-field]'));
-      for (const btn of allButtons) {
-        const r = (btn as HTMLElement).getBoundingClientRect();
-        if (e.clientX >= r.left && e.clientX <= r.right &&
-            e.clientY >= r.top  && e.clientY <= r.bottom) {
-          const field = (btn as HTMLElement).dataset.s2Field ?? '';
-          const value = (btn as HTMLElement).dataset.s2Value ?? '';
-          console.error('[S2 DOC COORD] overlay intercepting click — target was:',
-            target.tagName,
-            target.id   || '(no-id)',
-            (target.className as string)?.substring?.(0, 60) || '(no-class)',
-          );
-          applyField(field, value);
-          return;
-        }
-      }
-
-      // ── Path 3: click was inside step2 area but no button matched ────────
-      const s2r = el.getBoundingClientRect();
-      if (s2r.width > 0 &&
-          e.clientX >= s2r.left && e.clientX <= s2r.right &&
-          e.clientY >= s2r.top  && e.clientY <= s2r.bottom) {
-        console.error('[S2 DOC MISSED] inside step2 area, no button. Target:',
-          target.tagName, target.id || '', (target.className as string)?.substring?.(0, 60) || '');
-      }
-    };
-
-    document.addEventListener('pointerdown', handler, true);
-    document.addEventListener('mousedown',   handler, true);
-    document.addEventListener('click',       handler, true);
-    return () => {
-      document.removeEventListener('pointerdown', handler, true);
-      document.removeEventListener('mousedown',   handler, true);
-      document.removeEventListener('click',       handler, true);
-    };
-  }, [step]);
 
   const set = <K extends keyof FormData>(key: K, value: FormData[K]) =>
     setForm(prev => ({ ...prev, [key]: value }));
@@ -475,21 +395,7 @@ export default function GetSolarInfoPage() {
   const step3OK = form.timeline !== '';
 
   function goStep2() {
-    console.log('[STEP1 CLICKED] goStep2 fired');
-
-    if (!step1OK) {
-      // Log exactly which field is blocking so it shows up in DevTools
-      console.log('[STEP1 BLOCKED]', {
-        step1OK,
-        name:              form.name,
-        nameLengthOK:      form.name.trim().length >= 2,
-        phone:             form.phone,
-        phoneDigits:       form.phone.replace(/\D/g, '').length,
-        phoneOK:           form.phone.replace(/\D/g, '').length >= 10,
-        consent:           form.consent,
-      });
-      return;
-    }
+    if (!step1OK) return;
 
     setStep(2); // ← immediate — user is never blocked
 
@@ -497,18 +403,13 @@ export default function GetSolarInfoPage() {
     // Fires as soon as Step 1 is complete (name + phone + address + consent).
     // Captures this lead in GHL immediately so no data is lost if they drop off
     // at Steps 2 or 3. goResult() will update the same contact via phone dedup.
-    if (step1UpsertFired.current) {
-      console.log('[STEP1 FETCH SKIPPED] step1UpsertFired already true — dedup guard active');
-      return;
-    }
+    if (step1UpsertFired.current) return;
     step1UpsertFired.current = true;
 
     const phone     = toE164(form.phone);
     const nameParts = form.name.trim().split(/\s+/);
     const firstName = nameParts[0] ?? '';
     const lastName  = nameParts.slice(1).join(' ');
-
-    console.log('[STEP1 FETCH ABOUT TO FIRE]', { firstName, lastName, phone });
 
     fetch('/api/submit-lead', {
       method : 'POST',
@@ -543,12 +444,8 @@ export default function GetSolarInfoPage() {
         qualified:             false,
       }),
     })
-      .then(r => {
-        console.log('[STEP1 FETCH STARTED] response status:', r.status);
-        return r.json();
-      })
+      .then(r => r.json())
       .then((data: { contactId?: string | null }) => {
-        console.log('[STEP1 FETCH COMPLETE] contactId:', data.contactId ?? 'null');
         if (data.contactId) setContactId(data.contactId);
       })
       .catch(err => {
@@ -557,12 +454,6 @@ export default function GetSolarInfoPage() {
   }
 
   function goStep3() {
-    console.error('[HARD DEBUG] STEP 2 CLICK', {
-      step2OK,
-      ownsHome:    form.ownsHome,
-      monthlyBill: form.monthlyBill,
-      roofType:    form.roofType,
-    });
     if (!step2OK) return;
     if (form.ownsHome === 'no') { setPageState('disqualified'); return; }
     setStep(3);
@@ -973,15 +864,6 @@ export default function GetSolarInfoPage() {
                 </div>
               </div>
 
-              {/* DIAGNOSTIC — fires on every render of Step 1 */}
-              {(() => {
-                console.log('[DIAG] Step1 btn rendering — step:1, disabled:', !step1OK, {
-                  nameLengthOK: form.name.trim().length >= 2,
-                  phoneOK:      form.phone.replace(/\D/g,'').length >= 10,
-                  consent:      form.consent,
-                });
-                return null;
-              })()}
               <PrimaryBtn onClick={goStep2} disabled={!step1OK}>
                 Continue →
               </PrimaryBtn>
@@ -993,12 +875,8 @@ export default function GetSolarInfoPage() {
 
           {/* ── STEP 2: Home qualification ────────────────────── */}
           {step === 2 && (
-            <div
-              ref={step2Ref}
-              style={{ position: 'relative', zIndex: 9999, pointerEvents: 'auto' }}
-              onKeyDown={stepEnter(goStep3, step2OK)}
-            >
-              <h2 className="text-[21px] font-black text-[#0f172a] mb-2">Quick home check [DEBUG LIVE]</h2>
+            <div className="animate-step-slide" onKeyDown={stepEnter(goStep3, step2OK)}>
+              <h2 className="text-[21px] font-black text-[#0f172a] mb-2">Quick home check</h2>
               <p className="text-[13px] text-[#4b5563] mb-8">
                 Helps us know if solar is a fit before we talk.
               </p>
@@ -1010,20 +888,14 @@ export default function GetSolarInfoPage() {
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      data-s2-field="ownsHome"
-                      data-s2-value="yes"
-                      onClick={(e) => { console.error('[S2 CLICK WORKING] ownsHome=yes', e.type); setForm(prev => ({ ...prev, ownsHome: 'yes' })); }}
-                      style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+                      onClick={() => setForm(prev => ({ ...prev, ownsHome: 'yes' }))}
                       className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.ownsHome === 'yes' ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
                     >
                       <span className="text-[13.5px] font-semibold block leading-tight">Yes, I own it</span>
                     </button>
                     <button
                       type="button"
-                      data-s2-field="ownsHome"
-                      data-s2-value="no"
-                      onClick={() => { console.error('[S2 CLICK] ownsHome=no'); setForm(prev => ({ ...prev, ownsHome: 'no' })); }}
-                      style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+                      onClick={() => setForm(prev => ({ ...prev, ownsHome: 'no' }))}
                       className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.ownsHome === 'no' ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
                     >
                       <span className="text-[13.5px] font-semibold block leading-tight">No, I rent</span>
@@ -1044,13 +916,10 @@ export default function GetSolarInfoPage() {
                       <button
                         key={opt.code}
                         type="button"
-                        data-s2-field="monthlyBill"
-                        data-s2-value={opt.code}
-                        onClick={() => { console.error('[S2 CLICK] monthlyBill=' + opt.code); setForm(prev => ({ ...prev, monthlyBill: opt.code })); }}
-                        style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+                        onClick={() => setForm(prev => ({ ...prev, monthlyBill: opt.code }))}
                         className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.monthlyBill === opt.code ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
                       >
-                        <span className="flex items-center justify-between gap-3" style={{ pointerEvents: 'none' }}>
+                        <span className="flex items-center justify-between gap-3">
                           <span className="text-[13.5px] font-semibold leading-tight">{opt.label}</span>
                           {opt.badge && (
                             <span className="text-[10px] font-bold uppercase tracking-wider text-brand-gold bg-brand-gold/10 border border-brand-gold/20 px-2 py-0.5 rounded-full flex-shrink-0">{opt.badge}</span>
@@ -1074,52 +943,16 @@ export default function GetSolarInfoPage() {
                       <button
                         key={opt.code}
                         type="button"
-                        data-s2-field="roofType"
-                        data-s2-value={opt.code}
-                        onClick={() => { console.error('[S2 CLICK] roofType=' + opt.code); setForm(prev => ({ ...prev, roofType: opt.code })); }}
-                        style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+                        onClick={() => setForm(prev => ({ ...prev, roofType: opt.code }))}
                         className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.roofType === opt.code ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
                       >
-                        <span className="text-[13.5px] font-semibold leading-tight" style={{ pointerEvents: 'none' }}>{opt.label}</span>
+                        <span className="text-[13.5px] font-semibold leading-tight">{opt.label}</span>
                       </button>
                     ))}
                   </div>
                 </div>
               </div>
 
-              {/* ── VISUAL PROOF MARKER — remove after diagnosis ─────── */}
-              <div style={{ background: '#dc2626', color: '#ffffff', fontWeight: 700, fontSize: '16px', width: '100%', padding: '14px', marginBottom: '16px', borderRadius: '6px', textAlign: 'center' }}>
-                LIVE STEP 2 DEBUG MARKER
-              </div>
-              {/* ── END VISUAL PROOF MARKER ──────────────────────────── */}
-
-              {/* ── HARD DEBUG BANNER — remove after diagnosis ──────── */}
-              {(() => {
-                console.error('[HARD DEBUG] STEP 2 RENDER', {
-                  ownsHome:    form.ownsHome,
-                  monthlyBill: form.monthlyBill,
-                  roofType:    form.roofType,
-                  step2OK,
-                });
-                return null;
-              })()}
-              <div style={{
-                background:   '#dc2626',
-                color:        '#ffffff',
-                borderRadius: '8px',
-                padding:      '12px 16px',
-                marginBottom: '16px',
-                fontSize:     '13px',
-                fontWeight:   700,
-                lineHeight:   1.6,
-              }}>
-                DEBUG STEP 2 LIVE<br />
-                ownsHome: {form.ownsHome || '(empty)'}<br />
-                monthlyBill: {form.monthlyBill || '(empty)'}<br />
-                roofType: {form.roofType || '(empty)'}<br />
-                step2OK: {step2OK ? 'true' : 'false'}
-              </div>
-              {/* ── END HARD DEBUG BANNER ────────────────────────────── */}
               <PrimaryBtn onClick={goStep3} disabled={!step2OK}>
                 Continue →
               </PrimaryBtn>
