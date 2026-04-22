@@ -111,20 +111,13 @@ export async function upsertGHLContact(params: {
   }
 
   try {
-    const data = JSON.parse(raw) as {
-      contact?:   { id?: string };
-      id?:        string;
-      data?:      { id?: string };
-      contactId?: string;
-    };
-    // Check all known GHL response shapes across API versions
+    const data = JSON.parse(raw);
+    console.error('[GHL RAW RESPONSE]', data);
     const contactId =
       data?.contact?.id ||
       data?.id ||
-      data?.data?.id ||
-      data?.contactId ||
       null;
-    console.error('[GHL] upsertGHLContact extracted contactId:', contactId);
+    console.error('[GHL CONTACT ID]', contactId);
     return contactId;
   } catch {
     console.error('[GHL] upsertGHLContact: could not parse response JSON:', raw);
