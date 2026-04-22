@@ -59,13 +59,14 @@ export async function upsertGHLContact(params: {
   phone:     string;  // E.164
   email:     string;
   tags?:     string[];
+  address?:  string;  // full address string; mapped to address1 in GHL
 }): Promise<string | null> {
   if (!GHL_API_KEY) {
-    console.warn('[GHL] upsertGHLContact: GHL_API_KEY not set');
+    console.error('[GHL] upsertGHLContact: GHL_API_KEY not set — cannot upsert');
     return null;
   }
 
-  const body = {
+  const body: Record<string, unknown> = {
     locationId: GHL_LOCATION_ID,
     firstName:  params.firstName,
     lastName:   params.lastName,
@@ -73,6 +74,13 @@ export async function upsertGHLContact(params: {
     email:      params.email,
     tags:       params.tags ?? [],
   };
+
+  // Map free-text address to GHL's address1 field
+  if (params.address) {
+    body.address1 = params.address;
+  }
+
+  console.error('[GHL] upsertGHLContact sending:', JSON.stringify(body));
 
   let res: Response;
   try {
@@ -87,18 +95,26 @@ export async function upsertGHLContact(params: {
     return null;
   }
 
+  const rawText = await res.text().catch(() => '');
+  console.error(`[GHL] upsertGHLContact raw response — status: ${res.status} body: ${rawText}`);
+
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    console.error(`[GHL] upsertGHLContact failed: ${res.status} — ${text}`);
+    console.error(`[GHL] upsertGHLContact failed: ${res.status} — ${rawText}`);
     return null;
   }
 
   try {
-    const data = await res.json() as { contact?: { id?: string }; id?: string };
-    // GHL returns { contact: { id: '...' } } or { id: '...' } depending on version
-    return data?.contact?.id ?? data?.id ?? null;
+    const data = JSON.parse(rawText) as {
+      contact?: { id?: string };
+      id?:      string;
+    };
+    // GHL v2021-07-28 returns { contact: { id: '...' } }
+    // Some older versions return { id: '...' } at root
+    const contactId = data?.contact?.id ?? data?.id ?? null;
+    console.error('[GHL] upsertGHLContact extracted contactId:', contactId);
+    return contactId;
   } catch {
-    console.error('[GHL] upsertGHLContact: could not parse response JSON');
+    console.error('[GHL] upsertGHLContact: could not parse response JSON:', rawText);
     return null;
   }
 }
