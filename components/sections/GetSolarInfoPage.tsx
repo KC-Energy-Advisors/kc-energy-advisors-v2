@@ -929,12 +929,24 @@ export default function GetSolarInfoPage() {
                 <div>
                   <FieldLabel>Do you own the home?</FieldLabel>
                   <div className="grid grid-cols-2 gap-2">
-                    <div onClick={() => { console.error('[S2 CLICK] ownsHome yes'); setForm(prev => ({ ...prev, ownsHome: 'yes' })); }} style={{ cursor: 'pointer' }}>
-                      <ChoiceCard selected={form.ownsHome === 'yes'} label="Yes, I own it" onClick={() => {}} />
-                    </div>
-                    <div onClick={() => { console.error('[S2 CLICK] ownsHome no'); setForm(prev => ({ ...prev, ownsHome: 'no' })); }} style={{ cursor: 'pointer' }}>
-                      <ChoiceCard selected={form.ownsHome === 'no'} label="No, I rent" onClick={() => {}} />
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { console.error('[S2 CLICK] ownsHome=yes'); setForm(prev => ({ ...prev, ownsHome: 'yes' })); }}
+                      className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.ownsHome === 'yes' ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div><span className="text-[13.5px] font-semibold block leading-tight">Yes, I own it</span></div>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { console.error('[S2 CLICK] ownsHome=no'); setForm(prev => ({ ...prev, ownsHome: 'no' })); }}
+                      className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.ownsHome === 'no' ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div><span className="text-[13.5px] font-semibold block leading-tight">No, I rent</span></div>
+                      </div>
+                    </button>
                   </div>
                 </div>
 
@@ -948,9 +960,19 @@ export default function GetSolarInfoPage() {
                       { code: '150-200',   label: '$150 – $200 / month',  badge: 'Strong fit' },
                       { code: '200-plus',  label: '$200+ / month',        badge: 'Priority'  },
                     ] as { code: BillCode; label: string; badge?: string }[]).map(opt => (
-                      <div key={opt.code} onClick={() => { console.error('[S2 CLICK] monthlyBill=' + opt.code); setForm(prev => ({ ...prev, monthlyBill: opt.code })); }} style={{ cursor: 'pointer' }}>
-                        <ChoiceCard selected={form.monthlyBill === opt.code} label={opt.label} badge={opt.badge} onClick={() => {}} />
-                      </div>
+                      <button
+                        key={opt.code}
+                        type="button"
+                        onClick={() => { console.error('[S2 CLICK] monthlyBill=' + opt.code); setForm(prev => ({ ...prev, monthlyBill: opt.code })); }}
+                        className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.monthlyBill === opt.code ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div><span className="text-[13.5px] font-semibold block leading-tight">{opt.label}</span></div>
+                          {opt.badge && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-gold bg-brand-gold/10 border border-brand-gold/20 px-2 py-0.5 rounded-full flex-shrink-0">{opt.badge}</span>
+                          )}
+                        </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -965,9 +987,16 @@ export default function GetSolarInfoPage() {
                       { code: 'tile',    label: 'Tile'            },
                       { code: 'unsure',  label: 'Not sure'        },
                     ] as { code: RoofCode; label: string }[]).map(opt => (
-                      <div key={opt.code} onClick={() => { console.error('[S2 CLICK] roofType=' + opt.code); setForm(prev => ({ ...prev, roofType: opt.code })); }} style={{ cursor: 'pointer' }}>
-                        <ChoiceCard selected={form.roofType === opt.code} label={opt.label} onClick={() => {}} />
-                      </div>
+                      <button
+                        key={opt.code}
+                        type="button"
+                        onClick={() => { console.error('[S2 CLICK] roofType=' + opt.code); setForm(prev => ({ ...prev, roofType: opt.code })); }}
+                        className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.roofType === opt.code ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div><span className="text-[13.5px] font-semibold block leading-tight">{opt.label}</span></div>
+                        </div>
+                      </button>
                     ))}
                   </div>
                 </div>
