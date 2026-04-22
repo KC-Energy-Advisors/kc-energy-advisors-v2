@@ -413,7 +413,7 @@ export default function GetSolarInfoPage() {
       // ── Path 2: coordinate match (overlay is blocking) ───────────────────
       const el = step2Ref.current;
       if (!el) return;
-      const allButtons = el.querySelectorAll('[data-s2-field]');
+      const allButtons = Array.from(el.querySelectorAll('[data-s2-field]'));
       for (const btn of allButtons) {
         const r = (btn as HTMLElement).getBoundingClientRect();
         if (e.clientX >= r.left && e.clientX <= r.right &&
