@@ -115,7 +115,11 @@ export async function upsertGHLContact(params: {
     console.error('[GHL RAW RESPONSE]', data);
     const contactId =
       data?.contact?.id ||
+      data?.contact?.contactId ||
       data?.id ||
+      data?.contactId ||
+      data?.data?.id ||
+      data?.data?.contact?.id ||
       null;
     console.error('[GHL CONTACT ID]', contactId);
     return contactId;
