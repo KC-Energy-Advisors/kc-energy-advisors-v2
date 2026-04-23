@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { CalendarSlot } from '@/lib/types';
 import { PHONE_DISPLAY, PHONE_HREF } from '@/lib/constants';
+import SlotPicker from './SlotPicker';
 
 // ─────────────────────────────────────────────────────────────────
 //  Types — local to this page, not shared with other components
@@ -645,6 +646,20 @@ export default function GetSolarInfoPage() {
     }
   }
 
+  // ── Booking callbacks — passed down to SlotPicker ─────────────
+  // SlotPicker handles its own inline errors; these fire only on final outcomes.
+  function handleBooked(slot: CalendarSlot) {
+    console.error('[BOOKING] appointment confirmed — slot:', slot.startTime);
+    setBookedSlot(slot);
+    setPageState('booked');
+  }
+
+  function handleBookingFatalError(msg: string) {
+    console.error('[BOOKING] fatal error escalated to parent:', msg);
+    setSubmitError(msg);
+    setPageState('submit-error');
+  }
+
   // ── DISQUALIFIED ─────────────────────────────────────────────
   if (pageState === 'disqualified') {
     return (
@@ -825,8 +840,6 @@ export default function GetSolarInfoPage() {
       );
     }
 
-    const phone = toE164(form.phone);
-
     return (
       <div style={{ display: 'block', width: '100%', background: '#0C1322', margin: 0, padding: 0 }}>
         <div style={{ display: 'block', width: '100%', paddingTop: '24px', paddingBottom: '64px' }}>
@@ -849,8 +862,8 @@ export default function GetSolarInfoPage() {
             {' '}<span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: 400 }}>Pick a time below.</span>
           </p>
 
-          {/* Slot picker card */}
-          <div style={{ width: '100%', maxWidth: '640px', margin: '0 auto', padding: '0 16px' }}>
+          {/* Custom slot picker — contacts GHL directly via contactId, no iframe */}
+          <div style={{ width: '100%', maxWidth: '580px', margin: '0 auto', padding: '0 16px' }}>
             <div
               className="w-full rounded-2xl border border-white/[0.08]"
               style={{
@@ -859,11 +872,11 @@ export default function GetSolarInfoPage() {
                 padding    : '28px 24px',
               }}
             >
-              {/* SlotPicker (Phase 2) — temporarily replaced with GHL iframe until SlotPicker is deployed */}
-              <iframe
-                src={`https://api.leadconnectorhq.com/widget/booking/0fu9WVucPWOYhM0tSEGE?name=${encodeURIComponent(form.name)}&phone=${encodeURIComponent(phone)}`}
-                style={{ width: '100%', minHeight: 520, border: 'none', borderRadius: 8, display: 'block' }}
-                title="Schedule your free solar consultation"
+              <SlotPicker
+                contactId={resolvedContactId}
+                name={form.name}
+                onBooked={handleBooked}
+                onFatalError={handleBookingFatalError}
               />
             </div>
           </div>
