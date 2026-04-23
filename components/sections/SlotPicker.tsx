@@ -103,7 +103,7 @@ const CSS = `
     background: rgba(255,255,255,0.16) !important;
     color: rgba(255,255,255,0.9) !important;
   }
-  .kc-arrow-btn:active { transform: translateY(-50%) scale(0.88) !important; }
+  .kc-arrow-btn:active { transform: scale(0.88) !important; }
 
   /* Confirm button */
   .kc-confirm-btn:hover:not(:disabled) {
@@ -475,20 +475,21 @@ export default function SlotPicker({
         </p>
 
         {/* ── Date strip ────────────────────────────────────────── */}
-        <div style={{ position: 'relative', marginBottom: 52 }}>
+        {/*
+          Flex-row layout: arrows are siblings of the scroll track, never
+          overlapping it. The track's overflow:hidden cleanly clips cards at
+          both edges. No paddingLeft offset hack needed.
+        */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 52 }}>
 
-          {/* Left arrow */}
+          {/* Left arrow — outside the scroll track */}
           <button
             type="button"
             aria-label="Scroll dates left"
             className="kc-arrow-btn"
             onClick={() => scrollDates('left')}
             style={{
-              position      : 'absolute',
-              left          : -8,
-              top           : '50%',
-              transform     : 'translateY(-50%)',
-              zIndex        : 2,
+              flexShrink    : 0,
               width         : 48,
               height        : 48,
               borderRadius  : '50%',
@@ -501,7 +502,6 @@ export default function SlotPicker({
               cursor        : 'pointer',
               transition    : 'background 0.15s, color 0.15s',
               backdropFilter: 'blur(12px)',
-              flexShrink    : 0,
             }}
           >
             <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden>
@@ -509,100 +509,98 @@ export default function SlotPicker({
             </svg>
           </button>
 
-          {/* Left fade */}
-          <div style={{
-            position: 'absolute', left: 36, top: 0, bottom: 0, width: 36,
-            background: 'linear-gradient(to right, rgba(8,15,30,0.96), transparent)',
-            zIndex: 1, pointerEvents: 'none',
-          }} />
+          {/* Scroll track — clips cards, holds the right-edge fade */}
+          <div style={{ flex: 1, minWidth: 0, position: 'relative', overflow: 'hidden' }}>
 
-          {/* Scrollable strip */}
-          <div
-            ref={dateStripRef}
-            className="kc-date-strip"
-            style={{ overflowX: 'auto', paddingLeft: 44, paddingRight: 44, paddingBottom: 4 }}
-          >
-            <div style={{ display: 'flex', gap: 18, width: 'max-content' }}>
-              {dates.map(d => {
-                const { weekday, monthDay } = parseDateKey(d);
-                const on = d === selDate;
-                return (
-                  <button
-                    key={d}
-                    type="button"
-                    className={`kc-date-card${on ? ' kc-date-on' : ''}`}
-                    onClick={() => { setSelDate(d); setSelSlot(null); }}
-                    style={{
-                      flexShrink  : 0,
-                      width       : 120,
-                      padding     : '24px 0 22px',
-                      borderRadius: 22,
-                      border      : on
-                        ? '2px solid rgba(59,130,246,0.92)'
-                        : '1px solid rgba(255,255,255,0.1)',
-                      background  : on
-                        ? 'rgba(59,130,246,0.22)'
-                        : 'rgba(255,255,255,0.05)',
-                      cursor      : 'pointer',
-                      textAlign   : 'center',
-                      transition  : 'all 0.18s',
-                      boxShadow   : on
-                        ? '0 0 0 8px rgba(59,130,246,0.14), 0 10px 32px rgba(0,0,0,0.36)'
-                        : '0 2px 12px rgba(0,0,0,0.22)',
-                    }}
-                  >
-                    <span
-                      className="kc-wd"
+            {/* Right-edge fade — signals more cards to the right */}
+            <div style={{
+              position      : 'absolute',
+              right         : 0,
+              top           : 0,
+              bottom        : 0,
+              width         : 40,
+              background    : 'linear-gradient(to left, rgba(8,15,30,0.96), transparent)',
+              zIndex        : 1,
+              pointerEvents : 'none',
+            }} />
+
+            {/* Scrollable strip */}
+            <div
+              ref={dateStripRef}
+              className="kc-date-strip"
+              style={{ overflowX: 'auto', paddingBottom: 4 }}
+            >
+              <div style={{ display: 'flex', gap: 18, width: 'max-content' }}>
+                {dates.map(d => {
+                  const { weekday, monthDay } = parseDateKey(d);
+                  const on = d === selDate;
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      className={`kc-date-card${on ? ' kc-date-on' : ''}`}
+                      onClick={() => { setSelDate(d); setSelSlot(null); }}
                       style={{
-                        display      : 'block',
-                        fontSize     : 12,
-                        fontWeight   : 700,
-                        letterSpacing: '0.12em',
-                        color        : on ? '#7dd3fc' : 'rgba(255,255,255,0.26)',
-                        marginBottom : 10,
-                        transition   : 'color 0.15s',
+                        flexShrink  : 0,
+                        width       : 120,
+                        padding     : '24px 0 22px',
+                        borderRadius: 22,
+                        border      : on
+                          ? '2px solid rgba(59,130,246,0.92)'
+                          : '1px solid rgba(255,255,255,0.1)',
+                        background  : on
+                          ? 'rgba(59,130,246,0.22)'
+                          : 'rgba(255,255,255,0.05)',
+                        cursor      : 'pointer',
+                        textAlign   : 'center',
+                        transition  : 'all 0.18s',
+                        boxShadow   : on
+                          ? '0 0 0 8px rgba(59,130,246,0.14), 0 10px 32px rgba(0,0,0,0.36)'
+                          : '0 2px 12px rgba(0,0,0,0.22)',
                       }}
                     >
-                      {weekday}
-                    </span>
-                    <span
-                      className="kc-day"
-                      style={{
-                        display   : 'block',
-                        fontSize  : 18,
-                        fontWeight: on ? 800 : 400,
-                        color     : on ? 'white' : 'rgba(255,255,255,0.46)',
-                        lineHeight: 1.2,
-                        transition: 'color 0.15s',
-                      }}
-                    >
-                      {monthDay}
-                    </span>
-                  </button>
-                );
-              })}
+                      <span
+                        className="kc-wd"
+                        style={{
+                          display      : 'block',
+                          fontSize     : 12,
+                          fontWeight   : 700,
+                          letterSpacing: '0.12em',
+                          color        : on ? '#7dd3fc' : 'rgba(255,255,255,0.26)',
+                          marginBottom : 10,
+                          transition   : 'color 0.15s',
+                        }}
+                      >
+                        {weekday}
+                      </span>
+                      <span
+                        className="kc-day"
+                        style={{
+                          display   : 'block',
+                          fontSize  : 18,
+                          fontWeight: on ? 800 : 400,
+                          color     : on ? 'white' : 'rgba(255,255,255,0.46)',
+                          lineHeight: 1.2,
+                          transition: 'color 0.15s',
+                        }}
+                      >
+                        {monthDay}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          {/* Right fade */}
-          <div style={{
-            position: 'absolute', right: 36, top: 0, bottom: 0, width: 36,
-            background: 'linear-gradient(to left, rgba(8,15,30,0.96), transparent)',
-            zIndex: 1, pointerEvents: 'none',
-          }} />
-
-          {/* Right arrow */}
+          {/* Right arrow — outside the scroll track */}
           <button
             type="button"
             aria-label="Scroll dates right"
             className="kc-arrow-btn"
             onClick={() => scrollDates('right')}
             style={{
-              position      : 'absolute',
-              right         : -8,
-              top           : '50%',
-              transform     : 'translateY(-50%)',
-              zIndex        : 2,
+              flexShrink    : 0,
               width         : 48,
               height        : 48,
               borderRadius  : '50%',
@@ -615,7 +613,6 @@ export default function SlotPicker({
               cursor        : 'pointer',
               transition    : 'background 0.15s, color 0.15s',
               backdropFilter: 'blur(12px)',
-              flexShrink    : 0,
             }}
           >
             <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden>
