@@ -4,6 +4,9 @@ import Nav              from '@/components/layout/Nav';
 import Footer           from '@/components/layout/Footer';
 import GetSolarInfoPage from '@/components/sections/GetSolarInfoPage';
 
+// SERVER-SIDE MARKER — appears in Vercel function logs, not browser console
+console.error('🔥 get-solar-info/page.tsx IS RUNNING (server) 🔥');
+
 export const metadata: Metadata = {
   title: 'See If Solar Makes Sense For Your Home',
   description:

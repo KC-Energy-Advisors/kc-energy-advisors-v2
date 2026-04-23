@@ -360,6 +360,8 @@ const BILL_META: Record<string, { label: string; midpoint: number }> = {
 // ─────────────────────────────────────────────────────────────────
 
 export default function GetSolarInfoPage() {
+  console.error('🔥 COMPONENT: GetSolarInfoPage IS RUNNING 🔥');
+
   const [pageState,   setPageState]   = useState<PageState>('form');
   const [step,        setStep]        = useState<FormStep>(1);
   const [form,        setForm]        = useState<FormData>(EMPTY_FORM);
