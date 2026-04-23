@@ -373,9 +373,12 @@ export default function GetSolarInfoPage() {
 
   // Wrapper: keeps state + ref in lockstep.
   const setContactIdSafe = (id: string | null) => {
-    console.error('[FUNNEL] setContactIdSafe called with:', id ?? 'null');
+    console.error('[FUNNEL] setContactIdSafe RECEIVED:', id);
+    console.log('[FUNNEL] setContactIdSafe RECEIVED:', id);
     contactIdRef.current = id;
+    console.error('[FUNNEL] ref set to:', contactIdRef.current);
     setContactId(id);
+    console.error('[FUNNEL] setContactId(id) called — React will re-render');
   };
 
   console.error('[FUNNEL] render — contactId state:', contactId, '| ref:', contactIdRef.current);
@@ -482,15 +485,12 @@ export default function GetSolarInfoPage() {
       })
       .then((data: { contactId?: string | null; success?: boolean; ghl_ok?: boolean }) => {
         console.error('[S1 UPSERT] full parsed response:', JSON.stringify(data));
-        console.error('[S1 UPSERT] data.contactId raw value:', data.contactId);
-        console.error('[S1 UPSERT] typeof data.contactId:', typeof data.contactId);
-        if (data.contactId) {
-          console.error('[FUNNEL] setting contactId via setContactIdSafe:', data.contactId);
-          setContactIdSafe(data.contactId);
-          console.error('[FUNNEL] after setContactIdSafe call — ref is now:', contactIdRef.current);
-        } else {
-          console.error('[FUNNEL] contactId is falsy — NOT calling setContactIdSafe. Value was:', data.contactId);
-        }
+        const extractedId = data.contactId ?? null;
+        console.error('[FUNNEL] extracted contactId:', extractedId);
+        console.log('[FUNNEL] extracted contactId:', extractedId);
+        console.error('[FUNNEL] calling setContactIdSafe unconditionally with:', extractedId);
+        setContactIdSafe(extractedId);
+        console.error('[FUNNEL] after setContactIdSafe — ref is now:', contactIdRef.current);
       })
       .catch(err => {
         console.error('[S1 UPSERT] fetch threw:', err);
