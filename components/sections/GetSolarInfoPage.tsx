@@ -1107,11 +1107,11 @@ export default function GetSolarInfoPage() {
 
               <PrimaryBtn
                 onClick={goResult}
-                disabled={!step3OK || !contactId || pageState === 'submitting'}
+                disabled={!step3OK || !contactId}
               >
-                {pageState === 'submitting' ? 'Submitting…' : 'See My Options →'}
+                See My Options →
               </PrimaryBtn>
-              {!contactId && pageState !== 'submitting' && (
+              {!contactId && (
                 <p className="text-center text-[11px] text-[#9ca3af] mt-2">
                   Setting up your profile…
                 </p>
