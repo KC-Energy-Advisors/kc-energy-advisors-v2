@@ -60,7 +60,9 @@ const CSS = `
   @keyframes kc-pulse  { 0%,100%{opacity:.18} 50%{opacity:.44} }
   @keyframes kc-spin   { to { transform: rotate(360deg); } }
   @keyframes kc-fadein { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes kc-dot    { 0%,100%{opacity:.6;transform:scale(1)} 50%{opacity:1;transform:scale(1.25)} }
+  @keyframes kc-pop    { 0%{opacity:0;transform:scale(0.96) translateY(6px)} 65%{transform:scale(1.015) translateY(0)} 100%{opacity:1;transform:scale(1) translateY(0)} }
+  @keyframes kc-dot    { 0%,100%{opacity:.55;transform:scale(1)} 50%{opacity:1;transform:scale(1.3)} }
+  @keyframes kc-slot-in { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:none} }
 
   /* Date strip scrollbar suppression + touch scroll */
   .kc-date-strip {
@@ -77,20 +79,21 @@ const CSS = `
   /* Date card hover (unselected only) */
   .kc-date-card:not(.kc-date-on):hover {
     background: rgba(59,130,246,0.1) !important;
-    border-color: rgba(59,130,246,0.3) !important;
+    border-color: rgba(59,130,246,0.28) !important;
   }
   .kc-date-card:not(.kc-date-on):hover .kc-wd  { color: #93c5fd !important; }
-  .kc-date-card:not(.kc-date-on):hover .kc-day { color: rgba(255,255,255,0.88) !important; }
+  .kc-date-card:not(.kc-date-on):hover .kc-day { color: rgba(255,255,255,0.85) !important; }
 
-  /* Time button */
-  .kc-time-btn:hover  {
-    background: rgba(59,130,246,0.22) !important;
-    border-color: rgba(59,130,246,0.55) !important;
+  /* Time button — stagger in on mount, lift on hover */
+  .kc-time-btn { animation: kc-slot-in 0.18s ease both; }
+  .kc-time-btn:hover {
+    background: rgba(59,130,246,0.2) !important;
+    border-color: rgba(59,130,246,0.5) !important;
     color: white !important;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(37,99,235,0.22) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 18px rgba(37,99,235,0.26) !important;
   }
-  .kc-time-btn:active { transform: translateY(0) scale(0.97) !important; }
+  .kc-time-btn:active { transform: translateY(0) scale(0.96) !important; transition-duration: 0.07s !important; }
 
   /* Responsive time grid: 3 cols on narrow screens */
   @media (max-width: 380px) {
@@ -102,24 +105,30 @@ const CSS = `
     background: rgba(255,255,255,0.14) !important;
     color: rgba(255,255,255,0.9) !important;
   }
-  .kc-arrow-btn:active { transform: translateY(-50%) scale(0.9) !important; }
+  .kc-arrow-btn:active { transform: translateY(-50%) scale(0.88) !important; }
 
   /* Confirm button */
   .kc-confirm-btn:hover:not(:disabled) {
     background: #1d4ed8 !important;
-    box-shadow: 0 12px 44px rgba(37,99,235,0.62) !important;
-    transform: translateY(-1px);
+    box-shadow: 0 14px 48px rgba(37,99,235,0.66) !important;
+    transform: translateY(-2px) !important;
   }
-  .kc-confirm-btn:active:not(:disabled) { transform: translateY(0) scale(0.985) !important; }
+  .kc-confirm-btn:active:not(:disabled) { transform: translateY(0) scale(0.982) !important; transition-duration: 0.08s !important; }
 
   /* Back link */
-  .kc-back-btn:hover { color: rgba(255,255,255,0.72) !important; }
+  .kc-back-btn:hover { color: rgba(255,255,255,0.7) !important; }
 
-  /* Section fade-in */
+  /* Section animations */
   .kc-fadein { animation: kc-fadein 0.24s ease both; }
+  .kc-pop    { animation: kc-pop 0.3s cubic-bezier(0.34,1.4,0.64,1) both; }
 
   /* Availability dot pulse */
-  .kc-avail-dot { animation: kc-dot 2.4s ease-in-out infinite; }
+  .kc-avail-dot { animation: kc-dot 2.6s ease-in-out infinite; }
+
+  /* Trust line checkmarks */
+  .kc-trust { display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:wrap; }
+  .kc-trust-item { display:flex; align-items:center; gap:5px; color:rgba(255,255,255,0.28); font-size:12px; white-space:nowrap; }
+  .kc-trust-check { color:rgba(74,222,128,0.7); font-size:11px; }
 `;
 
 // ─────────────────────────────────────────────────────────────────
@@ -413,6 +422,22 @@ export default function SlotPicker({
       <div className="kc-fadein" style={{ paddingTop: 4 }}>
         <style>{CSS}</style>
 
+        {/* ── Identity anchor ───────────────────────────────────── */}
+        <div style={{ marginBottom: 22 }}>
+          <p style={{
+            color        : 'rgba(255,255,255,0.78)',
+            fontSize     : 15,
+            fontWeight   : 600,
+            letterSpacing: '-0.01em',
+            marginBottom : 3,
+          }}>
+            Your consultation with Michael
+          </p>
+          <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: 12, fontWeight: 400 }}>
+            Serving homeowners across the Kansas City area
+          </p>
+        </div>
+
         {/* ── Availability badge ────────────────────────────────── */}
         <div style={{
           display    : 'flex',
@@ -432,8 +457,8 @@ export default function SlotPicker({
               display     : 'block',
             }}
           />
-          <span style={{ color: 'rgba(255,255,255,0.46)', fontSize: 13 }}>
-            {dates.length} day{dates.length !== 1 ? 's' : ''} available — free 30-min consultation, no obligation
+          <span style={{ color: 'rgba(255,255,255,0.44)', fontSize: 13 }}>
+            Spots fill quickly — {dates.length} day{dates.length !== 1 ? 's' : ''} still open
           </span>
         </div>
 
@@ -534,7 +559,7 @@ export default function SlotPicker({
                         fontSize     : 10,
                         fontWeight   : 700,
                         letterSpacing: '0.1em',
-                        color        : on ? '#7dd3fc' : 'rgba(255,255,255,0.28)',
+                        color        : on ? '#7dd3fc' : 'rgba(255,255,255,0.2)',
                         marginBottom : 5,
                         transition   : 'color 0.15s',
                       }}
@@ -546,10 +571,10 @@ export default function SlotPicker({
                       style={{
                         display   : 'block',
                         fontSize  : 13.5,
-                        fontWeight: on ? 800 : 500,
-                        color     : on ? 'white' : 'rgba(255,255,255,0.52)',
+                        fontWeight: on ? 800 : 400,
+                        color     : on ? 'white' : 'rgba(255,255,255,0.38)',
                         lineHeight: 1.3,
-                        transition: 'color 0.15s, font-weight 0.15s',
+                        transition: 'color 0.15s',
                       }}
                     >
                       {monthDay}
@@ -632,36 +657,47 @@ export default function SlotPicker({
                   className="kc-time-btn"
                   onClick={() => { setSelSlot(slot); setState('confirming'); }}
                   style={{
-                    padding       : '14px 4px',
-                    borderRadius  : 12,
-                    border        : '1px solid rgba(255,255,255,0.1)',
-                    background    : 'rgba(255,255,255,0.05)',
-                    color         : 'rgba(255,255,255,0.72)',
-                    fontSize      : 13,
-                    fontWeight    : 600,
-                    cursor        : 'pointer',
-                    transition    : 'all 0.15s',
-                    whiteSpace    : 'nowrap',
-                    minHeight     : 52,
-                    display       : 'flex',
-                    alignItems    : 'center',
-                    justifyContent: 'center',
-                    boxShadow     : '0 2px 6px rgba(0,0,0,0.14)',
+                    padding        : '14px 4px',
+                    borderRadius   : 12,
+                    border         : '1px solid rgba(255,255,255,0.1)',
+                    background     : 'rgba(255,255,255,0.05)',
+                    color          : 'rgba(255,255,255,0.72)',
+                    fontSize       : 13,
+                    fontWeight     : 600,
+                    cursor         : 'pointer',
+                    transition     : 'all 0.15s',
+                    whiteSpace     : 'nowrap',
+                    minHeight      : 52,
+                    display        : 'flex',
+                    alignItems     : 'center',
+                    justifyContent : 'center',
+                    boxShadow      : '0 2px 6px rgba(0,0,0,0.14)',
+                    animationDelay : `${i * 0.028}s`,
                   }}
                 >
                   {slotTime(slot.startTime, tz)}
                 </button>
               ))}
             </div>
-            {/* Reassurance line */}
+            {/* Trust line */}
+            <div className="kc-trust" style={{ marginTop: 22 }}>
+              {(['Free consultation', 'No obligation', '~30 min with Michael'] as const).map(t => (
+                <span key={t} className="kc-trust-item">
+                  <span className="kc-trust-check">✓</span>{t}
+                </span>
+              ))}
+            </div>
+
+            {/* Commitment note */}
             <p style={{
-              textAlign  : 'center',
-              color      : 'rgba(255,255,255,0.18)',
+              color      : 'rgba(255,255,255,0.22)',
               fontSize   : 12,
-              marginTop  : 20,
-              letterSpacing: '0.01em',
+              textAlign  : 'center',
+              marginTop  : 12,
+              lineHeight : 1.6,
+              fontStyle  : 'italic',
             }}>
-              Free · No obligation · 30 minutes
+              Michael will visit your home, review your actual usage, and walk through your options — no pressure, just real numbers.
             </p>
           </div>
         ) : (
@@ -689,7 +725,7 @@ export default function SlotPicker({
     const busy = state === 'booking';
 
     return (
-      <div className="kc-fadein" style={{ paddingTop: 4 }}>
+      <div className="kc-pop" style={{ paddingTop: 4 }}>
         <style>{CSS}</style>
 
         {/* ── Back link ─────────────────────────────────────────── */}
@@ -717,29 +753,34 @@ export default function SlotPicker({
           Change time
         </button>
 
-        {/* ── Eyebrow ───────────────────────────────────────────── */}
-        <p style={{
-          color        : 'rgba(255,255,255,0.32)',
-          fontSize     : 11,
-          fontWeight   : 700,
-          letterSpacing: '0.09em',
-          textTransform: 'uppercase',
-          marginBottom : 14,
-        }}>
-          Almost there
-        </p>
+        {/* ── Identity anchor + eyebrow ─────────────────────────── */}
+        <div style={{ marginBottom: 16 }}>
+          <p style={{
+            color        : 'rgba(255,255,255,0.76)',
+            fontSize     : 15,
+            fontWeight   : 600,
+            letterSpacing: '-0.01em',
+            marginBottom : 3,
+          }}>
+            Your consultation with Michael
+          </p>
+          <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: 12 }}>
+            Kansas City area · Free · No obligation
+          </p>
+        </div>
 
         {/* ── Selected slot card ────────────────────────────────── */}
         <div style={{
-          background    : 'rgba(59,130,246,0.09)',
-          border        : '1px solid rgba(59,130,246,0.22)',
+          background    : 'rgba(59,130,246,0.08)',
+          border        : '1px solid rgba(59,130,246,0.2)',
+          borderTop     : '2px solid rgba(59,130,246,0.55)',
           borderRadius  : 18,
           padding       : '22px 24px',
           marginBottom  : 20,
           display       : 'flex',
           alignItems    : 'center',
           gap           : 18,
-          boxShadow     : '0 4px 24px rgba(0,0,0,0.22)',
+          boxShadow     : '0 6px 32px rgba(0,0,0,0.26)',
         }}>
           {/* Calendar icon */}
           <div style={{
@@ -790,6 +831,16 @@ export default function SlotPicker({
             </p>
           </div>
         </div>
+
+        {/* ── Commitment note ───────────────────────────────────── */}
+        <p style={{
+          color      : 'rgba(255,255,255,0.38)',
+          fontSize   : 13,
+          lineHeight : 1.6,
+          marginBottom: 20,
+        }}>
+          Michael will visit your home, review your exact energy usage, and walk you through your solar options — no pressure, just the real numbers.
+        </p>
 
         {/* ── Booking error ──────────────────────────────────────── */}
         {state === 'book-error' && bookErr && (
@@ -843,23 +894,33 @@ export default function SlotPicker({
                 display      : 'inline-block',
                 flexShrink   : 0,
               }} />
-              Confirming your spot…
+              Locking in your time…
             </>
           ) : (
-            state === 'book-error' ? 'Try Again →' : 'Confirm My Consultation →'
+            state === 'book-error' ? 'Try Again →' : 'Confirm My Time →'
           )}
         </button>
 
-        {/* ── Trust footer ───────────────────────────────────────── */}
+        {/* ── Post-click reassurance ─────────────────────────────── */}
         <p style={{
           textAlign    : 'center',
-          color        : 'rgba(255,255,255,0.18)',
+          color        : 'rgba(255,255,255,0.24)',
           fontSize     : 12,
           marginTop    : 12,
-          letterSpacing: '0.01em',
+          lineHeight   : 1.5,
+          letterSpacing: '0.005em',
         }}>
-          Free · No obligation · Confirmation sent by text
+          You'll receive a confirmation text right after booking.
         </p>
+
+        {/* ── Trust footer ───────────────────────────────────────── */}
+        <div className="kc-trust" style={{ marginTop: 10 }}>
+          {(['Free', 'No obligation', 'No payment required'] as const).map(t => (
+            <span key={t} className="kc-trust-item">
+              <span className="kc-trust-check">✓</span>{t}
+            </span>
+          ))}
+        </div>
       </div>
     );
   }
