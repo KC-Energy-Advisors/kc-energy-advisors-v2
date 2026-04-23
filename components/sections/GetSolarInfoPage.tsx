@@ -389,6 +389,10 @@ export default function GetSolarInfoPage() {
   // back to Step 1 and clicks Continue again. One upsert per session.
   const step1UpsertFired = useRef(false);
 
+  // Prevents goResult() from firing twice on rapid double-click.
+  // Reset on any error path so the user can retry.
+  const isSubmitting = useRef(false);
+
   // Mount detector — fires once; if seen twice the component is remounting.
   useEffect(() => {
     console.error('[FUNNEL] component mounted — initial contactIdRef:', contactIdRef.current);
@@ -517,7 +521,14 @@ export default function GetSolarInfoPage() {
   // ── Submit lead + transition to booking ────────────────────────
   async function goResult() {
     if (!step3OK) return;
-    console.error('[FUNNEL] goResult — contactId at call time:', contactId ?? 'null');
+    // Double-submit guard — ref is synchronous so it blocks even on rapid clicks
+    // before React has re-rendered with the new pageState.
+    if (isSubmitting.current) {
+      console.error('[FUNNEL] goResult blocked — already in flight');
+      return;
+    }
+    isSubmitting.current = true;
+    console.error('[FUNNEL] goResult — contactId at call time:', contactIdRef.current ?? contactId ?? 'null');
     setSubmitError('');
     setPageState('submitting');
 
@@ -585,6 +596,7 @@ export default function GetSolarInfoPage() {
       // Proceed to booking with no contactId so the dev flow is testable.
       if (data.dev_mode) {
         console.error('[FUNNEL] dev_mode — skipping contactId set, proceeding to booking');
+        // isSubmitting stays true — flow is complete
         setPageState('booking');
         return;
       }
@@ -595,6 +607,7 @@ export default function GetSolarInfoPage() {
       if (!res.ok) {
         const msg = data.error || 'Something went wrong submitting your info. Please try again.';
         console.error('[GetSolarInfoPage] submit-lead hard failure:', res.status, msg);
+        isSubmitting.current = false;   // allow retry
         setSubmitError(msg);
         setPageState('submit-error');
         return;
@@ -610,10 +623,12 @@ export default function GetSolarInfoPage() {
         '| state:', contactId ?? 'null');
       if (!resolvedId) {
         console.error('[FUNNEL] blocking booking — contactId is null after full submit');
+        isSubmitting.current = false;   // allow retry
         setSubmitError('Could not confirm your profile. Please try again.');
         setPageState('submit-error');
         return;
       }
+      // isSubmitting stays true — flow is complete, do not allow re-submit
       setContactIdSafe(resolvedId);
       setPageState('booking');
 
@@ -624,6 +639,7 @@ export default function GetSolarInfoPage() {
         ? 'Request timed out. Please check your connection and try again.'
         : 'Network error. Please check your connection and try again.';
       console.error('[GetSolarInfoPage] submit-lead network error:', err);
+      isSubmitting.current = false;     // allow retry
       setSubmitError(msg);
       setPageState('submit-error');
     }
@@ -775,7 +791,40 @@ export default function GetSolarInfoPage() {
 
   // ── BOOKING — slot picker ─────────────────────────────────────
   if (pageState === 'booking') {
-    console.error('[FUNNEL] booking page rendering — contactId:', contactId ?? 'null');
+    const resolvedContactId = contactIdRef.current ?? contactId;
+    console.error('[FUNNEL] booking page rendering — contactId:', resolvedContactId ?? 'null');
+
+    // Safety net: goResult() already blocks this path, but if contactId is
+    // somehow null here we cannot create a valid appointment — show recovery.
+    if (!resolvedContactId) {
+      console.error('[FUNNEL] ❌ booking reached with null contactId — showing recovery screen');
+      return (
+        <PageShell>
+          <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 py-20 text-center">
+            <h2 className="text-display-sm font-black text-white mb-3">
+              Something went wrong.
+            </h2>
+            <p className="text-white/50 text-[15px] leading-relaxed max-w-[380px] mb-8">
+              We couldn&rsquo;t verify your profile. Please try again or call us directly.
+            </p>
+            <PrimaryBtn onClick={() => {
+              isSubmitting.current = false;
+              setPageState('form');
+              setStep(3);
+            }}>
+              Try Again →
+            </PrimaryBtn>
+            <p className="mt-6 text-white/35 text-[13px]">
+              Or call us:{' '}
+              <a href={PHONE_HREF} className="text-white/60 underline hover:text-white/80 transition-colors">
+                {PHONE_DISPLAY}
+              </a>
+            </p>
+          </div>
+        </PageShell>
+      );
+    }
+
     const phone = toE164(form.phone);
 
     return (
@@ -1056,10 +1105,13 @@ export default function GetSolarInfoPage() {
                 </div>
               </div>
 
-              <PrimaryBtn onClick={goResult} disabled={!step3OK || !contactId}>
-                See My Options →
+              <PrimaryBtn
+                onClick={goResult}
+                disabled={!step3OK || !contactId || pageState === 'submitting'}
+              >
+                {pageState === 'submitting' ? 'Submitting…' : 'See My Options →'}
               </PrimaryBtn>
-              {!contactId && (
+              {!contactId && pageState !== 'submitting' && (
                 <p className="text-center text-[11px] text-[#9ca3af] mt-2">
                   Setting up your profile…
                 </p>
