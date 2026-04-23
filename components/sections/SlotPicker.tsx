@@ -76,31 +76,31 @@ const CSS = `
   /* Date card */
   .kc-date-card { scroll-snap-align: start; }
   .kc-date-card:not(.kc-date-on):hover {
-    background: rgba(59,130,246,0.1) !important;
-    border-color: rgba(59,130,246,0.28) !important;
+    background: rgba(59,130,246,0.12) !important;
+    border-color: rgba(59,130,246,0.32) !important;
   }
   .kc-date-card:not(.kc-date-on):hover .kc-wd  { color: #93c5fd !important; }
-  .kc-date-card:not(.kc-date-on):hover .kc-day { color: rgba(255,255,255,0.85) !important; }
+  .kc-date-card:not(.kc-date-on):hover .kc-day { color: rgba(255,255,255,0.9) !important; }
 
   /* Time button */
   .kc-time-btn { animation: kc-slot-in 0.18s ease both; }
   .kc-time-btn:hover {
-    background: rgba(59,130,246,0.2) !important;
-    border-color: rgba(59,130,246,0.5) !important;
+    background: rgba(59,130,246,0.22) !important;
+    border-color: rgba(59,130,246,0.55) !important;
     color: white !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 6px 18px rgba(37,99,235,0.26) !important;
+    box-shadow: 0 8px 22px rgba(37,99,235,0.3) !important;
   }
   .kc-time-btn:active { transform: translateY(0) scale(0.96) !important; transition-duration: 0.07s !important; }
 
-  /* Responsive time grid */
-  @media (max-width: 420px) {
+  /* Responsive time grid — collapse to 3 cols on narrow phones */
+  @media (max-width: 480px) {
     .kc-time-grid { grid-template-columns: repeat(3, 1fr) !important; }
   }
 
   /* Arrow button */
   .kc-arrow-btn:hover {
-    background: rgba(255,255,255,0.14) !important;
+    background: rgba(255,255,255,0.16) !important;
     color: rgba(255,255,255,0.9) !important;
   }
   .kc-arrow-btn:active { transform: translateY(-50%) scale(0.88) !important; }
@@ -108,7 +108,7 @@ const CSS = `
   /* Confirm button */
   .kc-confirm-btn:hover:not(:disabled) {
     background: #1d4ed8 !important;
-    box-shadow: 0 14px 48px rgba(37,99,235,0.66) !important;
+    box-shadow: 0 16px 52px rgba(37,99,235,0.7) !important;
     transform: translateY(-2px) !important;
   }
   .kc-confirm-btn:active:not(:disabled) { transform: translateY(0) scale(0.982) !important; transition-duration: 0.08s !important; }
@@ -124,9 +124,9 @@ const CSS = `
   .kc-avail-dot { animation: kc-dot 2.6s ease-in-out infinite; }
 
   /* Trust row */
-  .kc-trust { display:flex; align-items:center; justify-content:center; gap:20px; flex-wrap:wrap; }
-  .kc-trust-item { display:flex; align-items:center; gap:5px; color:rgba(255,255,255,0.32); font-size:13px; white-space:nowrap; }
-  .kc-trust-check { color:rgba(74,222,128,0.72); font-size:12px; }
+  .kc-trust { display:flex; align-items:center; justify-content:center; gap:32px; flex-wrap:wrap; }
+  .kc-trust-item { display:flex; align-items:center; gap:8px; color:rgba(255,255,255,0.36); font-size:15px; white-space:nowrap; }
+  .kc-trust-check { color:rgba(74,222,128,0.8); font-size:13px; }
 `;
 
 // ─────────────────────────────────────────────────────────────────
@@ -159,7 +159,7 @@ export default function SlotPicker({
   function scrollDates(dir: 'left' | 'right') {
     const el = dateStripRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir === 'right' ? 280 : -280, behavior: 'smooth' });
+    el.scrollBy({ left: dir === 'right' ? 360 : -360, behavior: 'smooth' });
   }
 
   // ── Fetch available slots ──────────────────────────────────────
@@ -265,25 +265,25 @@ export default function SlotPicker({
         <style>{CSS}</style>
 
         {/* Identity skeleton */}
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ width: 200, height: 14, borderRadius: 6, background: 'rgba(255,255,255,0.08)', marginBottom: 8, animation: 'kc-pulse 1s ease-in-out infinite' }} />
-          <div style={{ width: 160, height: 10, borderRadius: 5, background: 'rgba(255,255,255,0.05)', animation: 'kc-pulse 1.1s ease-in-out infinite' }} />
+        <div style={{ marginBottom: 44 }}>
+          <div style={{ width: 240, height: 18, borderRadius: 7, background: 'rgba(255,255,255,0.08)', marginBottom: 10, animation: 'kc-pulse 1s ease-in-out infinite' }} />
+          <div style={{ width: 190, height: 12, borderRadius: 6, background: 'rgba(255,255,255,0.05)', animation: 'kc-pulse 1.1s ease-in-out infinite' }} />
         </div>
 
         {/* Badge skeleton */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 36 }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', flexShrink: 0, animation: 'kc-pulse 1s ease-in-out infinite' }} />
-          <div style={{ width: 170, height: 11, borderRadius: 6, background: 'rgba(255,255,255,0.07)', animation: 'kc-pulse 1s ease-in-out infinite' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 52 }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', flexShrink: 0, animation: 'kc-pulse 1s ease-in-out infinite' }} />
+          <div style={{ width: 200, height: 13, borderRadius: 7, background: 'rgba(255,255,255,0.07)', animation: 'kc-pulse 1s ease-in-out infinite' }} />
         </div>
 
         {/* Date label skeleton */}
-        <div style={{ width: 80, height: 10, borderRadius: 5, background: 'rgba(255,255,255,0.07)', marginBottom: 16, animation: 'kc-pulse 1s ease-in-out infinite' }} />
+        <div style={{ width: 100, height: 12, borderRadius: 6, background: 'rgba(255,255,255,0.07)', marginBottom: 24, animation: 'kc-pulse 1s ease-in-out infinite' }} />
 
         {/* Date strip skeleton */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 36, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 52, overflow: 'hidden' }}>
           {[0, 1, 2, 3, 4, 5].map(i => (
             <div key={i} style={{
-              flexShrink: 0, width: 96, height: 86, borderRadius: 18,
+              flexShrink: 0, width: 120, height: 110, borderRadius: 22,
               background: 'rgba(255,255,255,0.055)',
               animation : `kc-pulse ${0.9 + i * 0.1}s ease-in-out infinite`,
             }} />
@@ -291,23 +291,23 @@ export default function SlotPicker({
         </div>
 
         {/* Divider */}
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', marginBottom: 32 }} />
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', marginBottom: 48 }} />
 
         {/* Time label skeleton */}
-        <div style={{ width: 120, height: 10, borderRadius: 5, background: 'rgba(255,255,255,0.07)', marginBottom: 16, animation: 'kc-pulse 1.1s ease-in-out infinite' }} />
+        <div style={{ width: 140, height: 12, borderRadius: 6, background: 'rgba(255,255,255,0.07)', marginBottom: 24, animation: 'kc-pulse 1.1s ease-in-out infinite' }} />
 
         {/* Time grid skeleton */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
           {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
             <div key={i} style={{
-              height: 56, borderRadius: 13,
+              height: 72, borderRadius: 16,
               background: 'rgba(255,255,255,0.05)',
               animation : `kc-pulse ${0.9 + i * 0.09}s ease-in-out infinite`,
             }} />
           ))}
         </div>
 
-        <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: 13, marginTop: 28, letterSpacing: '0.01em' }}>
+        <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.22)', fontSize: 14, marginTop: 36, letterSpacing: '0.01em' }}>
           Checking Michael's calendar…
         </p>
       </div>
@@ -427,55 +427,55 @@ export default function SlotPicker({
         <style>{CSS}</style>
 
         {/* ── Identity anchor ───────────────────────────────────── */}
-        <div style={{ marginBottom: 28 }}>
+        <div style={{ marginBottom: 44 }}>
           <p style={{
-            color        : 'rgba(255,255,255,0.82)',
-            fontSize     : 16,
-            fontWeight   : 600,
-            letterSpacing: '-0.015em',
-            marginBottom : 5,
+            color        : 'rgba(255,255,255,0.88)',
+            fontSize     : 19,
+            fontWeight   : 700,
+            letterSpacing: '-0.018em',
+            marginBottom : 8,
             lineHeight   : 1.3,
           }}>
             Your consultation with Michael
           </p>
-          <p style={{ color: 'rgba(255,255,255,0.32)', fontSize: 13, fontWeight: 400, lineHeight: 1.4 }}>
+          <p style={{ color: 'rgba(255,255,255,0.36)', fontSize: 14, fontWeight: 400, lineHeight: 1.4 }}>
             Serving homeowners across the Kansas City area
           </p>
         </div>
 
         {/* ── Availability badge ────────────────────────────────── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 36 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 52 }}>
           <span
             className="kc-avail-dot"
             style={{
-              width       : 8,
-              height      : 8,
+              width       : 10,
+              height      : 10,
               borderRadius: '50%',
               background  : '#22c55e',
-              boxShadow   : '0 0 0 3px rgba(34,197,94,0.18)',
+              boxShadow   : '0 0 0 4px rgba(34,197,94,0.2)',
               flexShrink  : 0,
               display     : 'block',
             }}
           />
-          <span style={{ color: 'rgba(255,255,255,0.46)', fontSize: 13, lineHeight: 1.4 }}>
+          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, lineHeight: 1.4 }}>
             Spots fill quickly — {dates.length} day{dates.length !== 1 ? 's' : ''} still open
           </span>
         </div>
 
         {/* ── Date label ────────────────────────────────────────── */}
         <p style={{
-          color        : 'rgba(255,255,255,0.4)',
-          fontSize     : 11,
+          color        : 'rgba(255,255,255,0.44)',
+          fontSize     : 12,
           fontWeight   : 700,
-          letterSpacing: '0.1em',
+          letterSpacing: '0.11em',
           textTransform: 'uppercase',
-          marginBottom : 16,
+          marginBottom : 24,
         }}>
           Choose a date
         </p>
 
         {/* ── Date strip ────────────────────────────────────────── */}
-        <div style={{ position: 'relative', marginBottom: 36 }}>
+        <div style={{ position: 'relative', marginBottom: 52 }}>
 
           {/* Left arrow */}
           <button
@@ -485,16 +485,16 @@ export default function SlotPicker({
             onClick={() => scrollDates('left')}
             style={{
               position      : 'absolute',
-              left          : -6,
+              left          : -8,
               top           : '50%',
               transform     : 'translateY(-50%)',
               zIndex        : 2,
-              width         : 36,
-              height        : 36,
+              width         : 48,
+              height        : 48,
               borderRadius  : '50%',
-              border        : '1px solid rgba(255,255,255,0.11)',
-              background    : 'rgba(10,18,36,0.9)',
-              color         : 'rgba(255,255,255,0.52)',
+              border        : '1px solid rgba(255,255,255,0.13)',
+              background    : 'rgba(10,18,36,0.92)',
+              color         : 'rgba(255,255,255,0.56)',
               display       : 'flex',
               alignItems    : 'center',
               justifyContent: 'center',
@@ -504,14 +504,14 @@ export default function SlotPicker({
               flexShrink    : 0,
             }}
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-              <path d="M7.5 9.5L4 6l3.5-3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden>
+              <path d="M7.5 9.5L4 6l3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
 
           {/* Left fade */}
           <div style={{
-            position: 'absolute', left: 26, top: 0, bottom: 0, width: 32,
+            position: 'absolute', left: 36, top: 0, bottom: 0, width: 36,
             background: 'linear-gradient(to right, rgba(8,15,30,0.96), transparent)',
             zIndex: 1, pointerEvents: 'none',
           }} />
@@ -520,9 +520,9 @@ export default function SlotPicker({
           <div
             ref={dateStripRef}
             className="kc-date-strip"
-            style={{ overflowX: 'auto', paddingLeft: 32, paddingRight: 32, paddingBottom: 4 }}
+            style={{ overflowX: 'auto', paddingLeft: 44, paddingRight: 44, paddingBottom: 4 }}
           >
-            <div style={{ display: 'flex', gap: 12, width: 'max-content' }}>
+            <div style={{ display: 'flex', gap: 18, width: 'max-content' }}>
               {dates.map(d => {
                 const { weekday, monthDay } = parseDateKey(d);
                 const on = d === selDate;
@@ -534,32 +534,32 @@ export default function SlotPicker({
                     onClick={() => { setSelDate(d); setSelSlot(null); }}
                     style={{
                       flexShrink  : 0,
-                      width       : 96,
-                      padding     : '16px 0 15px',
-                      borderRadius: 18,
+                      width       : 120,
+                      padding     : '24px 0 22px',
+                      borderRadius: 22,
                       border      : on
-                        ? '2px solid rgba(59,130,246,0.88)'
-                        : '1px solid rgba(255,255,255,0.09)',
+                        ? '2px solid rgba(59,130,246,0.92)'
+                        : '1px solid rgba(255,255,255,0.1)',
                       background  : on
-                        ? 'rgba(59,130,246,0.2)'
-                        : 'rgba(255,255,255,0.04)',
+                        ? 'rgba(59,130,246,0.22)'
+                        : 'rgba(255,255,255,0.05)',
                       cursor      : 'pointer',
                       textAlign   : 'center',
                       transition  : 'all 0.18s',
                       boxShadow   : on
-                        ? '0 0 0 4px rgba(59,130,246,0.14), 0 8px 24px rgba(0,0,0,0.3)'
-                        : '0 2px 10px rgba(0,0,0,0.2)',
+                        ? '0 0 0 8px rgba(59,130,246,0.14), 0 10px 32px rgba(0,0,0,0.36)'
+                        : '0 2px 12px rgba(0,0,0,0.22)',
                     }}
                   >
                     <span
                       className="kc-wd"
                       style={{
                         display      : 'block',
-                        fontSize     : 10,
+                        fontSize     : 12,
                         fontWeight   : 700,
-                        letterSpacing: '0.11em',
-                        color        : on ? '#7dd3fc' : 'rgba(255,255,255,0.22)',
-                        marginBottom : 6,
+                        letterSpacing: '0.12em',
+                        color        : on ? '#7dd3fc' : 'rgba(255,255,255,0.26)',
+                        marginBottom : 10,
                         transition   : 'color 0.15s',
                       }}
                     >
@@ -569,10 +569,10 @@ export default function SlotPicker({
                       className="kc-day"
                       style={{
                         display   : 'block',
-                        fontSize  : 14,
+                        fontSize  : 18,
                         fontWeight: on ? 800 : 400,
-                        color     : on ? 'white' : 'rgba(255,255,255,0.42)',
-                        lineHeight: 1.3,
+                        color     : on ? 'white' : 'rgba(255,255,255,0.46)',
+                        lineHeight: 1.2,
                         transition: 'color 0.15s',
                       }}
                     >
@@ -586,7 +586,7 @@ export default function SlotPicker({
 
           {/* Right fade */}
           <div style={{
-            position: 'absolute', right: 26, top: 0, bottom: 0, width: 32,
+            position: 'absolute', right: 36, top: 0, bottom: 0, width: 36,
             background: 'linear-gradient(to left, rgba(8,15,30,0.96), transparent)',
             zIndex: 1, pointerEvents: 'none',
           }} />
@@ -599,16 +599,16 @@ export default function SlotPicker({
             onClick={() => scrollDates('right')}
             style={{
               position      : 'absolute',
-              right         : -6,
+              right         : -8,
               top           : '50%',
               transform     : 'translateY(-50%)',
               zIndex        : 2,
-              width         : 36,
-              height        : 36,
+              width         : 48,
+              height        : 48,
               borderRadius  : '50%',
-              border        : '1px solid rgba(255,255,255,0.11)',
-              background    : 'rgba(10,18,36,0.9)',
-              color         : 'rgba(255,255,255,0.52)',
+              border        : '1px solid rgba(255,255,255,0.13)',
+              background    : 'rgba(10,18,36,0.92)',
+              color         : 'rgba(255,255,255,0.56)',
               display       : 'flex',
               alignItems    : 'center',
               justifyContent: 'center',
@@ -618,25 +618,25 @@ export default function SlotPicker({
               flexShrink    : 0,
             }}
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-              <path d="M4.5 2.5L8 6l-3.5 3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden>
+              <path d="M4.5 2.5L8 6l-3.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
         </div>
 
         {/* ── Section divider ───────────────────────────────────── */}
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', marginBottom: 32 }} />
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', marginBottom: 48 }} />
 
         {/* ── Time grid ─────────────────────────────────────────── */}
         {timeSlots.length > 0 ? (
           <div className="kc-fadein" key={selDate}>
             <p style={{
-              color        : 'rgba(255,255,255,0.4)',
-              fontSize     : 11,
+              color        : 'rgba(255,255,255,0.44)',
+              fontSize     : 12,
               fontWeight   : 700,
-              letterSpacing: '0.1em',
+              letterSpacing: '0.11em',
               textTransform: 'uppercase',
-              marginBottom : 16,
+              marginBottom : 24,
             }}>
               Available times{selectedDay ? ` — ${selectedDay}` : ''}
             </p>
@@ -645,7 +645,7 @@ export default function SlotPicker({
               style={{
                 display            : 'grid',
                 gridTemplateColumns: 'repeat(4, 1fr)',
-                gap                : 12,
+                gap                : 16,
               }}
             >
               {timeSlots.map((slot, i) => (
@@ -655,21 +655,21 @@ export default function SlotPicker({
                   className="kc-time-btn"
                   onClick={() => { setSelSlot(slot); setState('confirming'); }}
                   style={{
-                    padding       : '15px 6px',
-                    borderRadius  : 13,
-                    border        : '1px solid rgba(255,255,255,0.1)',
-                    background    : 'rgba(255,255,255,0.055)',
-                    color         : 'rgba(255,255,255,0.75)',
-                    fontSize      : 13,
+                    padding       : '20px 10px',
+                    borderRadius  : 16,
+                    border        : '1px solid rgba(255,255,255,0.11)',
+                    background    : 'rgba(255,255,255,0.065)',
+                    color         : 'rgba(255,255,255,0.8)',
+                    fontSize      : 16,
                     fontWeight    : 600,
                     cursor        : 'pointer',
                     transition    : 'all 0.15s',
                     whiteSpace    : 'nowrap',
-                    minHeight     : 56,
+                    minHeight     : 72,
                     display       : 'flex',
                     alignItems    : 'center',
                     justifyContent: 'center',
-                    boxShadow     : '0 2px 8px rgba(0,0,0,0.16)',
+                    boxShadow     : '0 2px 10px rgba(0,0,0,0.18)',
                     animationDelay: `${i * 0.028}s`,
                   }}
                 >
@@ -679,7 +679,7 @@ export default function SlotPicker({
             </div>
 
             {/* Trust line */}
-            <div className="kc-trust" style={{ marginTop: 28 }}>
+            <div className="kc-trust" style={{ marginTop: 44 }}>
               {(['Free consultation', 'No obligation', '~30 min with Michael'] as const).map(t => (
                 <span key={t} className="kc-trust-item">
                   <span className="kc-trust-check">✓</span>{t}
@@ -689,10 +689,10 @@ export default function SlotPicker({
 
             {/* Commitment note */}
             <p style={{
-              color    : 'rgba(255,255,255,0.24)',
-              fontSize : 12,
+              color    : 'rgba(255,255,255,0.26)',
+              fontSize : 13,
               textAlign: 'center',
-              marginTop: 14,
+              marginTop: 22,
               lineHeight: 1.65,
               fontStyle : 'italic',
             }}>
@@ -735,66 +735,66 @@ export default function SlotPicker({
           style={{
             display    : 'inline-flex',
             alignItems : 'center',
-            gap        : 6,
+            gap        : 7,
             background : 'none',
             border     : 'none',
-            color      : 'rgba(255,255,255,0.3)',
-            fontSize   : 13,
+            color      : 'rgba(255,255,255,0.32)',
+            fontSize   : 14,
             cursor     : 'pointer',
-            padding    : '0 0 28px',
+            padding    : '0 0 40px',
             transition : 'color 0.15s',
             fontWeight : 500,
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-            <path d="M9 11.5L5 7l4-4.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+          <svg width="15" height="15" viewBox="0 0 14 14" fill="none" aria-hidden>
+            <path d="M9 11.5L5 7l4-4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
           Change time
         </button>
 
         {/* ── Identity anchor ───────────────────────────────────── */}
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 36 }}>
           <p style={{
-            color        : 'rgba(255,255,255,0.82)',
-            fontSize     : 16,
-            fontWeight   : 600,
-            letterSpacing: '-0.015em',
-            marginBottom : 5,
+            color        : 'rgba(255,255,255,0.88)',
+            fontSize     : 19,
+            fontWeight   : 700,
+            letterSpacing: '-0.018em',
+            marginBottom : 7,
             lineHeight   : 1.3,
           }}>
             Your consultation with Michael
           </p>
-          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
+          <p style={{ color: 'rgba(255,255,255,0.32)', fontSize: 14 }}>
             Kansas City area · Free · No obligation
           </p>
         </div>
 
         {/* ── Appointment hero card ─────────────────────────────── */}
         <div style={{
-          background  : 'rgba(59,130,246,0.09)',
-          border      : '1px solid rgba(59,130,246,0.22)',
-          borderTop   : '2.5px solid rgba(59,130,246,0.6)',
-          borderRadius: 20,
-          padding     : '28px 30px',
-          marginBottom: 24,
+          background  : 'rgba(59,130,246,0.1)',
+          border      : '1px solid rgba(59,130,246,0.24)',
+          borderTop   : '3px solid rgba(59,130,246,0.7)',
+          borderRadius: 28,
+          padding     : '44px 44px',
+          marginBottom: 40,
           display     : 'flex',
           alignItems  : 'center',
-          gap         : 22,
-          boxShadow   : '0 8px 40px rgba(0,0,0,0.28)',
+          gap         : 36,
+          boxShadow   : '0 12px 52px rgba(0,0,0,0.32)',
         }}>
           {/* Calendar icon */}
           <div style={{
             flexShrink    : 0,
-            width         : 58,
-            height        : 58,
-            borderRadius  : 15,
-            background    : 'rgba(59,130,246,0.16)',
-            border        : '1px solid rgba(59,130,246,0.28)',
+            width         : 80,
+            height        : 80,
+            borderRadius  : 22,
+            background    : 'rgba(59,130,246,0.18)',
+            border        : '1px solid rgba(59,130,246,0.32)',
             display       : 'flex',
             alignItems    : 'center',
             justifyContent: 'center',
           }}>
-            <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden>
+            <svg width="36" height="36" viewBox="0 0 26 26" fill="none" aria-hidden>
               <rect x="3" y="5" width="20" height="17" rx="3.5" stroke="#60a5fa" strokeWidth="1.6"/>
               <path d="M9 3v4M17 3v4M3 10h20" stroke="#60a5fa" strokeWidth="1.6" strokeLinecap="round"/>
               <circle cx="9"  cy="15.5" r="1.2" fill="#60a5fa"/>
@@ -805,28 +805,28 @@ export default function SlotPicker({
 
           <div style={{ minWidth: 0, flex: 1 }}>
             <p style={{
-              color        : 'rgba(255,255,255,0.38)',
-              fontSize     : 11,
+              color        : 'rgba(255,255,255,0.4)',
+              fontSize     : 12,
               fontWeight   : 700,
               textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              marginBottom : 7,
+              letterSpacing: '0.11em',
+              marginBottom : 10,
             }}>
               Your appointment
             </p>
             <p style={{
-              color       : 'white',
-              fontSize    : 22,
-              fontWeight  : 800,
-              lineHeight  : 1.15,
-              marginBottom: 7,
-              letterSpacing: '-0.02em',
+              color        : 'white',
+              fontSize     : 30,
+              fontWeight   : 800,
+              lineHeight   : 1.1,
+              marginBottom : 12,
+              letterSpacing: '-0.025em',
             }}>
               {dateLong}
             </p>
             <p style={{
-              color     : 'rgba(255,255,255,0.6)',
-              fontSize  : 16,
+              color     : 'rgba(255,255,255,0.62)',
+              fontSize  : 22,
               fontWeight: 500,
               lineHeight: 1,
             }}>
@@ -837,10 +837,10 @@ export default function SlotPicker({
 
         {/* ── Commitment note ───────────────────────────────────── */}
         <p style={{
-          color      : 'rgba(255,255,255,0.42)',
-          fontSize   : 14,
+          color      : 'rgba(255,255,255,0.44)',
+          fontSize   : 17,
           lineHeight : 1.65,
-          marginBottom: 26,
+          marginBottom: 40,
         }}>
           Michael will visit your home, review your exact energy usage, and walk you through your solar options — no pressure, just the real numbers.
         </p>
@@ -850,11 +850,11 @@ export default function SlotPicker({
           <div style={{
             background  : 'rgba(239,68,68,0.09)',
             border      : '1px solid rgba(239,68,68,0.2)',
-            borderRadius: 13,
-            padding     : '13px 18px',
-            marginBottom: 18,
+            borderRadius: 14,
+            padding     : '16px 22px',
+            marginBottom: 22,
           }}>
-            <p style={{ color: '#fca5a5', fontSize: 13, textAlign: 'center', margin: 0 }}>
+            <p style={{ color: '#fca5a5', fontSize: 14, textAlign: 'center', margin: 0 }}>
               {bookErr}
             </p>
           </div>
@@ -868,28 +868,28 @@ export default function SlotPicker({
           disabled={busy}
           style={{
             width         : '100%',
-            padding       : '18px',
-            borderRadius  : 16,
+            padding       : '24px',
+            borderRadius  : 20,
             border        : 'none',
             background    : busy ? 'rgba(255,255,255,0.07)' : '#2563eb',
             color         : busy ? 'rgba(255,255,255,0.28)' : 'white',
-            fontSize      : 17,
+            fontSize      : 21,
             fontWeight    : 700,
             cursor        : busy ? 'not-allowed' : 'pointer',
-            boxShadow     : busy ? 'none' : '0 8px 36px rgba(37,99,235,0.5)',
+            boxShadow     : busy ? 'none' : '0 10px 44px rgba(37,99,235,0.56)',
             transition    : 'all 0.2s',
             display       : 'flex',
             alignItems    : 'center',
             justifyContent: 'center',
-            gap           : 10,
+            gap           : 12,
             letterSpacing : '0.005em',
           }}
         >
           {busy ? (
             <>
               <span style={{
-                width        : 18,
-                height       : 18,
+                width        : 24,
+                height       : 24,
                 border       : '2.5px solid rgba(255,255,255,0.15)',
                 borderTopColor: 'rgba(255,255,255,0.65)',
                 borderRadius : '50%',
@@ -907,9 +907,9 @@ export default function SlotPicker({
         {/* ── Post-click reassurance ─────────────────────────────── */}
         <p style={{
           textAlign    : 'center',
-          color        : 'rgba(255,255,255,0.26)',
-          fontSize     : 13,
-          marginTop    : 16,
+          color        : 'rgba(255,255,255,0.28)',
+          fontSize     : 15,
+          marginTop    : 24,
           lineHeight   : 1.5,
           letterSpacing: '0.005em',
         }}>
@@ -917,7 +917,7 @@ export default function SlotPicker({
         </p>
 
         {/* ── Trust footer ───────────────────────────────────────── */}
-        <div className="kc-trust" style={{ marginTop: 14 }}>
+        <div className="kc-trust" style={{ marginTop: 24 }}>
           {(['Free', 'No obligation', 'No payment required'] as const).map(t => (
             <span key={t} className="kc-trust-item">
               <span className="kc-trust-check">✓</span>{t}

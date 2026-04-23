@@ -842,17 +842,17 @@ export default function GetSolarInfoPage() {
 
     return (
       <div style={{ display: 'block', width: '100%', background: '#0C1322', margin: 0, padding: 0 }}>
-        <div style={{ display: 'block', width: '100%', paddingTop: '32px', paddingBottom: '88px' }}>
+        <div style={{ display: 'block', width: '100%', paddingTop: '56px', paddingBottom: '104px' }}>
 
           {/* Status line */}
           <p style={{
             textAlign   : 'center',
-            fontSize    : '15px',
+            fontSize    : '17px',
             fontWeight  : 600,
             color       : '#ffffff',
-            marginBottom: '20px',
-            paddingLeft : '20px',
-            paddingRight: '20px',
+            marginBottom: '32px',
+            paddingLeft : '24px',
+            paddingRight: '24px',
             lineHeight  : 1.4,
           }}>
             <span style={{ color: '#0D9488' }}>✓</span>{' '}
@@ -863,13 +863,13 @@ export default function GetSolarInfoPage() {
           </p>
 
           {/* Custom slot picker — contacts GHL directly via contactId, no iframe */}
-          <div style={{ width: '100%', maxWidth: '660px', margin: '0 auto', padding: '0 20px' }}>
+          <div style={{ width: '100%', maxWidth: '880px', margin: '0 auto', padding: '0 24px' }}>
             <div
-              className="w-full rounded-3xl border border-white/[0.09]"
+              className="w-full rounded-3xl border border-white/[0.14]"
               style={{
-                background : 'rgba(255,255,255,0.026)',
-                boxShadow  : '0 12px 56px rgba(0,0,0,0.36), 0 2px 8px rgba(0,0,0,0.18)',
-                padding    : '36px 32px 40px',
+                background : 'rgba(255,255,255,0.055)',
+                boxShadow  : '0 24px 80px rgba(0,0,0,0.52), 0 4px 20px rgba(0,0,0,0.28)',
+                padding    : '56px 52px 64px',
               }}
             >
               <SlotPicker
