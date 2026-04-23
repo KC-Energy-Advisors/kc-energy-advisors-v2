@@ -364,12 +364,19 @@ export default function GetSolarInfoPage() {
   const [step,        setStep]        = useState<FormStep>(1);
   const [form,        setForm]        = useState<FormData>(EMPTY_FORM);
   const [contactId,   setContactId]   = useState<string | null>(null);
+
+  console.error('[FUNNEL] render contactId:', contactId);
   const [submitError, setSubmitError] = useState<string>('');
   const [bookedSlot,  setBookedSlot]  = useState<CalendarSlot | null>(null);
 
   // Prevents re-firing the Step 1 partial upsert if the user navigates
   // back to Step 1 and clicks Continue again. One upsert per session.
   const step1UpsertFired = useRef(false);
+
+  // Mount detector — fires once; if seen twice the component is remounting.
+  useEffect(() => {
+    console.error('[FUNNEL] component mounted');
+  }, []);
 
   // Log every time contactId resolves to a real value.
   useEffect(() => {
@@ -464,7 +471,11 @@ export default function GetSolarInfoPage() {
       })
       .then((data: { contactId?: string | null }) => {
         console.error('[S1 UPSERT] contactId returned:', data.contactId ?? 'null/missing');
-        if (data.contactId) setContactId(data.contactId);
+        if (data.contactId) {
+          console.error('[FUNNEL] setting contactId:', data.contactId);
+          setContactId(data.contactId);
+          console.error('[FUNNEL] after setContactId call');
+        }
       })
       .catch(err => {
         console.error('[S1 UPSERT] fetch threw:', err);
