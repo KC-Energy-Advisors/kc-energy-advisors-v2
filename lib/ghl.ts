@@ -188,23 +188,52 @@ export async function getCalendarSlots(params: {
 
   // ── Parse ────────────────────────────────────────────────────────
   try {
-    // GHL returns: { _dates_: { "2026-04-22": { slots: ["2026-04-22T09:00:00-05:00", ...] } } }
-    const data = JSON.parse(raw) as {
-      _dates_?: Record<string, { slots: string[] }>;
-    };
+    const data = JSON.parse(raw) as Record<string, unknown>;
+    const topKeys = Object.keys(data);
+    console.error('[GHL] getCalendarSlots — top-level keys:', topKeys.slice(0, 6));
 
-    if (!data._dates_) {
-      console.error('[GHL] getCalendarSlots — response has no _dates_ key. Full response:', raw.substring(0, 400));
+    // ── Resolve the date map regardless of envelope shape ──────────
+    // Format A (documented):  { _dates_: { "YYYY-MM-DD": { slots: [...] } } }
+    // Format B (observed):    { "YYYY-MM-DD": { slots: [...] }, ... }
+    const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+    let dateMap: Record<string, { slots: string[] }> | null = null;
+
+    if (data._dates_ && typeof data._dates_ === 'object' && !Array.isArray(data._dates_)) {
+      // Format A
+      console.error('[GHL] getCalendarSlots — detected Format A (_dates_ envelope)');
+      dateMap = data._dates_ as Record<string, { slots: string[] }>;
+    } else if (topKeys.some(k => DATE_RE.test(k))) {
+      // Format B — top-level keys are date strings
+      console.error('[GHL] getCalendarSlots — detected Format B (flat date keys)');
+      dateMap = {} as Record<string, { slots: string[] }>;
+      for (const key of topKeys) {
+        if (DATE_RE.test(key)) {
+          const val = data[key];
+          if (val && typeof val === 'object' && Array.isArray((val as { slots?: unknown }).slots)) {
+            dateMap[key] = val as { slots: string[] };
+          }
+        }
+      }
+    } else {
+      console.error('[GHL] getCalendarSlots — unrecognised response shape. Top keys:', topKeys.slice(0, 10), '| raw:', raw.substring(0, 400));
       return {};
     }
 
-    const dateKeys = Object.keys(data._dates_);
-    console.error('[GHL] getCalendarSlots — dates returned:', dateKeys.length,
-      '| first 2:', dateKeys.slice(0, 2),
-      '| sample slots:', data._dates_[dateKeys[0]]?.slots?.slice(0, 2) ?? []);
+    const dateKeys = Object.keys(dateMap);
+    const totalSlots = dateKeys.reduce((n, k) => n + (dateMap![k]?.slots?.length ?? 0), 0);
+    console.error('[GHL] getCalendarSlots — dates:', dateKeys.length,
+      '| total slots:', totalSlots,
+      '| first 2 dates:', dateKeys.slice(0, 2),
+      '| sample slots:', dateMap[dateKeys[0]]?.slots?.slice(0, 2) ?? []);
+
+    if (dateKeys.length === 0) {
+      console.error('[GHL] getCalendarSlots — dateMap is empty after parsing');
+      return {};
+    }
 
     const result: SlotsByDate = {};
-    for (const [date, { slots }] of Object.entries(data._dates_)) {
+    for (const [date, { slots }] of Object.entries(dateMap)) {
       result[date] = slots.map(startIso => {
         const start = new Date(startIso);
         const end   = new Date(start.getTime() + 30 * 60 * 1000);
