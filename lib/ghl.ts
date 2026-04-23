@@ -41,10 +41,12 @@ export async function sendLeadToGHL(payload: LeadPayload): Promise<void> {
 
 // ── REST API helpers ──────────────────────────────────────────────────────────
 
+// Contacts API version (upsert/tag use this inline — kept here for reference).
+// Calendar API uses 2021-04-15 (confirmed from tagGHLContact at bottom of file).
 const GHL_HEADERS = () => ({
   'Authorization': `Bearer ${GHL_API_KEY}`,
   'Content-Type':  'application/json',
-  'Version':       '2021-07-28',
+  'Version':       '2021-04-15',   // ← calendar endpoints require 2021-04-15, NOT 2021-07-28
 });
 
 /**
@@ -144,53 +146,75 @@ export async function getCalendarSlots(params: {
   endDate:   number;  // ms timestamp
   timezone:  string;  // IANA, e.g. "America/Chicago"
 }): Promise<SlotsByDate> {
+
+  // ── Env-var guard ────────────────────────────────────────────────
+  console.error('[GHL] getCalendarSlots — calendarId:', GHL_CALENDAR_ID || '⚠️ NOT SET',
+    '| apiKey set:', !!GHL_API_KEY,
+    '| tz:', params.timezone,
+    '| start:', new Date(params.startDate).toISOString(),
+    '| end:', new Date(params.endDate).toISOString());
+
   if (!GHL_API_KEY || !GHL_CALENDAR_ID) {
-    console.warn('[GHL] getCalendarSlots: GHL_API_KEY or GHL_CALENDAR_ID not set');
+    console.error('[GHL] ❌ getCalendarSlots blocked — GHL_API_KEY or GHL_CALENDAR_ID missing in env');
     return {};
   }
 
-  const qs = new URLSearchParams({
+  // ── Build request ────────────────────────────────────────────────
+  const qs  = new URLSearchParams({
     startDate: String(params.startDate),
     endDate:   String(params.endDate),
     timezone:  params.timezone,
   });
+  const url = `${GHL_API_BASE}/calendars/${GHL_CALENDAR_ID}/free-slots?${qs.toString()}`;
+  console.error('[GHL] getCalendarSlots — request URL:', url);
 
   let res: Response;
   try {
-    res = await fetch(
-      `${GHL_API_BASE}/calendars/${GHL_CALENDAR_ID}/free-slots?${qs.toString()}`,
-      { method: 'GET', headers: GHL_HEADERS(), cache: 'no-store' },
-    );
+    res = await fetch(url, { method: 'GET', headers: GHL_HEADERS(), cache: 'no-store' });
   } catch (err) {
     console.error('[GHL] getCalendarSlots network error:', err);
     return {};
   }
 
+  // ── Read raw body once so we can log it regardless of status ────
+  const raw = await res.text().catch(() => '');
+  console.error('[GHL] getCalendarSlots — status:', res.status,
+    '| body (first 800):', raw.substring(0, 800));
+
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    console.error(`[GHL] getCalendarSlots failed: ${res.status} — ${text}`);
+    console.error(`[GHL] getCalendarSlots failed: ${res.status} — ${raw}`);
     return {};
   }
 
+  // ── Parse ────────────────────────────────────────────────────────
   try {
     // GHL returns: { _dates_: { "2026-04-22": { slots: ["2026-04-22T09:00:00-05:00", ...] } } }
-    const data = await res.json() as {
+    const data = JSON.parse(raw) as {
       _dates_?: Record<string, { slots: string[] }>;
     };
-    if (!data._dates_) return {};
+
+    if (!data._dates_) {
+      console.error('[GHL] getCalendarSlots — response has no _dates_ key. Full response:', raw.substring(0, 400));
+      return {};
+    }
+
+    const dateKeys = Object.keys(data._dates_);
+    console.error('[GHL] getCalendarSlots — dates returned:', dateKeys.length,
+      '| first 2:', dateKeys.slice(0, 2),
+      '| sample slots:', data._dates_[dateKeys[0]]?.slots?.slice(0, 2) ?? []);
 
     const result: SlotsByDate = {};
     for (const [date, { slots }] of Object.entries(data._dates_)) {
       result[date] = slots.map(startIso => {
-        // Each slot is a start time; assume 30-min duration
         const start = new Date(startIso);
         const end   = new Date(start.getTime() + 30 * 60 * 1000);
         return { startTime: startIso, endTime: end.toISOString() } as CalendarSlot;
       });
     }
     return result;
-  } catch {
-    console.error('[GHL] getCalendarSlots: could not parse response JSON');
+
+  } catch (parseErr) {
+    console.error('[GHL] getCalendarSlots: JSON parse failed:', parseErr, '| raw:', raw.substring(0, 400));
     return {};
   }
 }
