@@ -44,6 +44,18 @@ export async function POST(req: NextRequest) {
 
   const { contactId, startTime, endTime, name, timezone } = body;
 
+  // ── Diagnostic log: incoming request ──────────────────────────────
+  // console.error survives Next.js removeConsole; console.log does not.
+  console.error('[book-appointment] INCOMING REQUEST',
+    '| contactId:', contactId,
+    '| startTime:', startTime,
+    '| endTime:', endTime,
+    '| timezone:', timezone,
+    '| name:', name,
+    '| calendarId (env):', process.env.GHL_CALENDAR_ID ?? '⚠️ NOT SET',
+    '| assignedUserId (env):', process.env.GHL_ASSIGNED_USER_ID ?? '(not set)',
+  );
+
   try {
     const appointmentId = await createGHLAppointment({
       contactId,
@@ -54,6 +66,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!appointmentId) {
+      // createGHLAppointment already logged the GHL error detail
       console.error(`[book-appointment] ❌ createGHLAppointment returned null — contactId: ${contactId}`);
       return NextResponse.json<BookingResponse>(
         { success: false, error: 'Failed to create appointment. Please try again.' },
@@ -61,7 +74,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`[book-appointment] ✅ Appointment created — id: ${appointmentId}, contact: ${contactId}`);
+    // Use console.error — console.log is stripped by removeConsole in production
+    console.error(`[book-appointment] ✅ SUCCESS — appointmentId: ${appointmentId}, contactId: ${contactId}`);
     return NextResponse.json<BookingResponse>({ success: true, appointmentId });
 
   } catch (err) {

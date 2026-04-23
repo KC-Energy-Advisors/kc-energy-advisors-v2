@@ -251,34 +251,69 @@ export async function getCalendarSlots(params: {
 /**
  * Create an appointment in GHL for a specific contact and time slot.
  * Returns the appointment id on success, null on failure.
+ *
+ * FIX LOG (2026-04):
+ *   - Added `selectedTimezone` to request body — GHL requires this field;
+ *     omitting it causes a validation error and the appointment is never created.
+ *   - Added optional `assignedUserId` from GHL_ASSIGNED_USER_ID env var so
+ *     the appointment lands on Michael's calendar and triggers his workflow.
+ *   - Full diagnostic logging: outgoing body, URL, HTTP status, raw response.
+ *   - All logs use console.error so they survive Next.js removeConsole in prod.
  */
 export async function createGHLAppointment(params: {
   contactId : string;
   startTime : string;  // ISO 8601
   endTime   : string;  // ISO 8601
   name      : string;
-  timezone  : string;
+  timezone  : string;  // IANA tz — sent as selectedTimezone per GHL API spec
 }): Promise<string | null> {
   if (!GHL_API_KEY || !GHL_CALENDAR_ID) {
-    console.warn('[GHL] createGHLAppointment: GHL_API_KEY or GHL_CALENDAR_ID not set');
+    console.error('[GHL] createGHLAppointment: GHL_API_KEY or GHL_CALENDAR_ID not set — cannot book');
     return null;
   }
 
-  const body = {
-    calendarId:     GHL_CALENDAR_ID,
-    locationId:     GHL_LOCATION_ID,
-    contactId:      params.contactId,
-    startTime:      params.startTime,
-    endTime:        params.endTime,
-    title:          `Solar Consultation — ${params.name}`,
+  // ── Build request body ───────────────────────────────────────────
+  // `selectedTimezone` is required by GHL — without it GHL rejects with 422.
+  // `assignedUserId`   assigns the appointment to Michael so his workflow fires.
+  // `toNotify: true`   triggers GHL's built-in confirmation email/SMS to contact.
+  const body: Record<string, unknown> = {
+    calendarId:        GHL_CALENDAR_ID,
+    locationId:        GHL_LOCATION_ID,
+    contactId:         params.contactId,
+    startTime:         params.startTime,
+    endTime:           params.endTime,
+    selectedTimezone:  params.timezone,   // ← WAS MISSING — root cause of booking failure
+    title:             `Solar Consultation — ${params.name}`,
     appointmentStatus: 'confirmed',
     ignoreDateRange:   false,
     toNotify:          true,
   };
 
+  // Attach to Michael's GHL user account if env var is configured.
+  // Set GHL_ASSIGNED_USER_ID in Vercel → Settings → Environment Variables.
+  const assignedUserId = process.env.GHL_ASSIGNED_USER_ID;
+  if (assignedUserId) {
+    body.assignedUserId = assignedUserId;
+  }
+
+  const url = `${GHL_API_BASE}/calendars/events/appointments`;
+
+  // ── Diagnostic log: outgoing request ────────────────────────────
+  console.error('[GHL] createGHLAppointment → REQUEST',
+    '| url:', url,
+    '| calendarId:', GHL_CALENDAR_ID,
+    '| locationId:', GHL_LOCATION_ID,
+    '| contactId:', params.contactId,
+    '| startTime:', params.startTime,
+    '| endTime:', params.endTime,
+    '| selectedTimezone:', params.timezone,
+    '| assignedUserId:', assignedUserId ?? '(not set)',
+    '| toNotify: true',
+  );
+
   let res: Response;
   try {
-    res = await fetch(`${GHL_API_BASE}/calendars/events/appointments`, {
+    res = await fetch(url, {
       method:  'POST',
       headers: GHL_HEADERS(),
       body:    JSON.stringify(body),
@@ -289,17 +324,51 @@ export async function createGHLAppointment(params: {
     return null;
   }
 
+  // ── Read body once — needed for both logging and parsing ─────────
+  const raw = await res.text().catch(() => '');
+
+  // ── Diagnostic log: response ─────────────────────────────────────
+  console.error('[GHL] createGHLAppointment → RESPONSE',
+    '| status:', res.status,
+    '| ok:', res.ok,
+    '| body (first 1000):', raw.substring(0, 1000),
+  );
+
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    console.error(`[GHL] createGHLAppointment failed: ${res.status} — ${text}`);
+    console.error(`[GHL] createGHLAppointment FAILED — HTTP ${res.status}`,
+      '| contactId:', params.contactId,
+      '| raw:', raw.substring(0, 600),
+    );
     return null;
   }
 
+  // ── Parse appointment id ─────────────────────────────────────────
+  // GHL returns: { appointment: { id: "...", ... } }
+  // Belt-and-suspenders: also check top-level id in case shape changes.
   try {
-    const data = await res.json() as { id?: string; appointment?: { id?: string } };
-    return data?.id ?? data?.appointment?.id ?? null;
-  } catch {
-    console.error('[GHL] createGHLAppointment: could not parse response JSON');
+    const data = JSON.parse(raw) as {
+      id?:           string;
+      appointment?:  { id?: string };
+    };
+
+    const appointmentId =
+      data?.appointment?.id ??
+      data?.id ??
+      null;
+
+    if (appointmentId) {
+      console.error('[GHL] createGHLAppointment SUCCESS — appointmentId:', appointmentId,
+        '| contactId:', params.contactId,
+        '| startTime:', params.startTime,
+      );
+    } else {
+      console.error('[GHL] createGHLAppointment: HTTP 2xx but no id in response — raw:', raw.substring(0, 400));
+    }
+
+    return appointmentId;
+
+  } catch (parseErr) {
+    console.error('[GHL] createGHLAppointment: could not parse response JSON —', parseErr, '| raw:', raw.substring(0, 400));
     return null;
   }
 }

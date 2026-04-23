@@ -235,9 +235,9 @@ export default function SlotPicker({
       console.error('[BOOKING] response:', res.status, JSON.stringify(json));
 
       if (!res.ok || !json.success) {
-        const msg = json.error || 'Could not confirm your booking. Please try a different time.';
-        console.error('[BOOKING] failed — inline retry:', msg);
-        setBookErr(msg);
+        // Keep technical detail in logs only — show friendly message to user
+        console.error('[BOOKING] failed — server error:', json.error ?? `HTTP ${res.status}`);
+        setBookErr(`We couldn't lock in that time. Please try again or call us at ${PHONE_DISPLAY}.`);
         setState('book-error');
         return;
       }
@@ -246,12 +246,9 @@ export default function SlotPicker({
       onBooked(selSlot);
 
     } catch (err) {
-      const isAbort = err instanceof Error && err.name === 'AbortError';
-      const msg = isAbort
-        ? 'Request timed out. Please try again.'
-        : 'Network error. Please check your connection and try again.';
+      // Keep technical detail in logs only — show friendly message to user
       console.error('[BOOKING] network error:', err);
-      setBookErr(msg);
+      setBookErr(`We couldn't lock in that time. Please try again or call us at ${PHONE_DISPLAY}.`);
       setState('book-error');
     }
   }
