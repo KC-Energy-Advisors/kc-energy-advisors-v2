@@ -367,7 +367,18 @@ export default function GetSolarInfoPage() {
   const [form,        setForm]        = useState<FormData>(EMPTY_FORM);
   const [contactId,   setContactId]   = useState<string | null>(null);
 
-  console.error('[FUNNEL] render contactId:', contactId);
+  // Ref mirror — survives re-renders and stale closures.
+  // Always set in sync with the state setter below.
+  const contactIdRef = useRef<string | null>(null);
+
+  // Wrapper: keeps state + ref in lockstep.
+  const setContactIdSafe = (id: string | null) => {
+    console.error('[FUNNEL] setContactIdSafe called with:', id ?? 'null');
+    contactIdRef.current = id;
+    setContactId(id);
+  };
+
+  console.error('[FUNNEL] render — contactId state:', contactId, '| ref:', contactIdRef.current);
   const [submitError, setSubmitError] = useState<string>('');
   const [bookedSlot,  setBookedSlot]  = useState<CalendarSlot | null>(null);
 
@@ -377,14 +388,12 @@ export default function GetSolarInfoPage() {
 
   // Mount detector — fires once; if seen twice the component is remounting.
   useEffect(() => {
-    console.error('[FUNNEL] component mounted');
+    console.error('[FUNNEL] component mounted — initial contactIdRef:', contactIdRef.current);
   }, []);
 
   // Log every time contactId resolves to a real value.
   useEffect(() => {
-    if (contactId) {
-      console.error('[FUNNEL] contactId changed:', contactId);
-    }
+    console.error('[FUNNEL] contactId effect — value:', contactId ?? 'null', '| ref:', contactIdRef.current);
   }, [contactId]);
 
   const set = <K extends keyof FormData>(key: K, value: FormData[K]) =>
@@ -471,12 +480,16 @@ export default function GetSolarInfoPage() {
         console.error('[S1 UPSERT] response status:', r.status, 'body:', text);
         try { return JSON.parse(text); } catch { return {}; }
       })
-      .then((data: { contactId?: string | null }) => {
-        console.error('[S1 UPSERT] contactId returned:', data.contactId ?? 'null/missing');
+      .then((data: { contactId?: string | null; success?: boolean; ghl_ok?: boolean }) => {
+        console.error('[S1 UPSERT] full parsed response:', JSON.stringify(data));
+        console.error('[S1 UPSERT] data.contactId raw value:', data.contactId);
+        console.error('[S1 UPSERT] typeof data.contactId:', typeof data.contactId);
         if (data.contactId) {
-          console.error('[FUNNEL] setting contactId:', data.contactId);
-          setContactId(data.contactId);
-          console.error('[FUNNEL] after setContactId call');
+          console.error('[FUNNEL] setting contactId via setContactIdSafe:', data.contactId);
+          setContactIdSafe(data.contactId);
+          console.error('[FUNNEL] after setContactIdSafe call — ref is now:', contactIdRef.current);
+        } else {
+          console.error('[FUNNEL] contactId is falsy — NOT calling setContactIdSafe. Value was:', data.contactId);
         }
       })
       .catch(err => {
@@ -571,7 +584,7 @@ export default function GetSolarInfoPage() {
       // ── Dev mode (no GHL env vars configured locally) ────────────
       // Proceed to booking with no contactId so the dev flow is testable.
       if (data.dev_mode) {
-        setContactId(null);
+        console.error('[FUNNEL] dev_mode — skipping contactId set, proceeding to booking');
         setPageState('booking');
         return;
       }
@@ -590,15 +603,18 @@ export default function GetSolarInfoPage() {
       // ── Soft success — GHL webhook succeeded ──────────────────────
       // Prefer the fresh contactId from the full submit; fall back to the
       // one captured at Step 1. Block booking entirely if neither resolved.
-      const resolvedId = data.contactId ?? contactId ?? null;
-      console.error('[FUNNEL] resolved contactId after full submit:', resolvedId ?? 'null');
+      const resolvedId = data.contactId ?? contactIdRef.current ?? contactId ?? null;
+      console.error('[FUNNEL] resolved contactId after full submit:', resolvedId ?? 'null',
+        '| data.contactId:', data.contactId ?? 'null',
+        '| ref:', contactIdRef.current ?? 'null',
+        '| state:', contactId ?? 'null');
       if (!resolvedId) {
         console.error('[FUNNEL] blocking booking — contactId is null after full submit');
         setSubmitError('Could not confirm your profile. Please try again.');
         setPageState('submit-error');
         return;
       }
-      setContactId(resolvedId);
+      setContactIdSafe(resolvedId);
       setPageState('booking');
 
     } catch (err) {
@@ -816,7 +832,7 @@ export default function GetSolarInfoPage() {
     <PageShell>
       {/* ── DEBUG MARKER — remove after confirming deploy ───────── */}
       <div style={{ background: 'red', color: 'white', fontWeight: 'bold', fontSize: '14px', padding: '8px 16px', textAlign: 'center', zIndex: 9999 }}>
-        ✅ GetSolarInfoPage v2 — contactId: {contactId ?? 'none'}
+        ✅ GetSolarInfoPage v2 | state: {contactId || 'none'} | ref: {contactIdRef.current || 'none'}
       </div>
       {/* ── SECTION 1: HERO ───────────────────────────────────── */}
       <section className="pt-14 pb-8 text-center px-6">
