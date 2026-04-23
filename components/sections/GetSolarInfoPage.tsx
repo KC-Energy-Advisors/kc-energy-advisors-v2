@@ -830,10 +830,6 @@ export default function GetSolarInfoPage() {
   // ── MULTI-STEP FORM ────────────────────────────────────────────
   return (
     <PageShell>
-      {/* ── DEBUG MARKER — remove after confirming deploy ───────── */}
-      <div style={{ background: 'red', color: 'white', fontWeight: 'bold', fontSize: '14px', padding: '8px 16px', textAlign: 'center', zIndex: 9999 }}>
-        ✅ GetSolarInfoPage v2 | state: {contactId || 'none'} | ref: {contactIdRef.current || 'none'}
-      </div>
       {/* ── SECTION 1: HERO ───────────────────────────────────── */}
       <section className="pt-14 pb-8 text-center px-6">
         <div className="inline-flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-widest text-white/65 bg-white/[0.07] border border-white/[0.09] px-3.5 py-1.5 rounded-full mb-6">
