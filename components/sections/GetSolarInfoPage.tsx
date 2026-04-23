@@ -371,9 +371,11 @@ export default function GetSolarInfoPage() {
   // back to Step 1 and clicks Continue again. One upsert per session.
   const step1UpsertFired = useRef(false);
 
-  // Log every time contactId transitions so we can trace it through the funnel.
+  // Log every time contactId resolves to a real value.
   useEffect(() => {
-    console.error('[FUNNEL] contactId changed:', contactId ?? 'null');
+    if (contactId) {
+      console.error('[FUNNEL] contactId changed:', contactId);
+    }
   }, [contactId]);
 
   const set = <K extends keyof FormData>(key: K, value: FormData[K]) =>
