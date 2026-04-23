@@ -42,6 +42,7 @@ export interface LeadPayload {
   lastName:      string;
   phone:         string;        // E.164 format
   email:         string;
+  address?:      string;        // full address string from Step 1 form
   // Qualification
   is_owner:       'yes' | 'no';
   location_ok:    'yes' | 'no';

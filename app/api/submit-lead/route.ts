@@ -153,6 +153,7 @@ export async function POST(req: NextRequest) {
         phone:     p.phone,
         email:     p.email,
         tags:      p.tags,
+        address:   p.address,
       });
       if (contactId) {
         console.log(`[submit-lead] ✅ GHL upsert succeeded — contactId: ${contactId}`);
