@@ -355,9 +355,92 @@ export async function createGHLAppointment(params: {
   );
 
   if (!res.ok) {
+    // ── 422 + assignedUserId present → retry without it ──────────────
+    if (res.status === 422 && assignedUserId) {
+      console.error('[GHL] createGHLAppointment: HTTP 422 with assignedUserId — likely not a calendar team member.',
+        '| calendarId:', GHL_CALENDAR_ID,
+        '| assignedUserId:', assignedUserId,
+        '| full error body:', raw,
+        '| Retrying WITHOUT assignedUserId…',
+      );
+
+      // Build a clean body without assignedUserId
+      const retryBody: Record<string, unknown> = {
+        calendarId:        GHL_CALENDAR_ID,
+        locationId:        GHL_LOCATION_ID,
+        contactId:         params.contactId,
+        startTime:         params.startTime,
+        endTime:           params.endTime,
+        selectedTimezone:  params.timezone,
+        title:             `Solar Consultation — ${params.name}`,
+        appointmentStatus: 'confirmed',
+        ignoreDateRange:   false,
+        toNotify:          true,
+      };
+
+      console.error('[GHL] createGHLAppointment → RETRY REQUEST',
+        '| url:', url,
+        '| calendarId:', GHL_CALENDAR_ID,
+        '| contactId:', params.contactId,
+        '| startTime:', params.startTime,
+        '| assignedUserId: OMITTED',
+      );
+
+      let retryRes: Response;
+      try {
+        retryRes = await fetch(url, {
+          method:  'POST',
+          headers: GHL_HEADERS(GHL_BOOKING_API_KEY),
+          body:    JSON.stringify(retryBody),
+          cache:   'no-store',
+        });
+      } catch (retryErr) {
+        console.error('[GHL] createGHLAppointment retry network error:', retryErr);
+        return null;
+      }
+
+      const retryRaw = await retryRes.text().catch(() => '');
+
+      console.error('[GHL] createGHLAppointment → RETRY RESPONSE',
+        '| status:', retryRes.status,
+        '| ok:', retryRes.ok,
+        '| body (first 1000):', retryRaw.substring(0, 1000),
+      );
+
+      if (!retryRes.ok) {
+        console.error('[GHL] createGHLAppointment RETRY ALSO FAILED — HTTP', retryRes.status,
+          '| contactId:', params.contactId,
+          '| full error body:', retryRaw,
+        );
+        return null;
+      }
+
+      // Retry succeeded — parse and return
+      try {
+        const retryData = JSON.parse(retryRaw) as {
+          id?:          string;
+          appointment?: { id?: string };
+        };
+        const retryId = retryData?.appointment?.id ?? retryData?.id ?? null;
+        if (retryId) {
+          console.error('[GHL] createGHLAppointment RETRY SUCCESS (no assignedUserId) — appointmentId:', retryId,
+            '| contactId:', params.contactId,
+            '| startTime:', params.startTime,
+          );
+        } else {
+          console.error('[GHL] createGHLAppointment retry: HTTP 2xx but no id — raw:', retryRaw.substring(0, 400));
+        }
+        return retryId;
+      } catch (retryParseErr) {
+        console.error('[GHL] createGHLAppointment retry: JSON parse failed —', retryParseErr, '| raw:', retryRaw.substring(0, 400));
+        return null;
+      }
+    }
+
+    // ── Non-422 failure (or 422 without assignedUserId) ───────────────
     console.error(`[GHL] createGHLAppointment FAILED — HTTP ${res.status}`,
       '| contactId:', params.contactId,
-      '| raw:', raw.substring(0, 600),
+      '| full error body:', raw,
     );
     return null;
   }
