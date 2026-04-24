@@ -6,14 +6,33 @@
 import type { LeadPayload, CalendarSlot, SlotsByDate } from './types';
 
 const GHL_WEBHOOK_URL = process.env.GHL_WEBHOOK_URL ?? '';
-const GHL_API_KEY     = process.env.GHL_API_KEY     ?? '';
 const GHL_API_BASE    = 'https://services.leadconnectorhq.com';
 const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID ?? '';
 const GHL_CALENDAR_ID = process.env.GHL_CALENDAR_ID ?? '';
 
+// ── Dual API key resolution ───────────────────────────────────────────────────
+// GHL_LEAD_API_KEY    → KC Web Lead API    (contacts upsert, tag)
+// GHL_BOOKING_API_KEY → KC Booking API     (calendar slots, appointment creation)
+// GHL_API_KEY         → legacy single key  (fallback when specific key not set)
+//
+// All three can live in Vercel → Settings → Environment Variables.
+// The specific key always wins; GHL_API_KEY is the safety net.
+const GHL_API_KEY         = process.env.GHL_API_KEY         ?? '';
+const GHL_LEAD_API_KEY    = process.env.GHL_LEAD_API_KEY    || GHL_API_KEY;
+const GHL_BOOKING_API_KEY = process.env.GHL_BOOKING_API_KEY || GHL_API_KEY;
+
+// Human-readable source labels — logged but NEVER the actual token.
+const LEAD_KEY_SOURCE    = process.env.GHL_LEAD_API_KEY
+  ? 'GHL_LEAD_API_KEY'
+  : (GHL_API_KEY ? 'GHL_API_KEY (fallback)' : '⚠️ NOT SET');
+const BOOKING_KEY_SOURCE = process.env.GHL_BOOKING_API_KEY
+  ? 'GHL_BOOKING_API_KEY'
+  : (GHL_API_KEY ? 'GHL_API_KEY (fallback)' : '⚠️ NOT SET');
+
 if (!GHL_WEBHOOK_URL && process.env.NODE_ENV === 'production') {
   console.error('[GHL] GHL_WEBHOOK_URL is not set. Leads will not flow to GHL.');
 }
+console.error('[GHL] key sources — lead:', LEAD_KEY_SOURCE, '| booking:', BOOKING_KEY_SOURCE);
 
 /**
  * Send a qualified lead payload to the GHL inbound webhook.
@@ -41,10 +60,10 @@ export async function sendLeadToGHL(payload: LeadPayload): Promise<void> {
 
 // ── REST API helpers ──────────────────────────────────────────────────────────
 
-// Contacts API version (upsert/tag use this inline — kept here for reference).
-// Calendar API uses 2021-04-15 (confirmed from tagGHLContact at bottom of file).
-const GHL_HEADERS = () => ({
-  'Authorization': `Bearer ${GHL_API_KEY}`,
+// Calendar endpoints require Version 2021-04-15; contacts use 2021-07-28 inline.
+// Accepts an explicit key so each caller passes its own resolved key.
+const GHL_HEADERS = (apiKey: string) => ({
+  'Authorization': `Bearer ${apiKey}`,
   'Content-Type':  'application/json',
   'Version':       '2021-04-15',   // ← calendar endpoints require 2021-04-15, NOT 2021-07-28
 });
@@ -63,8 +82,8 @@ export async function upsertGHLContact(params: {
   tags?:     string[];
   address?:  string;  // full address string; mapped to address1 in GHL
 }): Promise<string | null> {
-  if (!GHL_API_KEY) {
-    console.error('[GHL] upsertGHLContact: GHL_API_KEY not set — cannot upsert');
+  if (!GHL_LEAD_API_KEY) {
+    console.error('[GHL] upsertGHLContact: no lead API key set (tried GHL_LEAD_API_KEY, GHL_API_KEY) — cannot upsert');
     return null;
   }
 
@@ -89,14 +108,14 @@ export async function upsertGHLContact(params: {
   }
 
   console.error('[GHL CLEAN BODY]', body);
-  console.error('[GHL REQUEST] Using endpoint:', endpoint);
+  console.error('[GHL REQUEST] Using endpoint:', endpoint, '| keySource:', LEAD_KEY_SOURCE);
 
   let res: Response;
   try {
     res = await fetch(endpoint, {
       method:  'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.GHL_API_KEY}`,
+        'Authorization': `Bearer ${GHL_LEAD_API_KEY}`,
         'Version':       '2021-07-28',
         'Content-Type':  'application/json',
       },
@@ -149,13 +168,13 @@ export async function getCalendarSlots(params: {
 
   // ── Env-var guard ────────────────────────────────────────────────
   console.error('[GHL] getCalendarSlots — calendarId:', GHL_CALENDAR_ID || '⚠️ NOT SET',
-    '| apiKey set:', !!GHL_API_KEY,
+    '| keySource:', BOOKING_KEY_SOURCE,
     '| tz:', params.timezone,
     '| start:', new Date(params.startDate).toISOString(),
     '| end:', new Date(params.endDate).toISOString());
 
-  if (!GHL_API_KEY || !GHL_CALENDAR_ID) {
-    console.error('[GHL] ❌ getCalendarSlots blocked — GHL_API_KEY or GHL_CALENDAR_ID missing in env');
+  if (!GHL_BOOKING_API_KEY || !GHL_CALENDAR_ID) {
+    console.error('[GHL] ❌ getCalendarSlots blocked — booking API key (GHL_BOOKING_API_KEY / GHL_API_KEY) or GHL_CALENDAR_ID missing');
     return {};
   }
 
@@ -170,7 +189,7 @@ export async function getCalendarSlots(params: {
 
   let res: Response;
   try {
-    res = await fetch(url, { method: 'GET', headers: GHL_HEADERS(), cache: 'no-store' });
+    res = await fetch(url, { method: 'GET', headers: GHL_HEADERS(GHL_BOOKING_API_KEY), cache: 'no-store' });
   } catch (err) {
     console.error('[GHL] getCalendarSlots network error:', err);
     return {};
@@ -267,8 +286,8 @@ export async function createGHLAppointment(params: {
   name      : string;
   timezone  : string;  // IANA tz — sent as selectedTimezone per GHL API spec
 }): Promise<string | null> {
-  if (!GHL_API_KEY || !GHL_CALENDAR_ID) {
-    console.error('[GHL] createGHLAppointment: GHL_API_KEY or GHL_CALENDAR_ID not set — cannot book');
+  if (!GHL_BOOKING_API_KEY || !GHL_CALENDAR_ID) {
+    console.error('[GHL] createGHLAppointment: booking API key (GHL_BOOKING_API_KEY / GHL_API_KEY) or GHL_CALENDAR_ID not set — cannot book');
     return null;
   }
 
@@ -301,6 +320,7 @@ export async function createGHLAppointment(params: {
   // ── Diagnostic log: outgoing request ────────────────────────────
   console.error('[GHL] createGHLAppointment → REQUEST',
     '| url:', url,
+    '| keySource:', BOOKING_KEY_SOURCE,
     '| calendarId:', GHL_CALENDAR_ID,
     '| locationId:', GHL_LOCATION_ID,
     '| contactId:', params.contactId,
@@ -315,7 +335,7 @@ export async function createGHLAppointment(params: {
   try {
     res = await fetch(url, {
       method:  'POST',
-      headers: GHL_HEADERS(),
+      headers: GHL_HEADERS(GHL_BOOKING_API_KEY),
       body:    JSON.stringify(body),
       cache:   'no-store',
     });
@@ -378,12 +398,17 @@ export async function createGHLAppointment(params: {
  * Used by the API route when we need to tag a disqualified lead.
  */
 export async function tagGHLContact(contactId: string, tags: string[]): Promise<void> {
-  if (!GHL_API_KEY) return;
+  if (!GHL_LEAD_API_KEY) {
+    console.error('[GHL] tagGHLContact: no lead API key set (tried GHL_LEAD_API_KEY, GHL_API_KEY) — skipping tag');
+    return;
+  }
+
+  console.error('[GHL] tagGHLContact — contactId:', contactId, '| tags:', tags, '| keySource:', LEAD_KEY_SOURCE);
 
   const res = await fetch(`${GHL_API_BASE}/contacts/${contactId}`, {
     method:  'PUT',
     headers: {
-      'Authorization':  `Bearer ${GHL_API_KEY}`,
+      'Authorization':  `Bearer ${GHL_LEAD_API_KEY}`,
       'Content-Type':   'application/json',
       'Version':        '2021-04-15',
     },

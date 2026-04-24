@@ -169,7 +169,7 @@ export default function SlotPicker({ contactId, name, phone, onBooked, onError }
         p.set('name', name);
       }
       if (phone) p.set('phone', phone);
-      return `https://api.leadconnectorhq.com/widget/booking/0fu9WVucPWOYhM0tSEGE?${p.toString()}`;
+      return `https://api.leadconnectorhq.com/widget/booking/0fu9WuucPW0YhM0SEGf?${p.toString()}`;
     })();
 
     return (

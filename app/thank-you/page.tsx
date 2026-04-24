@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function ThankYouPage() {
   const calendarUrl = process.env.NEXT_PUBLIC_BOOKING_CALENDAR_URL ||
-    'https://api.leadconnectorhq.com/widget/booking/0fu9WucPWOYhM0';
+    'https://api.leadconnectorhq.com/widget/booking/0fu9WuucPW0YhM0SEGf';
 
   return (
     <>
