@@ -385,7 +385,7 @@ export default function QualifyForm() {
                     <path d="M6 9l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                   <div>
-                    <div className="text-[12px] font-bold text-green-400">Your home qualifies!</div>
+                    <div className="text-[12px] font-bold text-green-400">Your home may qualify!</div>
                     <div className="text-[11px] text-white/45 mt-0.5">
                       Based on your bill ({fs.billLabel}), you&apos;re a strong solar candidate.
                     </div>
