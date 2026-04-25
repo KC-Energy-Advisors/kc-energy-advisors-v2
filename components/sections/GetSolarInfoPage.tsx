@@ -952,12 +952,6 @@ export default function GetSolarInfoPage() {
                     value={form.address}
                     onChange={v => set('address', v)}
                   />
-                  {/* Micro-momentum — shows once address has meaningful content */}
-                  {form.address.trim().length >= 8 && (
-                    <p className="text-[12px] font-medium mt-2" style={{ color: '#0D9488' }}>
-                      ✓ Nice — I can already use that to estimate what solar could look like for your home.
-                    </p>
-                  )}
                 </div>
 
                 {/* ── TCPA SMS Consent ───────────────────────────── */}
