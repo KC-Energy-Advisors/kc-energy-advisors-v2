@@ -60,7 +60,7 @@ export default function SolutionSection() {
               Solar isn&apos;t a gadget. It&apos;s a financial decision.
               When you generate your own power, you stop renting energy
               from a utility company and start owning it. Your payment is
-              fixed. It doesn&apos;t follow Evergy&apos;s pricing schedule.
+              fixed. It doesn&apos;t follow Ameren&apos;s pricing schedule.
             </motion.p>
 
             {/* Reassurance line — docx: one of highest-converting lines */}

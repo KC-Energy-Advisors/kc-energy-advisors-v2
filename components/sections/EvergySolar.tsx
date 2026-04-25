@@ -3,19 +3,19 @@ import { useIntersection } from '@/hooks/useIntersection';
 
 const FACTS = [
   {
-    label: 'Missouri side (KC Metro)',
+    label: 'Ameren Missouri net metering',
     detail:
-      'Evergy credits you at the full retail rate for every kilowatt your panels send to the grid. Those credits roll forward month to month. Most Missouri solar homeowners see near-zero bills in spring and fall.',
+      'Ameren credits you for the energy your panels send to the grid. Those credits roll forward month to month. Most St. Louis solar homeowners see near-zero bills in spring and fall.',
   },
   {
-    label: 'Kansas side (Overland Park, Lenexa, etc.)',
+    label: 'Right-sized for Ameren',
     detail:
-      "Same idea — but extra energy beyond your annual usage is credited at a much lower wholesale rate. That's why we size your system to match what you actually use, not to overproduce. Right-sizing is how you get the most out of net metering in Kansas.",
+      "We size your system to match what you actually use, not to overproduce. Excess generation beyond your annual usage is credited at a much lower rate, so right-sizing is how you get the most out of every panel.",
   },
   {
     label: 'At night or on cloudy days',
     detail:
-      "You stay connected to the Evergy grid. When your panels aren't producing, you draw power normally. Net metering means your credits from sunny days offset what you pull at night — so your net bill is far lower, not zero production days.",
+      "You stay connected to the Ameren grid. When your panels aren't producing, you draw power normally. Net metering means your credits from sunny days offset what you pull at night — so your net bill is far lower than before.",
   },
 ] as const;
 
@@ -77,15 +77,15 @@ export default function EvergySolar() {
             className="text-display-md font-black mb-4"
             style={{ color: '#0C1322', letterSpacing: '-0.01em', maxWidth: 600 }}
           >
-            How Evergy Works With Solar
+            How Ameren Works With Solar
           </h2>
 
           <p
             className="text-[17px] leading-relaxed mb-12"
             style={{ color: '#374151', maxWidth: 600 }}
           >
-            A lot of solar sites skip the specifics. Here&apos;s how Evergy&apos;s
-            net metering program actually works for KC homeowners — no jargon,
+            A lot of solar sites skip the specifics. Here&apos;s how Ameren Missouri&apos;s
+            net metering program actually works for St. Louis homeowners — no jargon,
             no fluff.
           </p>
         </div>
@@ -120,10 +120,10 @@ export default function EvergySolar() {
               Why we right-size every system
             </p>
             <p className="text-[14px] leading-[1.65]" style={{ color: '#1D4ED8' }}>
-              Under Evergy&apos;s net metering rules, producing more energy than you use
-              doesn&apos;t pay well — Evergy compensates that excess at wholesale rates
-              (a fraction of what they charge you). We design your system around your
-              actual consumption so every panel you pay for works at full value.
+              Under Ameren&apos;s net metering rules, producing more energy than you use
+              doesn&apos;t pay well — Ameren compensates that excess at a much lower rate
+              than what they charge you. We design your system around your actual
+              consumption so every panel you pay for works at full value.
             </p>
           </div>
         </div>

@@ -38,7 +38,7 @@ export default function Benefits() {
           viewport={viewport}
           transition={{ delay: 0.1 }}
         >
-          No hidden fees. No bait-and-switch. This is what a qualified KC homeowner receives.
+          No hidden fees. No bait-and-switch. This is what a qualified St. Louis homeowner receives.
         </motion.p>
 
         {/* 2-column grid, 4 rows — staggered */}
@@ -81,7 +81,7 @@ export default function Benefits() {
           whileInView="visible"
           viewport={viewport}
         >
-          *Home value increase based on national studies; individual results vary. Savings estimates based on avg. KC Evergy rates and system sizing data.
+          *Home value increase based on national studies; individual results vary. Savings estimates based on avg. Ameren Missouri rates and system sizing data.
         </motion.p>
       </div>
     </section>

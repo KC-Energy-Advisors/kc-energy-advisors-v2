@@ -25,13 +25,21 @@ const GHL_CALENDAR_ID = process.env.GHL_CALENDAR_ID ?? '';
 // ── GHL API key ───────────────────────────────────────────────────────────────
 // Single key. No fallbacks. No aliases. No OR logic.
 // Every GHL API call in this file uses GHL_API_KEY exclusively.
-// Missing key = hard throw at module load so misconfiguration is instantly
-// visible in Vercel logs rather than causing silent 403s downstream.
+//
+// IMPORTANT: We DO NOT throw at module load if the key is missing.
+// Throwing here breaks Next.js static analysis during `next build` whenever
+// the env var hasn't been provided yet (first-time Vercel build, local build
+// without .env.local, preview deploys, etc.). Each function in this file
+// already runtime-guards on GHL_API_KEY before making any API call, and the
+// API routes return a safe fallback response when the key is absent at
+// runtime — so build never sees a hard failure, and missing-key cases at
+// runtime are handled gracefully instead of crashing.
 const GHL_API_KEY = process.env.GHL_API_KEY ?? '';
 if (!GHL_API_KEY) {
-  throw new Error(
-    '[GHL] FATAL: GHL_API_KEY is not set. ' +
-    'Add it in Vercel → Settings → Environment Variables and redeploy.',
+  console.error(
+    '[GHL] WARNING: GHL_API_KEY is not set. ' +
+    'GHL API calls will return safe fallbacks at runtime. ' +
+    'Add the key in Vercel → Settings → Environment Variables before going live.',
   );
 }
 

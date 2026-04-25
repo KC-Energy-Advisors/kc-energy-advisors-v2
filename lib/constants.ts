@@ -78,27 +78,27 @@ export const RATE_CHART: readonly RateChartItem[] = [
 ];
 
 // ── FAQ content ───────────────────────────────────────────────────
-// Updated: removed tax credit Q&A (expired Dec 31 2025), added Evergy-specific answers.
+// Updated: removed tax credit Q&A (expired Dec 31 2025), added Ameren-specific answers.
 export const FAQ_ITEMS = [
   {
     q: 'Is this really $0 down?',
-    a: 'Yes. You pay nothing to get started. Your first solar payment replaces your Evergy bill — and it\'s typically lower. No deposit, no installation cost, no surprises.',
+    a: 'Yes. You pay nothing to get started. Your first solar payment replaces your Ameren bill — and it\'s typically lower. No deposit, no installation cost, no surprises.',
   },
   {
     q: "What's the catch?",
-    a: "There isn't one — but we get why you'd ask. You're financing a physical asset on your home. Like a car loan, you make monthly payments. The difference: the payment is usually less than your old Evergy bill, and at the end you own something that added value to your home.",
+    a: "There isn't one — but we get why you'd ask. You're financing a physical asset on your home. Like a car loan, you make monthly payments. The difference: the payment is usually less than your old Ameren bill, and at the end you own something that added value to your home.",
   },
   {
-    q: 'Does Evergy allow solar? How does the billing work?',
-    a: "Yes — Evergy is required by state law to offer net metering to solar customers in both Kansas and Missouri. When your panels produce more than you use, Evergy credits your account. At night you draw from the grid as normal. Most KC solar homeowners see near-zero bills several months a year. We handle the Evergy interconnection application — you don't deal with them directly.",
+    q: 'Does Ameren allow solar? How does the billing work?',
+    a: "Yes — Ameren Missouri is required by state law to offer net metering to residential solar customers. When your panels produce more than you use, Ameren credits your account. At night you draw from the grid as normal. Most St. Louis solar homeowners see near-zero bills several months a year. We handle the Ameren interconnection application — you don't deal with them directly.",
   },
   {
     q: 'What happens to extra energy my panels produce?',
-    a: "It gets credited to your Evergy account. On good production days — spring and fall especially — those credits roll forward and offset future bills. One important note: we size your system to match your actual usage, not to overproduce, because Evergy compensates excess generation beyond your annual usage at a much lower rate. Right-sizing protects your investment.",
+    a: "It gets credited to your Ameren account. On good production days — spring and fall especially — those credits roll forward and offset future bills. One important note: we size your system to match your actual usage, not to overproduce, because Ameren compensates excess generation beyond your annual usage at a much lower rate. Right-sizing protects your investment.",
   },
   {
     q: 'Is solar still worth it?',
-    a: "Yes — and the math is actually straightforward. If you're paying $150+ to Evergy today, and Evergy keeps raising rates (which they have, every year or two), your bill keeps growing. Solar replaces that with one fixed monthly payment — immune to future rate increases — for 25 years. The longer Evergy raises rates, the better solar looks by comparison.",
+    a: "Yes — and the math is actually straightforward. If you're paying $150+ to Ameren today, and Ameren keeps raising rates (which they have, every year or two), your bill keeps growing. Solar replaces that with one fixed monthly payment — immune to future rate increases — for 25 years. The longer Ameren raises rates, the better solar looks by comparison.",
   },
   {
     q: 'What if I sell my house?',
@@ -106,7 +106,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: 'How long does installation take?',
-    a: 'Installation itself is one day. The full process — permits, Evergy interconnection approval, inspection — typically runs 6–8 weeks. We manage all of it. You have one point of contact from your first call to the day your system goes live.',
+    a: 'Installation itself is one day. The full process — permits, Ameren interconnection approval, inspection — typically runs 6–8 weeks. We manage all of it. You have one point of contact from your first call to the day your system goes live.',
   },
   {
     q: "My bill isn't that high. Does solar make sense?",
@@ -123,16 +123,16 @@ export const BENEFITS = [
   },
   {
     title: 'Your Rate Is Locked.',
-    body:  'Your solar payment is fixed on day one. Evergy can raise rates as much as they want — your cost doesn\'t move.',
+    body:  'Your solar payment is fixed on day one. Ameren can raise rates as much as they want — your cost doesn\'t move.',
     icon:  '🔒',
   },
   {
    title: "Take Control of Your Energy Costs",
-body: "Most KC homeowners aren’t trying to gamble on utility rates anymore — they’re looking for something predictable. Solar gives you control over your energy costs instead of being at the mercy of Evergy’s increases.",
+body: "Most St. Louis homeowners aren’t trying to gamble on utility rates anymore — they’re looking for something predictable. Solar gives you control over your energy costs instead of being at the mercy of Ameren’s increases.",
   },
   {
     title: 'Done in One Day.',
-    body:  'Installation takes one day. Permits and Evergy interconnection take 2–3 weeks — we handle both.',
+    body:  'Installation takes one day. Permits and Ameren interconnection take 2–3 weeks — we handle both.',
     icon:  '⚡',
   },
   {
@@ -147,12 +147,12 @@ body: "Most KC homeowners aren’t trying to gamble on utility rates anymore —
   },
   {
     title: 'Protection From Rate Hikes.',
-    body:  'Evergy raised rates in 2024, again in 2025, and has filed for another increase. Solar puts you off that treadmill.',
+    body:  'Ameren has filed multiple rate cases in recent years and has filed again. Solar puts you off that treadmill.',
     icon:  '📊',
   },
   {
-    title: 'Local KC Team.',
-    body:  'We live here. We answer the phone. Same-day response. Real people who know Evergy\'s territory.',
+    title: 'Local Missouri Team.',
+    body:  'We live here. We answer the phone. Same-day response. Real people who know Ameren\'s territory.',
     icon:  '📍',
   },
 ] as const;

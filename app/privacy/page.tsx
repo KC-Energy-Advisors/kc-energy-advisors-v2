@@ -20,7 +20,7 @@ export default function PrivacyPage() {
 
           <div className="prose prose-slate max-w-none">
             <Section title="1. Who We Are">
-              <p>KC Energy Advisors LLC (&ldquo;KC Energy Advisors,&rdquo; &ldquo;we,&rdquo; or &ldquo;us&rdquo;) is a solar advisory firm based in Kansas City, Missouri. This Privacy Policy explains how we collect, use, disclose, and safeguard information when you visit our website or submit a form requesting solar information.</p>
+              <p>KC Energy Advisors LLC (&ldquo;KC Energy Advisors,&rdquo; &ldquo;we,&rdquo; or &ldquo;us&rdquo;) is a solar advisory firm based in St. Louis, Missouri. This Privacy Policy explains how we collect, use, disclose, and safeguard information when you visit our website or submit a form requesting solar information.</p>
             </Section>
 
             <Section title="2. Information We Collect">
@@ -76,7 +76,7 @@ export default function PrivacyPage() {
             </Section>
 
             <Section title="10. Contact Us">
-              <p>KC Energy Advisors LLC<br/>Kansas City, Missouri<br/>Email: info@kcenergyadvisors.com</p>
+              <p>KC Energy Advisors LLC<br/>St. Louis, Missouri<br/>Email: info@kcenergyadvisors.com</p>
               <p className="mt-3">For SMS opt-out issues, text STOP to the number you received our message from, or email us with your phone number and we will immediately remove you.</p>
             </Section>
           </div>

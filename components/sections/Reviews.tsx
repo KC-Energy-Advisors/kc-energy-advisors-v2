@@ -76,7 +76,7 @@ export default function Reviews() {
       <div className="max-w-site mx-auto px-6">
         <RevealSection className="text-center max-w-[560px] mx-auto mb-6">
           <div className="inline-flex items-center gap-2 text-[11.5px] font-bold uppercase tracking-widest text-brand-blue bg-blue-50 border border-blue-100 px-3.5 py-1.5 rounded-full mb-4">
-            Real KC Homeowners
+            Real Missouri Homeowners
           </div>
           <h2 className="text-display-md font-black text-slate-900 mb-4">
             500+ families already made the switch.

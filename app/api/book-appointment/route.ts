@@ -37,6 +37,19 @@ function isValidBookingRequest(body: unknown): body is BookingRequest {
  *  7. Return success response
  */
 export async function POST(req: NextRequest) {
+  // ── Build-safe runtime guard ──────────────────────────────────────
+  // If the env var isn't set at runtime (e.g. preview deploy, missed
+  // Vercel config), return a safe fallback instead of throwing. This
+  // pairs with lib/ghl.ts no longer throwing at module load, so the
+  // build never hits a hard failure and runtime never 500s on misconfig.
+  if (!process.env.GHL_API_KEY) {
+    console.error('[book-appointment] GHL_API_KEY not set — returning safe fallback');
+    return NextResponse.json<BookingResponse>(
+      { success: false, error: 'API not configured' },
+      { status: 200 },
+    );
+  }
+
   // ── Parse body ────────────────────────────────────────────────────
   let body: unknown;
   try {

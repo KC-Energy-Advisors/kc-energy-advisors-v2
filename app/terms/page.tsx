@@ -6,7 +6,7 @@ import { PHONE_DISPLAY, PHONE_HREF } from '@/lib/constants';
 
 export const metadata: Metadata = {
   title: 'Terms of Service | KC Energy Advisors',
-  description: 'Terms of service for KC Energy Advisors — Kansas City solar advisory services.',
+  description: 'Terms of service for KC Energy Advisors — St. Louis solar advisory services.',
   robots: { index: false },
 };
 
@@ -31,7 +31,7 @@ export default function TermsPage() {
               <h2 className="text-[18px] font-bold mb-3" style={{ color: '#0C1322' }}>1. Services</h2>
               <p>
                 KC Energy Advisors LLC ("we," "us," or "our") provides solar energy advisory,
-                consultation, and referral services to residential homeowners in the Kansas City
+                consultation, and referral services to residential homeowners in the St. Louis
                 metropolitan area. Our services include free savings estimates, advisor consultations,
                 and connection to licensed installation partners.
               </p>
@@ -62,7 +62,7 @@ export default function TermsPage() {
               <h2 className="text-[18px] font-bold mb-3" style={{ color: '#0C1322' }}>4. Savings Estimates</h2>
               <p>
                 All savings estimates provided by KC Energy Advisors are projections based on
-                average KC utility rates, historical EIA rate data, and standard production
+                average Missouri utility rates, historical EIA rate data, and standard production
                 assumptions for our region. Actual savings will vary based on your home's
                 specific characteristics, usage patterns, roof orientation, and applicable
                 utility tariffs. Estimates do not constitute a guarantee or contract.

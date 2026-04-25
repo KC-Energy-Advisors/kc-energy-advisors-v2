@@ -99,7 +99,7 @@ export default function ProblemSection() {
             {/* Rate bar chart */}
             <div className="rounded-2xl p-6 inline-block border border-white/5" style={{ background: 'rgba(30,45,69,0.6)' }}>
               <p className="text-[11px] font-semibold uppercase tracking-widest mb-5" style={{ color: '#6B7280' }}>
-                KC Average Electricity Rate (¢/kWh)
+                Missouri Average Electricity Rate (¢/kWh)
               </p>
               <div className="flex items-end gap-3">
                 {RATE_CHART.map(item => (
@@ -141,7 +141,7 @@ export default function ProblemSection() {
         >
           <p className="text-[17px] leading-relaxed mb-4 mx-auto" style={{ color: '#94A3B8', maxWidth: 560 }}>
             At current rates and projected increases,
-            the average Kansas City homeowner will pay
+            the average St. Louis homeowner will pay
           </p>
           <div
             className="font-black leading-none mb-4"
@@ -153,7 +153,7 @@ export default function ProblemSection() {
             to their utility company over the next 20 years.
           </p>
           <p className="text-[13px]" style={{ color: '#6B7280' }}>
-            *Based on avg. KC residential bill of $190/mo, 3.4% annual rate increase per EIA historical data (2010–2023).
+            *Based on avg. Missouri residential bill of $190/mo, 3.4% annual rate increase per EIA historical data (2010–2023).
           </p>
         </div>
       </div>

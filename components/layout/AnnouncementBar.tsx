@@ -12,7 +12,7 @@ export default function AnnouncementBar() {
         <span className="text-center leading-snug">
           Energy costs are rising faster than at any point in the last 20 years — and demand is only growing.{' '}
           <a href="/get-solar-info?source=announcement" className="underline underline-offset-2 font-semibold hover:text-white/90 transition-colors">
-            See what Kansas City homeowners are doing about it →
+            See what St. Louis homeowners are doing about it →
           </a>
         </span>
         <button

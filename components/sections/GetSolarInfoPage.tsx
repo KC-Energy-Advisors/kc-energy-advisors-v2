@@ -199,7 +199,7 @@ function ExpectationSection() {
     {
       icon : '📋',
       title: 'We review your current energy usage',
-      body : 'Your actual Evergy bill — real numbers specific to your home, not national averages.',
+      body : 'Your actual Ameren bill — real numbers for your home, not national averages.',
     },
     {
       icon : '🏡',
@@ -244,7 +244,7 @@ function ExpectationSection() {
 
 function TrustSection() {
   const items = [
-    { stat: '500+', label: 'KC homeowners served' },
+    { stat: '500+', label: 'Missouri homeowners served' },
     { stat: '25yr',  label: 'Panel warranty' },
     { stat: '$0',    label: 'Down options available' },
   ];
@@ -971,7 +971,7 @@ export default function GetSolarInfoPage() {
                 <div>
                   <FieldLabel>Phone Number</FieldLabel>
                   <TextInput
-                    placeholder="(816) 000-0000"
+                    placeholder="(314) 000-0000"
                     value={form.phone}
                     onChange={v => set('phone', v)}
                     type="tel"
@@ -980,7 +980,7 @@ export default function GetSolarInfoPage() {
                 <div>
                   <FieldLabel>Property Address</FieldLabel>
                   <TextInput
-                    placeholder="123 Main St, Kansas City, MO"
+                    placeholder="123 Main St, St. Louis, MO"
                     value={form.address}
                     onChange={v => set('address', v)}
                   />

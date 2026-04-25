@@ -1,14 +1,14 @@
 import RevealSection from '@/components/ui/RevealSection';
 
 const LOGOS = [
-  { name: 'KC Focus',   badge: 'Kansas City Homeowner-Focused'   },
-  { name: 'Clarity',    badge: 'Numbers First. Sales Second.'    },
-  { name: 'No Pressure', badge: 'No-Pressure Consultations'     },
-  { name: 'Licensed',   badge: 'Licensed Contractor (MO + KS)'  },
+  { name: 'STL Focus',   badge: 'St. Louis Homeowner-Focused'    },
+  { name: 'Clarity',     badge: 'Numbers First. Sales Second.'    },
+  { name: 'No Pressure', badge: 'No-Pressure Consultations'      },
+  { name: 'Licensed',    badge: 'Licensed Contractor · Missouri' },
 ];
 
 const STATS = [
-  { value: '500+',  label: 'KC Homes Powered'      },
+  { value: '500+',  label: 'Missouri Homes Powered' },
   { value: '$0',    label: 'Down • Many Qualify'    },
   { value: '25yr',  label: 'Panel Warranty'         },
 ];
@@ -29,11 +29,11 @@ export default function TrustBar() {
 
         {/* Logo trust row */}
         <RevealSection delay={1} className="flex flex-wrap items-center justify-center gap-8">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mr-2">Built for Kansas City</span>
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mr-2">Built for St. Louis</span>
           {LOGOS.map(l => (
             <div key={l.name} className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5">
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black text-white flex-shrink-0
-                ${l.name === 'KC Focus'    ? 'bg-[#F59E0B]'  :
+                ${l.name === 'STL Focus'   ? 'bg-[#F59E0B]'  :
                   l.name === 'Clarity'     ? 'bg-brand-blue' :
                   l.name === 'No Pressure' ? 'bg-[#0D9488]'  :
                                              'bg-[#1E3A5F]'}`}

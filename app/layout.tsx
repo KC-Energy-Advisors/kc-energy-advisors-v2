@@ -20,15 +20,15 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "KC Energy Advisors — KC's #1 Solar Advisory Firm",
+    default: "KC Energy Advisors — St. Louis Solar Advisory Firm",
     template: '%s | KC Energy Advisors',
   },
   description:
-    "Kansas City homeowners: see exactly how much solar saves you. Free 60-second estimate + personalized SMS from Michael, our AI solar advisor. Licensed, local, no pressure.",
+    "St. Louis homeowners: see exactly how much solar saves you. Free 60-second estimate + personalized SMS from Michael, our AI solar advisor. Licensed, local, no pressure.",
   keywords: [
-    'solar panels Kansas City', 'KC solar advisor', 'Missouri solar incentives',
-    'Evergy solar', 'solar savings calculator KC',
-    'solar installation Kansas City', 'KC solar cost',
+    'solar panels St. Louis', 'St. Louis solar advisor', 'Missouri solar incentives',
+    'Ameren solar', 'solar savings calculator St. Louis',
+    'solar installation St. Louis', 'St. Louis solar cost',
   ],
   authors: [{ name: 'KC Energy Advisors LLC' }],
   creator: 'KC Energy Advisors LLC',
@@ -41,24 +41,24 @@ export const metadata: Metadata = {
     type: 'website',
     url: SITE_URL,
     siteName: 'KC Energy Advisors',
-    title: "KC Energy Advisors — Stop Overpaying Evergy",
+    title: "KC Energy Advisors — Stop Overpaying Ameren",
     description:
-      "See what solar saves YOU. Free instant estimate + personalized SMS from our AI advisor. 500+ KC families served. Licensed & local.",
+      "See what solar saves YOU. Free instant estimate + personalized SMS from our AI advisor. 500+ Missouri families served. Licensed & local.",
     locale: 'en_US',
     images: [
       {
         url: `${SITE_URL}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: 'KC Energy Advisors — Kansas City Solar Advisory',
+        alt: 'KC Energy Advisors — St. Louis Solar Advisory',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: "KC Energy Advisors — KC's #1 Solar Advisory Firm",
+    title: "KC Energy Advisors — St. Louis Solar Advisory Firm",
     description:
-      "Free 60-second solar estimate for KC homeowners. Personalized numbers, no pressure.",
+      "Free 60-second solar estimate for St. Louis homeowners. Personalized numbers, no pressure.",
   },
 };
 
@@ -72,18 +72,18 @@ export default function RootLayout({
     '@type': 'LocalBusiness',
     '@id': SITE_URL,
     name: 'KC Energy Advisors',
-    description: 'Solar energy advisory and installation referral services for Kansas City homeowners.',
+    description: 'Solar energy advisory and installation referral services for St. Louis homeowners.',
     url: SITE_URL,
     telephone: '+18163190932',
     address: {
       '@type': 'PostalAddress',
-      addressLocality: 'Kansas City',
+      addressLocality: 'St. Louis',
       addressRegion: 'MO',
       addressCountry: 'US',
     },
     areaServed: {
       '@type': 'GeoCircle',
-      geoMidpoint: { '@type': 'GeoCoordinates', latitude: 39.0997, longitude: -94.5786 },
+      geoMidpoint: { '@type': 'GeoCoordinates', latitude: 38.6270, longitude: -90.1994 },
       geoRadius: '160934', // ~100 miles / 2 hours
     },
     aggregateRating: {

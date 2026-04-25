@@ -59,7 +59,7 @@ export default function NotYetPage() {
               {[
                 'Electric bill under $75/month — savings don\'t cover the payment',
                 'Renting — you don\'t own the roof',
-                'Outside our service area (within ~2 hours of Kansas City)',
+                'Outside our St. Louis-area Ameren Missouri service zone',
                 'Roof condition needs attention first',
               ].map(item => (
                 <li key={item} className="flex items-start gap-2.5 text-[14px]" style={{ color: '#6B7280' }}>

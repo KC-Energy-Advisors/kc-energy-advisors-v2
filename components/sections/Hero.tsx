@@ -74,7 +74,7 @@ export default function Hero() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          Kansas City · Energy Advisors
+          St. Louis · Energy Advisors
         </motion.p>
 
         {/* H1 */}
@@ -108,7 +108,7 @@ export default function Hero() {
           initial={false}
           animate="visible"
         >
-          → Evergy has filed for another rate increase.{' '}
+          → Ameren has filed for another rate increase.{' '}
           <span style={{ color: '#94A3B8' }}>
             Every month you wait is another month at their rate, not yours.
           </span>
@@ -179,7 +179,7 @@ export default function Hero() {
         >
           <StatItem to={1800} suffix="" label="Avg. annual savings / home" />
           <div className="w-px h-8 bg-white/10" />
-          <StatItem to={500} suffix="+" label="KC families served" />
+          <StatItem to={500} suffix="+" label="Missouri families served" />
           <div className="w-px h-8 bg-white/10" />
           <StatItem to={25} suffix=" yr" label="Panel warranty included" />
         </motion.div>

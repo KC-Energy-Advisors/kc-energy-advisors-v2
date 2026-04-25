@@ -317,10 +317,10 @@ export default function QualifyForm() {
             {fs.step === 2 && (
               <div className="animate-step-slide">
                 <h3 className="text-[22px] font-black text-white mb-2">What city is your home in? (St. Louis area)</h3>
-                <p className="text-sm text-white/45 mb-7">We serve homeowners within about 2 hours of Kansas City.</p>
+                <p className="text-sm text-white/45 mb-7">We serve Ameren Missouri homeowners across St. Louis County, St. Charles, Jefferson, Franklin, Lincoln, Warren, and nearby Missouri-side areas.</p>
                 <div className="grid grid-cols-2 gap-4">
                   <ChoiceCard
-                    label="Yes — KC area"
+                    label="Yes — St. Louis area"
                     icon="📍"
                     onClick={() => handleLocation(true)}
                     highlight
@@ -428,7 +428,7 @@ export default function QualifyForm() {
                       autoComplete="tel"
                       value={form.phone}
                       onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-                      placeholder="(816) 555-0100"
+                      placeholder="(314) 555-0100"
                       className="w-full bg-white/[0.07] border border-white/[0.12] rounded-xl px-4 py-3 text-white placeholder-white/25 text-sm outline-none focus:border-brand-blue focus:bg-white/[0.10] transition-all"
                       required
                     />

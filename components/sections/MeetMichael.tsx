@@ -6,7 +6,7 @@ import RevealSection from '@/components/ui/RevealSection';
 // This is the ONLY static content in the widget. Every subsequent message is a
 // live API response from /api/website-chat. No demo data, no fake conversations.
 const OPENING_MSG = [
-  { from: 'michael' as const, text: "Hey! What questions do you have about going solar in KC?" },
+  { from: 'michael' as const, text: "Hey! What questions do you have about going solar in St. Louis?" },
 ];
 
 function TypingDots() {
@@ -127,7 +127,7 @@ export default function MeetMichael() {
             </RevealSection>
             <RevealSection delay={2}>
               <p className="text-lg text-white/65 leading-relaxed mb-8">
-                Michael is a Claude-powered AI trained specifically on KC solar incentives, Evergy rates, and local installer pricing. He texts you within minutes — not hours — with honest, personalized answers.
+                Michael is a Claude-powered AI trained specifically on St. Louis solar incentives, Ameren rates, and local installer pricing. He texts you within minutes — not hours — with honest, personalized answers.
               </p>
             </RevealSection>
 

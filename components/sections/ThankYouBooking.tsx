@@ -235,7 +235,7 @@ export default function ThankYouBooking(props: ThankYouBookingProps) {
               {
                 icon : '📋',
                 title: 'We review your actual energy usage',
-                body : 'Your real Evergy bill — the numbers specific to your home, not national averages.',
+                body : 'Bring your latest Ameren bill — real numbers for your home, not national averages.',
               },
               {
                 icon : '🏡',

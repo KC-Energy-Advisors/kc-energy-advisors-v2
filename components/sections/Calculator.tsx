@@ -121,7 +121,7 @@ export default function Calculator() {
             </div>
 
             <p className="text-[10.5px] text-white/25 leading-relaxed mt-1">
-              * Estimates based on KC avg production (1,200 kWh/kW/yr), current utility rates, and 3.4% annual escalation (EIA historical avg). Actual savings vary by home.
+              * Estimates based on Missouri avg production (1,200 kWh/kW/yr), current utility rates, and 3.4% annual escalation (EIA historical avg). Actual savings vary by home.
             </p>
           </div>
         </RevealSection>

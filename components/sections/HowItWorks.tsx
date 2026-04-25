@@ -19,7 +19,7 @@ const STEPS = [
   {
     num:      '02',
     title:    'We Handle Everything.',
-    body:     'We calculate what solar would actually cost vs what you\'re currently paying Evergy. Design, permits, utility coordination, installation — all handled for you.',
+    body:     'We calculate what solar would actually cost vs what you\'re currently paying Ameren. Design, permits, utility coordination, installation — all handled for you.',
     timeline: '2–3 weeks',
   },
   {

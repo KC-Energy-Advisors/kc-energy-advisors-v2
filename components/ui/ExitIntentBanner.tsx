@@ -160,7 +160,7 @@ export default function ExitIntentBanner() {
           id="exit-banner-heading"
           className="text-[20px] font-black text-white mb-3 leading-snug"
         >
-          Most Kansas City homeowners don&apos;t realize how much they&apos;re overpaying for electricity.
+          Most St. Louis homeowners don&apos;t realize how much they&apos;re overpaying for electricity.
         </h2>
 
         <p className="text-[14px] leading-relaxed mb-2" style={{ color: 'rgba(255,255,255,0.55)' }}>

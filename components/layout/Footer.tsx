@@ -10,9 +10,9 @@ const NAV_LINKS = [
 ];
 
 const TRUST_SEALS = [
-  'Kansas City Homeowner-Focused',
-  'State Licensed Installer · MO + KS',
-  'Licensed Contractor · MO + KS',
+  'St. Louis Homeowner-Focused',
+  'State Licensed Installer · Missouri',
+  'Licensed Contractor · Missouri',
   '25-Year Panel Warranty',
 ];
 
@@ -35,7 +35,7 @@ export default function Footer() {
               </span>
             </a>
             <p className="text-[14px] leading-relaxed" style={{ color: '#6B7280' }}>
-              Helping Kansas City homeowners take control of their energy — without pressure or guesswork.
+              Helping St. Louis homeowners take control of their energy — without pressure or guesswork.
             </p>
           </div>
 
@@ -46,7 +46,7 @@ export default function Footer() {
               <a href={PHONE_HREF} className="hover:text-white transition-colors font-medium" style={{ color: '#94A3B8' }}>
                 {PHONE_DISPLAY}
               </a>
-              <span>Kansas City, MO</span>
+              <span>St. Louis, MO</span>
               <span>Response within 1 business hour.</span>
             </div>
           </div>
@@ -86,11 +86,11 @@ export default function Footer() {
         {/* Disclaimer */}
         <div className="pt-8 pb-6 text-[12px] leading-relaxed" style={{ color: '#6B7280' }}>
           <p className="mb-3">
-            Savings estimates are based on average KC utility rates and projected 3.4% annual rate increase per EIA historical data.
+            Savings estimates are based on average Missouri utility rates and projected 3.4% annual rate increase per EIA historical data.
             Individual results vary based on system size, roof orientation, local utility rates, and usage patterns.
             Not all homeowners qualify. Subject to credit approval. Individual results vary based on home, roof, and energy usage.
           </p>
-          <p>© {new Date().getFullYear()} KC Energy Advisors · Kansas City, MO · All rights reserved.</p>
+          <p>© {new Date().getFullYear()} KC Energy Advisors · St. Louis, MO · All rights reserved.</p>
         </div>
       </div>
     </footer>

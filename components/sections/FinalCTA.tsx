@@ -67,7 +67,7 @@ export default function FinalCTA() {
           style={{ color: '#94A3B8', maxWidth: 580 }}
           variants={fadeUp}
         >
-          Kansas City homeowners who installed solar in 2021–2023 avoided
+          Missouri homeowners who installed solar in 2021–2023 avoided
           the largest rate spike in a decade. The conditions that made that
           the right move then still exist now — and demand is still rising.
         </motion.p>
@@ -122,7 +122,7 @@ export default function FinalCTA() {
           <span>✓ $0 down</span>
           <span>✓ No credit check</span>
           <span>✓ No obligation</span>
-          <span>✓ Kansas City team</span>
+          <span>✓ St. Louis team</span>
         </motion.div>
       </motion.div>
     </section>

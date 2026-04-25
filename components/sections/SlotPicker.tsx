@@ -508,7 +508,7 @@ export default function SlotPicker({
             Your consultation with Michael
           </p>
           <p style={{ color: 'rgba(255,255,255,0.36)', fontSize: 14, fontWeight: 400, lineHeight: 1.4 }}>
-            Serving homeowners across the Kansas City area
+            Michael serves homeowners across the St. Louis area.
           </p>
         </div>
 
@@ -831,7 +831,7 @@ export default function SlotPicker({
             Your consultation with Michael
           </p>
           <p style={{ color: 'rgba(255,255,255,0.32)', fontSize: 14 }}>
-            Kansas City area · Free · No obligation
+            St. Louis area · Free · No obligation
           </p>
         </div>
 

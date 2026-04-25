@@ -1,7 +1,7 @@
 import RevealSection from '@/components/ui/RevealSection';
 
 const QUALIFIERS = [
-  'You own your home in the Kansas City area',
+  'You own your home in the St. Louis area',
   'Your electric bill is $100 or more per month',
   'You plan to stay in your home for a few years',
   "You're open to seeing if solar actually makes sense",
@@ -15,7 +15,7 @@ export default function ThisIsForYou() {
 
           {/* Eyebrow — soft social proof + local positioning */}
           <p className="text-[11.5px] font-bold uppercase tracking-[0.12em] mb-5" style={{ color: '#2563EB' }}>
-            Built specifically for Kansas City homeowners
+            Built specifically for St. Louis homeowners
           </p>
 
           <h2 className="text-display-sm font-black mb-10" style={{ color: '#0C1322', letterSpacing: '-0.01em' }}>
