@@ -290,7 +290,7 @@ export async function upsertGHLContact(params: {
  * ({{contact.average_cost_per_month_for_electricity}}, etc.) are always
  * populated by the time the GHL workflow SMS fires after booking.
  */
-async function updateGHLContactFields(contactId: string, params: {
+export async function updateGHLContactFields(contactId: string, params: {
   ownsHome?   : string;   // 'yes' | 'no'
   monthlyBill?: string;   // code e.g. '150-200'
   roofType?   : string;   // code e.g. 'asphalt'
@@ -720,16 +720,10 @@ export async function createGHLAppointment(params: {
           addGHLContactNote(params.contactId, appointmentNotes).catch(err =>
             console.error('[GHL] addGHLContactNote (post-retry) error:', err),
           );
-          // Write qualification custom fields to contact so GHL workflow merge tags resolve
-          updateGHLContactFields(params.contactId, {
-            ownsHome:    params.ownsHome,
-            monthlyBill: params.monthlyBill,
-            roofType:    params.roofType,
-            timeline:    params.timeline,
-            address:     params.address,
-          }).catch(err =>
-            console.error('[GHL] updateGHLContactFields (post-retry) error:', err),
-          );
+          // NOTE: updateGHLContactFields is intentionally NOT called here.
+          // The route (book-appointment/route.ts) fires it after returning the
+          // success response so the frontend never waits on custom field writes.
+
           // Send internal SMS notification to Michael — fire-and-forget
           // Map params.timeline → decisionStage so buildInternalMessage reads the right key
           const internalMsg = buildInternalMessage({
@@ -780,16 +774,10 @@ export async function createGHLAppointment(params: {
       addGHLContactNote(params.contactId, appointmentNotes).catch(err =>
         console.error('[GHL] addGHLContactNote (post-booking) error:', err),
       );
-      // Write qualification custom fields to contact so GHL workflow merge tags resolve
-      updateGHLContactFields(params.contactId, {
-        ownsHome:    params.ownsHome,
-        monthlyBill: params.monthlyBill,
-        roofType:    params.roofType,
-        timeline:    params.timeline,
-        address:     params.address,
-      }).catch(err =>
-        console.error('[GHL] updateGHLContactFields (post-booking) error:', err),
-      );
+      // NOTE: updateGHLContactFields is intentionally NOT called here.
+      // The route (book-appointment/route.ts) fires it after returning the
+      // success response so the frontend never waits on custom field writes.
+
       // Send internal SMS notification to Michael — fire-and-forget
       // Map params.timeline → decisionStage so buildInternalMessage reads the right key
       const internalMsg = buildInternalMessage({

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createGHLAppointment } from '@/lib/ghl';
+import { createGHLAppointment, updateGHLContactFields } from '@/lib/ghl';
 import type { BookingRequest, BookingResponse } from '@/lib/types';
 
 function isValidBookingRequest(body: unknown): body is BookingRequest {
@@ -104,7 +104,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Use console.error — console.log is stripped by removeConsole in production
+    // ── Appointment confirmed — return to frontend immediately ────────
+    // Custom field writes happen after the response is sent so the UI
+    // never waits on them. The contact already exists; this is metadata only.
+    updateGHLContactFields(contactId, {
+      ownsHome,
+      monthlyBill,
+      roofType,
+      timeline,
+      address,
+    }).catch(err => console.error('[book-appointment] updateGHLContactFields error:', err));
+
     console.error(`[book-appointment] ✅ SUCCESS — appointmentId: ${appointmentId}, contactId: ${contactId}`);
     return NextResponse.json<BookingResponse>({ success: true, appointmentId });
 
