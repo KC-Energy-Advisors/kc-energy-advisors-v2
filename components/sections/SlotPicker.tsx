@@ -9,22 +9,22 @@ import { PHONE_DISPLAY, PHONE_HREF } from '@/lib/constants';
 
 export interface SlotPickerProps {
   /** GHL contactId — required; booking is blocked without it */
-  contactId    : string;
+  contactId     : string;
   /** Full name used as the GHL appointment title */
-  name         : string;
-  /** Optional lead summary fields — enrich GHL appointment notes */
-  firstName?   : string;
-  lastName?    : string;
-  phone?       : string;   // E.164
-  email?       : string;
-  address?     : string;
-  ownsHome?    : string;   // 'yes' | 'no'
-  monthlyBill? : string;   // code e.g. '150-200'
-  roofType?    : string;   // 'asphalt' | 'metal' | 'tile' | 'unsure'
-  timeline?    : string;   // 'exploring' | 'interested' | 'ready'
-  /** Called when the appointment is successfully created in GHL */
+  name          : string;
+  /** Lead contact fields */
+  firstName?    : string;
+  lastName?     : string;
+  phone?        : string;   // E.164
+  email?        : string;
+  address?      : string;
+  /** Qualification fields — must arrive populated for SMS to show values */
+  ownsHome?     : string;   // 'yes' | 'no'
+  monthlyBill?  : string;   // 'under-100' | '100-150' | '150-200' | '200-plus'
+  roofType?     : string;   // 'asphalt' | 'metal' | 'tile' | 'flat' | 'unsure'
+  decisionStage?: string;   // 'exploring' | 'interested' | 'ready'
+  /** Callbacks */
   onBooked     : (slot: CalendarSlot) => void;
-  /** Called only for truly unrecoverable failures (should be rare) */
   onFatalError : (msg: string) => void;
 }
 
@@ -154,7 +154,7 @@ export default function SlotPicker({
   ownsHome,
   monthlyBill,
   roofType,
-  timeline,
+  decisionStage,
   onBooked,
   onFatalError,
 }: SlotPickerProps) {
@@ -232,14 +232,7 @@ export default function SlotPicker({
     setState('booking');
     setBookErr('');
     console.error('[BOOKING] firing — contactId:', contactId, '| start:', selSlot.startTime, '| tz:', tz);
-    console.error('[BOOKING] qualification fields being sent',
-      '| ownsHome:', ownsHome ?? '❌ MISSING',
-      '| monthlyBill:', monthlyBill ?? '❌ MISSING',
-      '| roofType:', roofType ?? '❌ MISSING',
-      '| timeline:', timeline ?? '❌ MISSING',
-      '| phone:', phone ?? '❌ MISSING',
-      '| address:', address ?? '❌ MISSING',
-    );
+    console.log('[BOOKING PAYLOAD]', { monthlyBill, roofType, ownsHome, decisionStage });
 
     try {
       const res  = await fetch('/api/book-appointment', {
@@ -257,10 +250,10 @@ export default function SlotPicker({
           ...(phone        ? { phone }               : {}),
           ...(email        ? { email }               : {}),
           ...(address      ? { address }             : {}),
-          ...(ownsHome     ? { ownsHome }            : {}),
-          ...(monthlyBill  ? { monthlyBill }         : {}),
-          ...(roofType     ? { roofType }            : {}),
-          ...(timeline     ? { timeline }            : {}),
+          ...(ownsHome      ? { ownsHome }                    : {}),
+          ...(monthlyBill   ? { monthlyBill }                : {}),
+          ...(roofType      ? { roofType }                   : {}),
+          ...(decisionStage ? { timeline: decisionStage }    : {}),
         }),
       });
 

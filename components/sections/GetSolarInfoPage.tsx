@@ -885,7 +885,7 @@ export default function GetSolarInfoPage() {
                 ownsHome    ={form.ownsHome || undefined}
                 monthlyBill ={form.monthlyBill || undefined}
                 roofType    ={form.roofType || undefined}
-                timeline    ={form.timeline || undefined}
+                decisionStage={form.timeline || undefined}
                 onBooked    ={handleBooked}
                 onFatalError={handleBookingFatalError}
               />
