@@ -1022,17 +1022,17 @@ export function buildInternalMessage(params: {
   }
 
   // Build lines conditionally — missing fields produce no line at all
-  const lines: string[] = ['🔥 NEW APPOINTMENT BOOKED'];
-  if (fullName)        lines.push(`👤 ${fullName}`);
-  if (params.phone)    lines.push(`📞 ${params.phone}`);
-  if (params.address)  lines.push(`📍 ${params.address}`);
-  lines.push(          `🕒 ${apptTime}`);   // startTime is always present
+  const lines: string[] = ['🔥 NEW APPOINTMENT BOOKED 🔥'];
+  if (fullName)          lines.push(`👤 ${fullName}`);
+  if (params.phone)      lines.push(`📞 ${params.phone}`);
+  if (params.address)    lines.push(`📍 ${params.address}`);
+  lines.push(            `🕒 ${apptTime}`);   // startTime is always present
   if (bill     !== null) lines.push(`💰 Bill: ${bill}`);
   if (ownsHome !== null) lines.push(`🏠 Owns: ${ownsHome}`);
   if (roof     !== null) lines.push(`🏚 Roof: ${roof}`);
   if (stage    !== null) lines.push(`🎯 Stage: ${stage}`);
 
-  return lines.join('\n');
+  return lines.join('\n\n');
 }
 
 // ── Internal notification contact cache ──────────────────────────────────────
