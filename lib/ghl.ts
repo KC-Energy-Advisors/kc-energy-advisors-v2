@@ -663,15 +663,11 @@ export async function createGHLAppointment(params: {
             console.error('[GHL] addGHLContactNote (post-retry) error:', err),
           );
           // Send internal SMS notification to Michael — fire-and-forget
-          console.error('[INTERNAL SMS] pre-send field check (retry path)',
-            '| ownsHome:', params.ownsHome ?? '❌ MISSING',
-            '| monthlyBill:', params.monthlyBill ?? '❌ MISSING',
-            '| roofType:', params.roofType ?? '❌ MISSING',
-            '| timeline:', params.timeline ?? '❌ MISSING',
-            '| phone:', params.phone ?? '❌ MISSING',
-            '| address:', params.address ?? '❌ MISSING',
-          );
-          const internalMsg = buildInternalMessage(params);
+          // Map params.timeline → decisionStage so buildInternalMessage reads the right key
+          const internalMsg = buildInternalMessage({
+            ...params,
+            decisionStage: params.timeline,
+          });
           sendInternalNotification(internalMsg).catch(err =>
             console.error('[INTERNAL SMS] post-retry send error:', err),
           );
@@ -717,15 +713,11 @@ export async function createGHLAppointment(params: {
         console.error('[GHL] addGHLContactNote (post-booking) error:', err),
       );
       // Send internal SMS notification to Michael — fire-and-forget
-      console.error('[INTERNAL SMS] pre-send field check (first-attempt path)',
-        '| ownsHome:', params.ownsHome ?? '❌ MISSING',
-        '| monthlyBill:', params.monthlyBill ?? '❌ MISSING',
-        '| roofType:', params.roofType ?? '❌ MISSING',
-        '| timeline:', params.timeline ?? '❌ MISSING',
-        '| phone:', params.phone ?? '❌ MISSING',
-        '| address:', params.address ?? '❌ MISSING',
-      );
-      const internalMsg = buildInternalMessage(params);
+      // Map params.timeline → decisionStage so buildInternalMessage reads the right key
+      const internalMsg = buildInternalMessage({
+        ...params,
+        decisionStage: params.timeline,
+      });
       sendInternalNotification(internalMsg).catch(err =>
         console.error('[INTERNAL SMS] post-booking send error:', err),
       );
@@ -781,46 +773,61 @@ export async function addGHLContactNote(contactId: string, noteBody: string): Pr
 /**
  * Build the internal SMS text that Michael receives after every booking.
  * Format is locked — do not change labels or emoji without product sign-off.
+ *
+ * Field names MUST match exactly what createGHLAppointment passes here:
+ *   ownsHome, monthlyBill, roofType, decisionStage
  */
 function buildInternalMessage(params: {
-  firstName?  : string;
-  lastName?   : string;
-  name        : string;
-  phone?      : string;
-  address?    : string;
-  ownsHome?   : string;   // 'yes' | 'no'
-  monthlyBill?: string;   // code e.g. '150-200'
-  roofType?   : string;   // code e.g. 'asphalt'
-  timeline?   : string;   // code e.g. 'ready'
-  startTime   : string;
-  timezone    : string;
+  firstName?    : string;
+  lastName?     : string;
+  name          : string;
+  phone?        : string;
+  address?      : string;
+  ownsHome?     : string;    // 'yes' | 'no'
+  monthlyBill?  : string;    // code e.g. '150-200'
+  roofType?     : string;    // code e.g. 'asphalt'
+  decisionStage?: string;    // code e.g. 'ready'
+  startTime     : string;
+  timezone      : string;
 }): string {
+  // ── Log exact input so Vercel shows what this function received ──
+  console.error('[SMS INPUT]', {
+    ownsHome     : params.ownsHome      ?? '(missing)',
+    monthlyBill  : params.monthlyBill   ?? '(missing)',
+    roofType     : params.roofType      ?? '(missing)',
+    decisionStage: params.decisionStage ?? '(missing)',
+    phone        : params.phone         ?? '(missing)',
+    address      : params.address       ?? '(missing)',
+    name         : params.name,
+    startTime    : params.startTime,
+  });
+
   const fullName = params.firstName
     ? `${params.firstName} ${params.lastName ?? ''}`.trim()
     : params.name;
 
-  const ownsHome  = params.ownsHome    === 'yes' ? 'Yes'
-                  : params.ownsHome    === 'no'  ? 'No'
+  const ownsHome  = params.ownsHome      === 'yes' ? 'Yes'
+                  : params.ownsHome      === 'no'  ? 'No'
                   : '(not provided)';
-  const bill      = params.monthlyBill ? (BILL_LABELS[params.monthlyBill]    ?? params.monthlyBill)  : '(not provided)';
-  const roof      = params.roofType    ? (ROOF_LABELS[params.roofType]       ?? params.roofType)     : '(not provided)';
-  const stage     = params.timeline    ? (TIMELINE_LABELS[params.timeline]   ?? params.timeline)     : '(not provided)';
+  const bill      = params.monthlyBill   ? (BILL_LABELS[params.monthlyBill]         ?? params.monthlyBill)   : '(not provided)';
+  const roof      = params.roofType      ? (ROOF_LABELS[params.roofType]            ?? params.roofType)      : '(not provided)';
+  const stage     = params.decisionStage ? (TIMELINE_LABELS[params.decisionStage]   ?? params.decisionStage) : '(not provided)';
   const apptTime  = fmtAppointmentTime(params.startTime, params.timezone);
 
   // Log which fields are missing so Vercel shows the gap immediately
   const missing = [
-    !params.phone       && 'phone',
-    !params.address     && 'address',
-    !params.ownsHome    && 'ownsHome',
-    !params.monthlyBill && 'monthlyBill',
-    !params.roofType    && 'roofType',
-    !params.timeline    && 'timeline',
+    !params.phone         && 'phone',
+    !params.address       && 'address',
+    !params.ownsHome      && 'ownsHome',
+    !params.monthlyBill   && 'monthlyBill',
+    !params.roofType      && 'roofType',
+    !params.decisionStage && 'decisionStage',
   ].filter(Boolean);
   if (missing.length > 0) {
     console.error('[INTERNAL SMS] ⚠️  missing fields — SMS will show (not provided) for:', missing.join(', '));
   }
 
-  return [
+  const message = [
     '🔥 NEW APPOINTMENT BOOKED 🔥',
     '',
     `Name: ${fullName}`,
@@ -834,6 +841,11 @@ function buildInternalMessage(params: {
     '',
     'This one is locked in. 📈',
   ].join('\n');
+
+  // ── Log final message text before it leaves this function ────────
+  console.error('[SMS OUTPUT]', message);
+
+  return message;
 }
 
 /**
