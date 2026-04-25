@@ -316,7 +316,7 @@ export default function QualifyForm() {
             {/* ── Step 2 ─────────────────────────────────────────── */}
             {fs.step === 2 && (
               <div className="animate-step-slide">
-                <h3 className="text-[22px] font-black text-white mb-2">Are you in the Kansas City area?</h3>
+                <h3 className="text-[22px] font-black text-white mb-2">What city is your home in? (St. Louis area)</h3>
                 <p className="text-sm text-white/45 mb-7">We serve homeowners within about 2 hours of Kansas City.</p>
                 <div className="grid grid-cols-2 gap-4">
                   <ChoiceCard

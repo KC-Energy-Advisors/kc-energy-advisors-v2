@@ -38,6 +38,7 @@ export default function Hero() {
       className="relative overflow-hidden min-h-[calc(100vh-68px-44px)] flex items-center py-20"
       style={{ background: '#0C1322' }}
     >
+      {/* STL REBRAND DEPLOY TRIGGER */}
       {/* Dot-grid texture */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -84,8 +85,7 @@ export default function Hero() {
           initial={false}
           animate="visible"
         >
-          Evergy Raised Rates Again.<br className="hidden sm:block" />{' '}
-          Lock In a Lower Bill.
+          Stop renting your power from Ameren.
         </motion.h1>
 
         {/* Subheadline */}
@@ -96,9 +96,8 @@ export default function Hero() {
           initial={false}
           animate="visible"
         >
-          KC homeowners are replacing unpredictable Evergy bills
-          with one fixed monthly solar cost — that is immune to any future rate increases -
-          locked in for 25 years.
+          Lock in your energy costs with a system you own. We&rsquo;ll show you if it
+          actually makes sense — or tell you if it doesn&rsquo;t.
         </motion.p>
 
         {/* Urgency insert */}
@@ -137,7 +136,7 @@ export default function Hero() {
               scrollToQualify();
             }}
           >
-            See My Real Numbers
+            Check if your home qualifies (30 seconds)
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
               <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -167,10 +166,7 @@ export default function Hero() {
           animate="visible"
         >
           <p className="text-[13.5px] font-medium" style={{ color: 'rgba(255,255,255,0.55)' }}>
-            Takes about 30 seconds. We&apos;ll show you real numbers based on your home.
-          </p>
-          <p className="text-[12px] mt-1.5" style={{ color: 'rgba(255,255,255,0.30)' }}>
-            No pressure — if it doesn&apos;t make financial sense, we&apos;ll tell you.
+            No pressure. In-home consult. We&rsquo;ll tell you if it doesn&rsquo;t make sense.
           </p>
         </motion.div>
 
