@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createGHLAppointment, updateGHLContactFields } from '@/lib/ghl';
+import { createGHLAppointment, updateGHLContactFields, upsertGHLContact } from '@/lib/ghl';
 import type { BookingRequest, BookingResponse } from '@/lib/types';
 
 function isValidBookingRequest(body: unknown): body is BookingRequest {
   if (!body || typeof body !== 'object') return false;
   const b = body as Record<string, unknown>;
   return (
-    typeof b.contactId === 'string' && b.contactId.length > 0 &&
+    // contactId is now optional — route upserts the contact if absent or empty
+    (b.contactId === undefined || typeof b.contactId === 'string') &&
     typeof b.startTime === 'string' && b.startTime.length > 0 &&
     typeof b.endTime   === 'string' && b.endTime.length   > 0 &&
     typeof b.name      === 'string' &&
@@ -19,10 +20,10 @@ function isValidBookingRequest(body: unknown): body is BookingRequest {
  * Body: BookingRequest
  * Returns: BookingResponse
  *
- * Creates an appointment in GHL for a contact that was already upserted
- * during form submission. Because the contact already exists, GHL will
- * correctly attribute the appointment and fire any "Appointment Created"
- * workflow triggers (including the Python booking-followup webhook).
+ * Creates an appointment in GHL for a contact. If contactId is absent or empty
+ * (e.g. the submit-lead upsert returned null), this route upserts the contact
+ * itself using the lead fields in the request body — so contactId is NEVER null
+ * in a successful booking response.
  */
 export async function POST(req: NextRequest) {
   let body: unknown;
@@ -37,13 +38,13 @@ export async function POST(req: NextRequest) {
 
   if (!isValidBookingRequest(body)) {
     return NextResponse.json<BookingResponse>(
-      { success: false, error: 'Missing required fields: contactId, startTime, endTime, name, timezone' },
+      { success: false, error: 'Missing required fields: startTime, endTime, name, timezone' },
       { status: 400 },
     );
   }
 
   const {
-    contactId,
+    contactId: incomingContactId,
     startTime,
     endTime,
     name,
@@ -72,10 +73,49 @@ export async function POST(req: NextRequest) {
     `  Electric Bill:  ${monthlyBill ?? '(not provided)'}\n` +
     `  Roof Type:      ${roofType ?? '(not provided)'}\n` +
     `  Decision Stage: ${timeline ?? '(not provided)'}\n` +
-    `  contactId:      ${contactId}\n` +
+    `  contactId:      ${incomingContactId || '(absent — will upsert)'}\n` +
     `  calendarId:     ${process.env.GHL_CALENDAR_ID ?? '⚠️ NOT SET'}\n` +
     `  assignedUserId: ${process.env.GHL_ASSIGNED_USER_ID ?? '(not set)'}`,
   );
+
+  // ── Resolve contactId — upsert if missing ─────────────────────────
+  // If submit-lead returned null (e.g. GHL upsert failed or API key not set),
+  // the frontend sends an empty/absent contactId. Upsert here so the booking
+  // can always proceed and contactId is NEVER null in the success response.
+  let contactId: string = incomingContactId || '';
+
+  if (!contactId) {
+    console.error('[book-appointment] contactId missing — upserting contact from lead fields');
+
+    const nameParts  = name.trim().split(/\s+/);
+    const upsertFirst = firstName || nameParts[0] || '';
+    const upsertLast  = lastName  || nameParts.slice(1).join(' ') || '';
+
+    const upsertedId = await upsertGHLContact({
+      firstName : upsertFirst,
+      lastName  : upsertLast,
+      phone     : phone    || '',
+      email     : email    || '',
+      address,
+      isOwner   : ownsHome,
+      roofType,
+      timeline,
+    }).catch((err: unknown) => {
+      console.error('[book-appointment] upsertGHLContact threw:', err);
+      return null;
+    });
+
+    if (upsertedId) {
+      contactId = upsertedId;
+      console.error('[book-appointment] ✅ upsert succeeded — contactId:', contactId);
+    } else {
+      console.error('[book-appointment] ❌ upsert returned null — cannot create appointment without contactId');
+      return NextResponse.json<BookingResponse>(
+        { success: false, error: 'Could not create or find your contact. Please try again.' },
+        { status: 502 },
+      );
+    }
+  }
 
   try {
     const appointmentId = await createGHLAppointment({
@@ -116,7 +156,7 @@ export async function POST(req: NextRequest) {
     }).catch(err => console.error('[book-appointment] updateGHLContactFields error:', err));
 
     console.error(`[book-appointment] ✅ SUCCESS — appointmentId: ${appointmentId}, contactId: ${contactId}`);
-    return NextResponse.json<BookingResponse>({ success: true, appointmentId });
+    return NextResponse.json<BookingResponse>({ success: true, appointmentId, contactId });
 
   } catch (err) {
     console.error('[book-appointment] Unexpected error:', err);

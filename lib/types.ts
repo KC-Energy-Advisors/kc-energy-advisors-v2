@@ -95,7 +95,7 @@ export interface CalendarSlot {
 export type SlotsByDate = Record<string, CalendarSlot[]>;
 
 export interface BookingRequest {
-  contactId   : string;
+  contactId?  : string;  // optional — route will upsert contact if absent or empty
   startTime   : string;  // ISO 8601
   endTime     : string;  // ISO 8601
   name        : string;  // full name — kept for backward compat
@@ -115,5 +115,6 @@ export interface BookingRequest {
 export interface BookingResponse {
   success       : boolean;
   appointmentId?: string;
+  contactId?    : string;  // echoed back on success — never null on a successful booking
   error?        : string;
 }

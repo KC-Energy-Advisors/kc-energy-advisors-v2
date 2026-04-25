@@ -8,8 +8,8 @@ import { PHONE_DISPLAY, PHONE_HREF } from '@/lib/constants';
 // ─────────────────────────────────────────────────────────────────
 
 export interface SlotPickerProps {
-  /** GHL contactId — required; booking is blocked without it */
-  contactId     : string;
+  /** GHL contactId — optional; book-appointment route upserts if absent */
+  contactId?    : string;
   /** Full name used as the GHL appointment title */
   name          : string;
   /** Lead contact fields */
@@ -224,19 +224,24 @@ export default function SlotPicker({
 
   // ── Confirm the selected slot ──────────────────────────────────
   async function confirmBooking() {
-    if (!selSlot || !contactId) {
-      console.error('[BOOKING] blocked — selSlot:', selSlot, 'contactId:', contactId);
+    if (!selSlot) {
+      console.error('[BOOKING] blocked — no slot selected');
       return;
+    }
+    // contactId may be empty if submit-lead upsert failed; the route will upsert
+    if (!contactId) {
+      console.error('[BOOKING] ⚠️ contactId absent — route will upsert contact during booking');
     }
 
     setState('booking');
     setBookErr('');
-    console.error('[BOOKING] firing — contactId:', contactId, '| start:', selSlot.startTime, '| tz:', tz);
+    console.error('[BOOKING] firing — contactId:', contactId || '(absent)', '| start:', selSlot.startTime, '| tz:', tz);
 
     // ── Build payload from current props ────────────────────────
     // decisionStage maps to 'timeline' in the API / GHL layer.
+    // contactId may be empty string — route will upsert if so.
     const bookingPayload = {
-      contactId,
+      contactId: contactId || '',
       startTime   : selSlot.startTime,
       endTime     : selSlot.endTime,
       name,

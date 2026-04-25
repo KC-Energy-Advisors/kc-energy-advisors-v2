@@ -619,18 +619,16 @@ export default function GetSolarInfoPage() {
 
       // ── Soft success — GHL webhook succeeded ──────────────────────
       // Prefer the fresh contactId from the full submit; fall back to the
-      // one captured at Step 1. Block booking entirely if neither resolved.
+      // one captured at Step 1. If still null, proceed anyway — the
+      // book-appointment route will upsert the contact itself so the booking
+      // can still succeed even if upsertGHLContact failed at submit time.
       const resolvedId = data.contactId ?? contactIdRef.current ?? contactId ?? null;
-      console.error('[FUNNEL] resolved contactId after full submit:', resolvedId ?? 'null',
+      console.error('[FUNNEL] resolved contactId after full submit:', resolvedId ?? 'null (route will upsert)',
         '| data.contactId:', data.contactId ?? 'null',
         '| ref:', contactIdRef.current ?? 'null',
         '| state:', contactId ?? 'null');
       if (!resolvedId) {
-        console.error('[FUNNEL] blocking booking — contactId is null after full submit');
-        isSubmitting.current = false;   // allow retry
-        setSubmitError('Could not confirm your profile. Please try again.');
-        setPageState('submit-error');
-        return;
+        console.error('[FUNNEL] ⚠️ contactId null after full submit — proceeding to booking; route will upsert');
       }
       // isSubmitting stays true — flow is complete, do not allow re-submit
       setContactIdSafe(resolvedId);
@@ -809,45 +807,16 @@ export default function GetSolarInfoPage() {
 
   // ── BOOKING — slot picker ─────────────────────────────────────
   if (pageState === 'booking') {
-    const resolvedContactId = contactIdRef.current ?? contactId;
-    console.error('[FUNNEL] booking page rendering — contactId:', resolvedContactId ?? 'null');
+    // resolvedContactId may be null if submit-lead upsert failed.
+    // That is fine — SlotPicker sends it as '' and book-appointment upserts.
+    const resolvedContactId = contactIdRef.current ?? contactId ?? '';
+    console.error('[FUNNEL] booking page rendering — contactId:', resolvedContactId || '(absent — route will upsert)');
     console.error('[BOOKING RENDER] form qualification state',
       '| ownsHome:', form.ownsHome       || '❌ MISSING',
       '| monthlyBill:', form.monthlyBill || '❌ MISSING',
       '| roofType:', form.roofType       || '❌ MISSING',
       '| decisionStage:', form.decisionStage || '❌ MISSING',
     );
-
-    // Safety net: goResult() already blocks this path, but if contactId is
-    // somehow null here we cannot create a valid appointment — show recovery.
-    if (!resolvedContactId) {
-      console.error('[FUNNEL] ❌ booking reached with null contactId — showing recovery screen');
-      return (
-        <PageShell>
-          <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 py-20 text-center">
-            <h2 className="text-display-sm font-black text-white mb-3">
-              Something went wrong.
-            </h2>
-            <p className="text-white/50 text-[15px] leading-relaxed max-w-[380px] mb-8">
-              We couldn&rsquo;t verify your profile. Please try again or call us directly.
-            </p>
-            <PrimaryBtn onClick={() => {
-              isSubmitting.current = false;
-              setPageState('form');
-              setStep(3);
-            }}>
-              Try Again →
-            </PrimaryBtn>
-            <p className="mt-6 text-white/35 text-[13px]">
-              Or call us:{' '}
-              <a href={PHONE_HREF} className="text-white/60 underline hover:text-white/80 transition-colors">
-                {PHONE_DISPLAY}
-              </a>
-            </p>
-          </div>
-        </PageShell>
-      );
-    }
 
     return (
       <div style={{ display: 'block', width: '100%', background: '#0C1322', margin: 0, padding: 0 }}>
@@ -1153,15 +1122,10 @@ export default function GetSolarInfoPage() {
 
               <PrimaryBtn
                 onClick={goResult}
-                disabled={!step3OK || !contactId}
+                disabled={!step3OK}
               >
                 See My Options →
               </PrimaryBtn>
-              {!contactId && (
-                <p className="text-center text-[11px] text-[#9ca3af] mt-2">
-                  Setting up your profile…
-                </p>
-              )}
               <div className="mt-4 flex justify-center">
                 <BackBtn onClick={() => setStep(2)} />
               </div>
