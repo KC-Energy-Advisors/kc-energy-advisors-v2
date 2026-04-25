@@ -33,15 +33,23 @@ const BOOKING_KEY_SOURCE = process.env.GHL_BOOKING_API_KEY
 // Set INTERNAL_NOTIFICATION_PHONE in Vercel env vars. If unset, notifications are skipped.
 const INTERNAL_NOTIFICATION_PHONE = process.env.INTERNAL_NOTIFICATION_PHONE ?? '';
 
-// ── GHL custom field IDs ──────────────────────────────────────────────────────
-// GHL stores custom field values by opaque ID, not by the merge-field key name.
-// Find these in GHL → Settings → Custom Fields → click each field → copy the ID.
-// If a value is blank, that field is silently skipped in the contact upsert and
-// its merge tag (e.g. {{contact.monthly_bill}}) will be empty in GHL workflows.
-const GHL_CF_MONTHLY_BILL   = process.env.GHL_CF_MONTHLY_BILL   ?? '';
-const GHL_CF_ROOF_TYPE      = process.env.GHL_CF_ROOF_TYPE      ?? '';
-const GHL_CF_OWNS_HOME      = process.env.GHL_CF_OWNS_HOME      ?? '';
-const GHL_CF_DECISION_STAGE = process.env.GHL_CF_DECISION_STAGE ?? '';
+// ── GHL custom field identifiers ─────────────────────────────────────────────
+// Default to the exact key names from GHL → Settings → Custom Fields → "Key" column.
+// These are the same identifiers used in workflow merge tags:
+//   {{contact.average_cost_per_month_for_electricity}}
+//   {{contact.roof_type}}
+//   {{contact.do_you_own_your_home}}
+//   {{contact.decision_stage}}
+//   {{contact.property_address}}
+//
+// GHL resolves custom fields by key name in the customField array.
+// If GHL ever rejects key names and demands opaque UUIDs, set the corresponding
+// env var in Vercel → Settings → Environment Variables to override the default.
+const CF_MONTHLY_BILL    = process.env.GHL_CF_MONTHLY_BILL    || 'average_cost_per_month_for_electricity';
+const CF_ROOF_TYPE       = process.env.GHL_CF_ROOF_TYPE       || 'roof_type';
+const CF_OWNS_HOME       = process.env.GHL_CF_OWNS_HOME       || 'do_you_own_your_home';
+const CF_DECISION_STAGE  = process.env.GHL_CF_DECISION_STAGE  || 'decision_stage';
+const CF_PROPERTY_ADDR   = process.env.GHL_CF_PROPERTY_ADDRESS || 'property_address';
 
 if (!GHL_WEBHOOK_URL && process.env.NODE_ENV === 'production') {
   console.error('[GHL] GHL_WEBHOOK_URL is not set. Leads will not flow to GHL.');
@@ -50,11 +58,12 @@ console.error('[GHL] key sources — lead:', LEAD_KEY_SOURCE, '| booking:', BOOK
   '| internalNotifyPhone:', INTERNAL_NOTIFICATION_PHONE ? '✓ set' : '(not set — booking SMS disabled)',
 );
 console.error(
-  '[GHL] custom field IDs —',
-  '| monthly_bill:', GHL_CF_MONTHLY_BILL   || '⚠️ MISSING (set GHL_CF_MONTHLY_BILL)',
-  '| roof_type:',    GHL_CF_ROOF_TYPE      || '⚠️ MISSING (set GHL_CF_ROOF_TYPE)',
-  '| owns_home:',    GHL_CF_OWNS_HOME      || '⚠️ MISSING (set GHL_CF_OWNS_HOME)',
-  '| decision_stage:', GHL_CF_DECISION_STAGE || '⚠️ MISSING (set GHL_CF_DECISION_STAGE)',
+  '[GHL] custom field identifiers —',
+  '| average_cost_per_month_for_electricity:', CF_MONTHLY_BILL,
+  '| roof_type:', CF_ROOF_TYPE,
+  '| do_you_own_your_home:', CF_OWNS_HOME,
+  '| decision_stage:', CF_DECISION_STAGE,
+  '| property_address:', CF_PROPERTY_ADDR,
 );
 
 /**
@@ -92,35 +101,40 @@ const GHL_HEADERS = (apiKey: string) => ({
 });
 
 /**
- * Build the customField array for a GHL contact upsert.
- * Only includes entries where both the field ID (env var) and a value are present.
- * GHL requires IDs — if an env var is blank the field is silently skipped.
+ * Build the customField array for a GHL contact upsert or update.
+ * Uses the exact field key names from GHL Settings → Custom Fields.
+ * The `id` field in each entry accepts both opaque UUIDs and key names.
  *
- * Merge field → env var mapping:
- *   {{contact.monthly_bill}}   → GHL_CF_MONTHLY_BILL
- *   {{contact.roof_type}}      → GHL_CF_ROOF_TYPE
- *   {{contact.owns_home}}      → GHL_CF_OWNS_HOME
- *   {{contact.decision_stage}} → GHL_CF_DECISION_STAGE
+ * Merge tag → field key mapping:
+ *   {{contact.average_cost_per_month_for_electricity}} → CF_MONTHLY_BILL
+ *   {{contact.roof_type}}                             → CF_ROOF_TYPE
+ *   {{contact.do_you_own_your_home}}                  → CF_OWNS_HOME
+ *   {{contact.decision_stage}}                        → CF_DECISION_STAGE
+ *   {{contact.property_address}}                      → CF_PROPERTY_ADDR
  */
 function buildCustomFields(params: {
   isOwner?:    string;   // 'yes' | 'no'
   billLabel?:  string;   // human label e.g. '$150–$200/mo'
   roofType?:   string;   // code e.g. 'asphalt'
   timeline?:   string;   // code e.g. 'ready'
+  address?:    string;   // full property address string
 }): Array<{ id: string; field_value: string }> {
   const fields: Array<{ id: string; field_value: string }> = [];
 
-  if (GHL_CF_MONTHLY_BILL && params.billLabel) {
-    fields.push({ id: GHL_CF_MONTHLY_BILL, field_value: params.billLabel });
+  if (params.billLabel) {
+    fields.push({ id: CF_MONTHLY_BILL,   field_value: params.billLabel });
   }
-  if (GHL_CF_ROOF_TYPE && params.roofType) {
-    fields.push({ id: GHL_CF_ROOF_TYPE, field_value: ROOF_LABELS[params.roofType] ?? params.roofType });
+  if (params.roofType) {
+    fields.push({ id: CF_ROOF_TYPE,      field_value: ROOF_LABELS[params.roofType]    ?? params.roofType });
   }
-  if (GHL_CF_OWNS_HOME && params.isOwner) {
-    fields.push({ id: GHL_CF_OWNS_HOME, field_value: params.isOwner === 'yes' ? 'Yes' : 'No' });
+  if (params.isOwner) {
+    fields.push({ id: CF_OWNS_HOME,      field_value: params.isOwner === 'yes' ? 'Yes' : 'No' });
   }
-  if (GHL_CF_DECISION_STAGE && params.timeline) {
-    fields.push({ id: GHL_CF_DECISION_STAGE, field_value: TIMELINE_LABELS[params.timeline] ?? params.timeline });
+  if (params.timeline) {
+    fields.push({ id: CF_DECISION_STAGE, field_value: TIMELINE_LABELS[params.timeline] ?? params.timeline });
+  }
+  if (params.address) {
+    fields.push({ id: CF_PROPERTY_ADDR,  field_value: params.address });
   }
 
   return fields;
@@ -174,12 +188,15 @@ export async function upsertGHLContact(params: {
     body.address1 = params.address;
   }
 
-  // ── Custom fields — populate GHL merge tags for workflow SMS ────────
+  // ── Custom fields — write to exact GHL field key names ─────────────
+  // address is written to both the standard address1 field (already set above)
+  // AND the property_address custom field so {{contact.property_address}} resolves.
   const customFields = buildCustomFields({
     isOwner:   params.isOwner,
     billLabel: params.billLabel,
     roofType:  params.roofType,
     timeline:  params.timeline,
+    address:   params.address,
   });
   // GHL v2 contacts/upsert uses the key "customField" (singular array)
   if (customFields.length > 0) {
@@ -187,52 +204,30 @@ export async function upsertGHLContact(params: {
   }
 
   // ── Resolved human-readable values for logging ─────────────────────
-  const logOwnsHome      = params.isOwner    ? (params.isOwner === 'yes' ? 'Yes' : 'No')                         : '(not provided)';
-  const logMonthlyBill   = params.billLabel  ?? '(not provided)';
-  const logRoofType      = params.roofType   ? (ROOF_LABELS[params.roofType]    ?? params.roofType)              : '(not provided)';
-  const logDecisionStage = params.timeline   ? (TIMELINE_LABELS[params.timeline] ?? params.timeline)             : '(not provided)';
-
-  // ── Missing field ID detection ──────────────────────────────────────
-  const missingIds = [
-    !GHL_CF_MONTHLY_BILL   ? 'GHL_CF_MONTHLY_BILL'   : null,
-    !GHL_CF_ROOF_TYPE      ? 'GHL_CF_ROOF_TYPE'      : null,
-    !GHL_CF_OWNS_HOME      ? 'GHL_CF_OWNS_HOME'      : null,
-    !GHL_CF_DECISION_STAGE ? 'GHL_CF_DECISION_STAGE' : null,
-  ].filter((x): x is string => x !== null);
-
-  if (missingIds.length > 0) {
-    for (const id of missingIds) {
-      console.error(`[GHL] ❌ MISSING ENV: ${id} — {{contact.${id.replace('GHL_CF_', '').toLowerCase()}}} will be empty in GHL workflow`);
-    }
-  }
+  const logOwnsHome      = params.isOwner   ? (params.isOwner === 'yes' ? 'Yes' : 'No')              : '(not provided)';
+  const logMonthlyBill   = params.billLabel ?? '(not provided)';
+  const logRoofType      = params.roofType  ? (ROOF_LABELS[params.roofType]    ?? params.roofType)   : '(not provided)';
+  const logDecisionStage = params.timeline  ? (TIMELINE_LABELS[params.timeline] ?? params.timeline)  : '(not provided)';
 
   // ── LOG 1: Contact update payload ──────────────────────────────────
   console.error(
     '[GHL] CONTACT UPDATE PAYLOAD\n' +
     JSON.stringify({
-      name    : `${params.firstName} ${params.lastName}`.trim(),
-      phone   : params.phone,
-      address1: params.address ?? '',
-      customFields: customFields,
+      name           : `${params.firstName} ${params.lastName}`.trim(),
+      phone          : params.phone,
+      address1       : params.address ?? '',
+      customFields   : customFields,
     }, null, 2),
   );
 
-  // ── LOG 2: Custom field values (human-readable) ─────────────────────
+  // ── LOG 2: Custom field values being written ────────────────────────
   console.error(
     '[GHL] CUSTOM FIELD VALUES\n' +
-    `  monthly_bill:    ${logMonthlyBill}\n` +
-    `  roof_type:       ${logRoofType}\n` +
-    `  owns_home:       ${logOwnsHome}\n` +
-    `  decision_stage:  ${logDecisionStage}`,
-  );
-
-  // ── LOG 3: Custom field IDs being used ──────────────────────────────
-  console.error(
-    '[GHL] CUSTOM FIELD IDS USED\n' +
-    `  GHL_CF_MONTHLY_BILL:   ${GHL_CF_MONTHLY_BILL   || '❌ NOT SET'}\n` +
-    `  GHL_CF_ROOF_TYPE:      ${GHL_CF_ROOF_TYPE      || '❌ NOT SET'}\n` +
-    `  GHL_CF_OWNS_HOME:      ${GHL_CF_OWNS_HOME      || '❌ NOT SET'}\n` +
-    `  GHL_CF_DECISION_STAGE: ${GHL_CF_DECISION_STAGE || '❌ NOT SET'}`,
+    `  average_cost_per_month_for_electricity: ${logMonthlyBill}\n` +
+    `  roof_type:                              ${logRoofType}\n` +
+    `  do_you_own_your_home:                   ${logOwnsHome}\n` +
+    `  decision_stage:                         ${logDecisionStage}\n` +
+    `  property_address:                       ${params.address ?? '(not provided)'}`,
   );
 
   let res: Response;
@@ -279,13 +274,76 @@ export async function upsertGHLContact(params: {
       );
     } else if (contactId && customFields.length === 0) {
       console.error(
-        `[GHL] ✅ contact upserted (no custom fields — all GHL_CF_* env vars are unset) — contactId: ${contactId}`,
+        `[GHL] ✅ contact upserted (no custom field values provided) — contactId: ${contactId}`,
       );
     }
     return contactId;
   } catch {
     console.error('[GHL] upsertGHLContact: could not parse response JSON:', raw);
     return null;
+  }
+}
+
+/**
+ * Write qualification custom fields to an existing GHL contact via PUT.
+ * Called fire-and-forget from createGHLAppointment so the merge tags
+ * ({{contact.average_cost_per_month_for_electricity}}, etc.) are always
+ * populated by the time the GHL workflow SMS fires after booking.
+ */
+async function updateGHLContactFields(contactId: string, params: {
+  ownsHome?   : string;   // 'yes' | 'no'
+  monthlyBill?: string;   // code e.g. '150-200'
+  roofType?   : string;   // code e.g. 'asphalt'
+  timeline?   : string;   // code e.g. 'ready'
+  address?    : string;
+}): Promise<void> {
+  if (!GHL_LEAD_API_KEY) {
+    console.error('[GHL] updateGHLContactFields: no lead API key — skipping');
+    return;
+  }
+
+  // Convert bill code → human label using the same map as the rest of the system
+  const billLabel = params.monthlyBill
+    ? (BILL_LABELS[params.monthlyBill] ?? params.monthlyBill)
+    : undefined;
+
+  const customField = buildCustomFields({
+    isOwner:   params.ownsHome,
+    billLabel,
+    roofType:  params.roofType,
+    timeline:  params.timeline,
+    address:   params.address,
+  });
+
+  if (customField.length === 0) {
+    console.error('[GHL] updateGHLContactFields: nothing to write — all values blank');
+    return;
+  }
+
+  console.error('[GHL] updateGHLContactFields — contactId:', contactId,
+    '| writing fields:', customField.map(f => `${f.id}="${f.field_value}"`).join(', '),
+  );
+
+  try {
+    const res = await fetch(`${GHL_API_BASE}/contacts/${contactId}`, {
+      method:  'PUT',
+      headers: {
+        'Authorization': `Bearer ${GHL_LEAD_API_KEY}`,
+        'Content-Type':  'application/json',
+        'Version':       '2021-07-28',
+      },
+      body:  JSON.stringify({ customField }),
+      cache: 'no-store',
+    });
+    const raw = await res.text().catch(() => '');
+    if (res.ok) {
+      console.error('[GHL] updateGHLContactFields ✅ — contactId:', contactId,
+        '| fields written:', customField.length);
+    } else {
+      console.error('[GHL] updateGHLContactFields ❌ —', res.status, '|', raw.substring(0, 400));
+    }
+  } catch (err) {
+    console.error('[GHL] updateGHLContactFields network error:', err);
   }
 }
 
@@ -662,6 +720,16 @@ export async function createGHLAppointment(params: {
           addGHLContactNote(params.contactId, appointmentNotes).catch(err =>
             console.error('[GHL] addGHLContactNote (post-retry) error:', err),
           );
+          // Write qualification custom fields to contact so GHL workflow merge tags resolve
+          updateGHLContactFields(params.contactId, {
+            ownsHome:    params.ownsHome,
+            monthlyBill: params.monthlyBill,
+            roofType:    params.roofType,
+            timeline:    params.timeline,
+            address:     params.address,
+          }).catch(err =>
+            console.error('[GHL] updateGHLContactFields (post-retry) error:', err),
+          );
           // Send internal SMS notification to Michael — fire-and-forget
           // Map params.timeline → decisionStage so buildInternalMessage reads the right key
           const internalMsg = buildInternalMessage({
@@ -711,6 +779,16 @@ export async function createGHLAppointment(params: {
       // Attach lead summary as a GHL contact note — fire-and-forget, never blocks booking
       addGHLContactNote(params.contactId, appointmentNotes).catch(err =>
         console.error('[GHL] addGHLContactNote (post-booking) error:', err),
+      );
+      // Write qualification custom fields to contact so GHL workflow merge tags resolve
+      updateGHLContactFields(params.contactId, {
+        ownsHome:    params.ownsHome,
+        monthlyBill: params.monthlyBill,
+        roofType:    params.roofType,
+        timeline:    params.timeline,
+        address:     params.address,
+      }).catch(err =>
+        console.error('[GHL] updateGHLContactFields (post-booking) error:', err),
       );
       // Send internal SMS notification to Michael — fire-and-forget
       // Map params.timeline → decisionStage so buildInternalMessage reads the right key
