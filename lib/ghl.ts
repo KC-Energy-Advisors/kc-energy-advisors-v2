@@ -613,15 +613,15 @@ const TIMELINE_LABELS: Record<string, string> = {
   'ready':      'Ready if it makes sense',
 };
 
-/** Format an ISO appointment time as "Tuesday, April 28 · 10:00 AM Central" */
+/** Format an ISO appointment time as "Wed Apr 29 @ 12:00 PM" */
 function fmtAppointmentTime(iso: string, tz: string): string {
   try {
-    const d = new Date(iso);
-    const date = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: tz });
-    const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: tz });
-    // Try to get a short timezone label like "Central"
-    const tzShort = d.toLocaleTimeString('en-US', { timeZoneName: 'short', timeZone: tz }).split(' ').pop() ?? tz;
-    return `${date} · ${time} ${tzShort}`;
+    const d       = new Date(iso);
+    const weekday = d.toLocaleDateString('en-US', { weekday: 'short',   timeZone: tz }); // "Wed"
+    const month   = d.toLocaleDateString('en-US', { month:   'short',   timeZone: tz }); // "Apr"
+    const day     = d.toLocaleDateString('en-US', { day:     'numeric', timeZone: tz }); // "29"
+    const time    = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: tz }); // "12:00 PM"
+    return `${weekday} ${month} ${day} @ ${time}`;
   } catch {
     return iso;
   }
@@ -999,16 +999,17 @@ export function buildInternalMessage(params: {
     ? `${params.firstName} ${params.lastName ?? ''}`.trim()
     : params.name;
 
+  // Resolve display values — null means the field is absent; those lines are omitted.
   const ownsHome = params.ownsHome === 'yes' ? 'Yes'
                  : params.ownsHome === 'no'  ? 'No'
-                 : '(not provided)';
-  const bill     = params.monthlyBill   ? (BILL_LABELS[params.monthlyBill]       ?? params.monthlyBill)   : '(not provided)';
-  const roof     = params.roofType      ? (ROOF_LABELS[params.roofType]          ?? params.roofType)      : '(not provided)';
-  const stage    = params.decisionStage ? (TIMELINE_LABELS[params.decisionStage] ?? params.decisionStage) : '(not provided)';
+                 : null;
+  const bill     = params.monthlyBill   ? (BILL_LABELS[params.monthlyBill]       ?? params.monthlyBill)   : null;
+  const roof     = params.roofType      ? (ROOF_LABELS[params.roofType]          ?? params.roofType)      : null;
+  const stage    = params.decisionStage ? (TIMELINE_LABELS[params.decisionStage] ?? params.decisionStage) : null;
   const apptTime = fmtAppointmentTime(params.startTime, params.timezone);
 
-  // Warn about any blank fields (undefined OR empty string) so Vercel shows the gap immediately
-  const missing = [
+  // Log any omitted fields so Vercel shows the gap without cluttering the SMS
+  const omitted = [
     !params.phone         && 'phone',
     !params.address       && 'address',
     !params.ownsHome      && 'ownsHome',
@@ -1016,24 +1017,22 @@ export function buildInternalMessage(params: {
     !params.roofType      && 'roofType',
     !params.decisionStage && 'decisionStage',
   ].filter(Boolean);
-  if (missing.length > 0) {
-    console.error('[INTERNAL SMS INPUT] ⚠️ missing/empty fields — will show (not provided) for:', missing.join(', '));
+  if (omitted.length > 0) {
+    console.error('[INTERNAL SMS INPUT] ⚠️ missing/empty fields — lines omitted from SMS:', omitted.join(', '));
   }
 
-  return [
-    '🔥 NEW APPOINTMENT BOOKED 🔥',
-    '',
-    `Name: ${fullName}`,
-    `Phone: ${params.phone ?? '(not provided)'}`,
-    `Address: ${params.address ?? '(not provided)'}`,
-    `Time: ${apptTime}`,
-    `Bill: ${bill}`,
-    `Roof: ${roof}`,
-    `Owns Home: ${ownsHome}`,
-    `Stage: ${stage}`,
-    '',
-    "Let's Lock It In 📈",
-  ].join('\n');
+  // Build lines conditionally — missing fields produce no line at all
+  const lines: string[] = ['🔥 NEW APPOINTMENT BOOKED'];
+  if (fullName)        lines.push(`👤 ${fullName}`);
+  if (params.phone)    lines.push(`📞 ${params.phone}`);
+  if (params.address)  lines.push(`📍 ${params.address}`);
+  lines.push(          `🕒 ${apptTime}`);   // startTime is always present
+  if (bill     !== null) lines.push(`💰 Bill: ${bill}`);
+  if (ownsHome !== null) lines.push(`🏠 Owns: ${ownsHome}`);
+  if (roof     !== null) lines.push(`🏚 Roof: ${roof}`);
+  if (stage    !== null) lines.push(`🎯 Stage: ${stage}`);
+
+  return lines.join('\n');
 }
 
 // ── Internal notification contact cache ──────────────────────────────────────
