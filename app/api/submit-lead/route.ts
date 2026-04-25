@@ -257,40 +257,7 @@ export async function POST(req: NextRequest) {
     ? (upsertResult.value as string | null)
     : null;
 
-  // ── Step 4 GHL tracking: note + log (fire-and-forget) ────────────
-  // Only fires on complete form submissions so partial Step-1 upserts
-  // don't spam notes. Never blocks or breaks the HTTP response.
-  if (contactId && payload.stage === 'complete') {
-    console.error('[submit-lead] WEBSITE SAVINGS REPORT SUBMITTED — contactId:', contactId);
-    const roofLabels: Record<string, string> = {
-      asphalt: 'Asphalt shingle', metal: 'Metal', tile: 'Tile', unsure: 'Not sure',
-    };
-    const timelineLabels: Record<string, string> = {
-      exploring: 'Just exploring', interested: "I'm interested", ready: 'Ready if it makes sense',
-    };
-    const noteBody = [
-      'WEBSITE SAVINGS REPORT SUBMITTED',
-      '',
-      `Name:     ${[payload.firstName, payload.lastName].filter(Boolean).join(' ') || '(not provided)'}`,
-      `Phone:    ${payload.phone     || '(not provided)'}`,
-      `Address:  ${payload.address   || '(not provided)'}`,
-      '',
-      'Qualification:',
-      `  Owns Home:      ${payload.is_owner === 'yes' ? 'Yes' : payload.is_owner === 'no' ? 'No' : '(not provided)'}`,
-      `  Electric Bill:  ${payload.bill_label || '(not provided)'}`,
-      `  Roof Type:      ${payload.roofType ? (roofLabels[payload.roofType] ?? payload.roofType) : '(not provided)'}`,
-      `  Decision Stage: ${payload.timeline  ? (timelineLabels[payload.timeline]  ?? payload.timeline)  : '(not provided)'}`,
-      '',
-      'Source: KC Energy Advisors website',
-      `Submitted At: ${payload.submittedAt}`,
-    ].join('\n');
-
-    addGHLContactNote(contactId, noteBody)
-      .then(() => console.error('[submit-lead] GHL note added — contactId:', contactId))
-      .catch(err  => console.error('[submit-lead] GHL note error:', err));
-  }
-
-  // GHL webhook is authoritative — if it fails, return 502
+  // ── GHL webhook check ────────────────────────────────────────────
   if (!ghlOk) {
     return NextResponse.json(
       {
@@ -303,13 +270,66 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // GHL webhook succeeded — return 200 even if Python had an issue
+  // ── Upsert check + Step 4 note (complete-stage only) ─────────────
+  if (payload.stage === 'complete') {
+    console.error('[submit-lead] STAGE COMPLETE DETECTED');
+    console.error('[submit-lead] contactId after upsert:', contactId ?? 'null');
+
+    // Block redirect if upsert returned no contactId — booking and note
+    // both depend on it; better to show a retry than proceed broken.
+    if (!contactId) {
+      console.error(
+        '[submit-lead] COMPLETE SUBMIT FAILED - no contactId from GHL |' +
+        ` phone: ${payload.phone} | upsertStatus: ${upsertResult.status}`,
+      );
+      return NextResponse.json(
+        {
+          error:      'Failed to save your info. Please try again.',
+          ghl_ok:     true,
+          python_ok:  pythonOk,
+          contactId:  null,
+        },
+        { status: 502 },
+      );
+    }
+
+    // ── Write contact note — awaited so Vercel doesn't abandon it ────
+    // Own try-catch: a note failure must NEVER block the success response.
+    console.error('[submit-lead] adding GHL note for website savings report');
+    const roofLabels: Record<string, string> = {
+      asphalt: 'Asphalt shingle', metal: 'Metal', tile: 'Tile', unsure: 'Not sure',
+    };
+    const timelineLabels: Record<string, string> = {
+      exploring: 'Just exploring', interested: "I'm interested", ready: 'Ready if it makes sense',
+    };
+    const noteBody = [
+      'WEBSITE SAVINGS REPORT SUBMITTED',
+      `Name: ${[payload.firstName, payload.lastName].filter(Boolean).join(' ') || '(not provided)'}`,
+      `Phone: ${payload.phone || '(not provided)'}`,
+      `Address: ${payload.address || '(not provided)'}`,
+      `Bill: ${payload.bill_label || '(not provided)'}`,
+      `Owns Home: ${payload.is_owner === 'yes' ? 'Yes' : payload.is_owner === 'no' ? 'No' : '(not provided)'}`,
+      `Roof: ${payload.roofType ? (roofLabels[payload.roofType] ?? payload.roofType) : '(not provided)'}`,
+      `Stage: ${payload.timeline ? (timelineLabels[payload.timeline] ?? payload.timeline) : '(not provided)'}`,
+      'Source: Website Step 4 savings report',
+      `Submitted At: ${payload.submittedAt}`,
+    ].join('\n');
+
+    try {
+      await addGHLContactNote(contactId, noteBody);
+      console.error('[submit-lead] GHL note added successfully');
+    } catch (noteErr) {
+      console.error('[submit-lead] GHL note error (non-fatal):', noteErr);
+    }
+  }
+
+  // GHL webhook + upsert succeeded — return 200
   return NextResponse.json({
     success:    true,
     qualified,
     ghl_ok:     true,
     python_ok:  pythonOk,
-    contactId,  // may be null if upsert failed — SlotPicker handles gracefully
+    contactId,
     ...(pythonOk ? {} : { python_warning: 'Python webhook did not succeed — check server logs' }),
   });
 }

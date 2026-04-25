@@ -930,15 +930,20 @@ export async function createGHLAppointment(params: {
  */
 export async function addGHLContactNote(contactId: string, noteBody: string): Promise<void> {
   if (!GHL_API_KEY) {
-    console.error('[GHL] addGHLContactNote: GHL_API_KEY not set — skipping contact note');
+    console.error('[GHL NOTE FAILED] GHL_API_KEY not set — cannot write note | contactId:', contactId);
     return;
   }
 
   const url = `${GHL_API_BASE}/contacts/${contactId}/notes`;
-  console.error('[GHL] addGHLContactNote → POST', url, '| contactId:', contactId);
 
+  // ── Log full request details before fetch ────────────────────────
+  console.error('[GHL NOTE REQUEST] contactId:', contactId);
+  console.error('[GHL NOTE REQUEST] url:', url);
+  console.error('[GHL NOTE REQUEST] body:', JSON.stringify({ body: noteBody }));
+
+  let res: Response;
   try {
-    const res = await fetch(url, {
+    res = await fetch(url, {
       method:  'POST',
       headers: {
         'Authorization': `Bearer ${GHL_API_KEY}`,
@@ -948,15 +953,39 @@ export async function addGHLContactNote(contactId: string, noteBody: string): Pr
       body:  JSON.stringify({ body: noteBody }),
       cache: 'no-store',
     });
-
-    const raw = await res.text().catch(() => '');
-    if (res.ok) {
-      console.error('[GHL] addGHLContactNote SUCCESS — contactId:', contactId);
-    } else {
-      console.error('[GHL] addGHLContactNote FAILED —', res.status, '| body:', raw.substring(0, 400));
-    }
   } catch (err) {
-    console.error('[GHL] addGHLContactNote network error:', err);
+    console.error('[GHL NOTE FAILED] network error — contactId:', contactId, '| err:', err);
+    throw err;   // re-throw so the caller's try-catch sees it
+  }
+
+  // ── Log full response ────────────────────────────────────────────
+  const raw = await res.text().catch(() => '');
+  console.error('[GHL NOTE RESPONSE STATUS]:', res.status);
+  console.error('[GHL NOTE RESPONSE BODY]:', raw);
+
+  if (!res.ok) {
+    console.error('[GHL NOTE FAILED] status:', res.status, '| contactId:', contactId);
+    throw new Error(`addGHLContactNote HTTP ${res.status}: ${raw.substring(0, 400)}`);
+  }
+
+  // Verify the response body actually contains a note id — GHL returns
+  // { note: { id: "..." } } on success.
+  let parsed: Record<string, unknown> = {};
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    // non-JSON body — treat as unconfirmed
+  }
+
+  const noteId =
+    (parsed?.note as Record<string, unknown> | undefined)?.id ??
+    (parsed as Record<string, unknown>)?.id ??
+    null;
+
+  if (!noteId) {
+    console.error('[GHL NOTE NOT CONFIRMED] HTTP 2xx but no note id in response | contactId:', contactId, '| raw:', raw.substring(0, 400));
+  } else {
+    console.error('[GHL NOTE SUCCESS] contactId:', contactId, '| noteId:', noteId);
   }
 }
 
