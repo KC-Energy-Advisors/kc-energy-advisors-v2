@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendLeadToGHL, upsertGHLContact } from '@/lib/ghl';
+import { sendLeadToGHL, upsertGHLContact, addGHLContactNote } from '@/lib/ghl';
 import type { LeadPayload } from '@/lib/types';
 
 // Simple in-memory rate limiter (resets on cold start — good enough for a landing page)
@@ -169,7 +169,9 @@ export async function POST(req: NextRequest) {
         lastName  : p.lastName,
         phone     : p.phone,
         email     : p.email,
-        tags      : p.tags,
+        // Add tracking tag on complete form submissions so this prospect is
+        // clearly marked in GHL as a savings-report lead (idempotent via phone dedup).
+        tags      : [...(p.tags ?? []), ...(p.stage === 'complete' ? ['website-savings-report-submitted'] : [])],
         address   : p.address,
         // ── Qualification → custom fields (workflow merge tags) ───────
         // Only populated on the full Step 3 submit; blank on Step 1 partial.
@@ -254,6 +256,39 @@ export async function POST(req: NextRequest) {
   const contactId = upsertResult.status === 'fulfilled'
     ? (upsertResult.value as string | null)
     : null;
+
+  // ── Step 4 GHL tracking: note + log (fire-and-forget) ────────────
+  // Only fires on complete form submissions so partial Step-1 upserts
+  // don't spam notes. Never blocks or breaks the HTTP response.
+  if (contactId && payload.stage === 'complete') {
+    console.error('[submit-lead] WEBSITE SAVINGS REPORT SUBMITTED — contactId:', contactId);
+    const roofLabels: Record<string, string> = {
+      asphalt: 'Asphalt shingle', metal: 'Metal', tile: 'Tile', unsure: 'Not sure',
+    };
+    const timelineLabels: Record<string, string> = {
+      exploring: 'Just exploring', interested: "I'm interested", ready: 'Ready if it makes sense',
+    };
+    const noteBody = [
+      'WEBSITE SAVINGS REPORT SUBMITTED',
+      '',
+      `Name:     ${[payload.firstName, payload.lastName].filter(Boolean).join(' ') || '(not provided)'}`,
+      `Phone:    ${payload.phone     || '(not provided)'}`,
+      `Address:  ${payload.address   || '(not provided)'}`,
+      '',
+      'Qualification:',
+      `  Owns Home:      ${payload.is_owner === 'yes' ? 'Yes' : payload.is_owner === 'no' ? 'No' : '(not provided)'}`,
+      `  Electric Bill:  ${payload.bill_label || '(not provided)'}`,
+      `  Roof Type:      ${payload.roofType ? (roofLabels[payload.roofType] ?? payload.roofType) : '(not provided)'}`,
+      `  Decision Stage: ${payload.timeline  ? (timelineLabels[payload.timeline]  ?? payload.timeline)  : '(not provided)'}`,
+      '',
+      'Source: KC Energy Advisors website',
+      `Submitted At: ${payload.submittedAt}`,
+    ].join('\n');
+
+    addGHLContactNote(contactId, noteBody)
+      .then(() => console.error('[submit-lead] GHL note added — contactId:', contactId))
+      .catch(err  => console.error('[submit-lead] GHL note error:', err));
+  }
 
   // GHL webhook is authoritative — if it fails, return 502
   if (!ghlOk) {
