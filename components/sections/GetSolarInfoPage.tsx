@@ -363,10 +363,12 @@ const BILL_META: Record<string, { label: string; midpoint: number }> = {
 export default function GetSolarInfoPage() {
   console.error('🔥 COMPONENT: GetSolarInfoPage IS RUNNING 🔥');
 
-  const [pageState,   setPageState]   = useState<PageState>('form');
-  const [step,        setStep]        = useState<FormStep>(1);
-  const [form,        setForm]        = useState<FormData>(EMPTY_FORM);
-  const [contactId,   setContactId]   = useState<string | null>(null);
+  const [pageState,    setPageState]    = useState<PageState>('form');
+  const [step,         setStep]         = useState<FormStep>(1);
+  const [form,         setForm]         = useState<FormData>(EMPTY_FORM);
+  const [contactId,    setContactId]    = useState<string | null>(null);
+  // Step 2 inline disqualification errors — cleared automatically on valid selection
+  const [step2Errors,  setStep2Errors]  = useState<{ ownsHome?: string; roofType?: string }>({});
 
   // Ref mirror — survives re-renders and stale closures.
   // Always set in sync with the state setter below.
@@ -504,7 +506,25 @@ export default function GetSolarInfoPage() {
 
   function goStep3() {
     if (!step2OK) return;
-    if (form.ownsHome === 'no') { setPageState('disqualified'); return; }
+
+    // ── Step 2 disqualification checks ────────────────────────────────
+    // Show inline errors instead of immediately redirecting so the user
+    // understands why they can't continue before leaving the step.
+    const errors: { ownsHome?: string; roofType?: string } = {};
+
+    if (form.ownsHome === 'no') {
+      errors.ownsHome = "We currently only install on owner-occupied homes. If that changes in the future, we'd be happy to take another look.";
+    }
+    if (form.roofType === 'tile') {
+      errors.roofType = "At the moment, we're not installing on tile roofs in your area, but we can revisit this if options expand.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setStep2Errors(errors);
+      return;
+    }
+
+    setStep2Errors({});
     setStep(3);
   }
 
@@ -1001,19 +1021,36 @@ export default function GetSolarInfoPage() {
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => setForm(prev => ({ ...prev, ownsHome: 'yes' }))}
+                      onClick={() => {
+                        setForm(prev => ({ ...prev, ownsHome: 'yes' }));
+                        setStep2Errors(prev => ({ ...prev, ownsHome: undefined }));
+                      }}
                       className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.ownsHome === 'yes' ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
                     >
                       <span className="text-[13.5px] font-semibold block leading-tight">Yes, I own it</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => setForm(prev => ({ ...prev, ownsHome: 'no' }))}
-                      className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.ownsHome === 'no' ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
+                      onClick={() => {
+                        setForm(prev => ({ ...prev, ownsHome: 'no' }));
+                        setStep2Errors(prev => ({ ...prev, ownsHome: "We currently only install on owner-occupied homes. If that changes in the future, we'd be happy to take another look." }));
+                      }}
+                      className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${
+                        form.ownsHome === 'no' && step2Errors.ownsHome
+                          ? 'border-red-400 bg-red-50 text-red-700'
+                          : form.ownsHome === 'no'
+                            ? 'border-blue-500 bg-blue-50 text-[#1e40af]'
+                            : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'
+                      }`}
                     >
                       <span className="text-[13.5px] font-semibold block leading-tight">No, I rent</span>
                     </button>
                   </div>
+                  {step2Errors.ownsHome && (
+                    <p className="mt-2 text-[12px] text-[#ef4444] leading-snug">
+                      {step2Errors.ownsHome}
+                    </p>
+                  )}
                 </div>
 
                 {/* Monthly electric bill */}
@@ -1056,13 +1093,31 @@ export default function GetSolarInfoPage() {
                       <button
                         key={opt.code}
                         type="button"
-                        onClick={() => setForm(prev => ({ ...prev, roofType: opt.code }))}
-                        className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${form.roofType === opt.code ? 'border-blue-500 bg-blue-50 text-[#1e40af]' : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'}`}
+                        onClick={() => {
+                          setForm(prev => ({ ...prev, roofType: opt.code }));
+                          if (opt.code === 'tile') {
+                            setStep2Errors(prev => ({ ...prev, roofType: "At the moment, we're not installing on tile roofs in your area, but we can revisit this if options expand." }));
+                          } else {
+                            setStep2Errors(prev => ({ ...prev, roofType: undefined }));
+                          }
+                        }}
+                        className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all duration-200 ${
+                          form.roofType === opt.code && opt.code === 'tile' && step2Errors.roofType
+                            ? 'border-red-400 bg-red-50 text-red-700'
+                            : form.roofType === opt.code
+                              ? 'border-blue-500 bg-blue-50 text-[#1e40af]'
+                              : 'border-[#d1d5db] bg-white text-[#374151] hover:border-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'
+                        }`}
                       >
                         <span className="text-[13.5px] font-semibold leading-tight">{opt.label}</span>
                       </button>
                     ))}
                   </div>
+                  {step2Errors.roofType && (
+                    <p className="mt-2 text-[12px] text-[#ef4444] leading-snug">
+                      {step2Errors.roofType}
+                    </p>
+                  )}
                 </div>
               </div>
 
