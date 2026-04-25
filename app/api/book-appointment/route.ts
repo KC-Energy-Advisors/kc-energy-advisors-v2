@@ -72,6 +72,12 @@ export async function POST(req: NextRequest) {
     timeline,
   } = body;
 
+  // ── Standardized hand-off log ──────────────────────────────────────
+  // Matches the same log emitted on /thank-you (server) and inside
+  // SlotPicker (browser) so the contactId is traceable end-to-end.
+  console.log('BOOKING WITH CONTACT ID:', incomingContactId || '(absent — will upsert)');
+  console.error('BOOKING WITH CONTACT ID:', incomingContactId || '(absent — will upsert)');
+
   // ── Full lead summary log — survives removeConsole ─────────────────
   console.error(
     '[book-appointment] LEAD SUMMARY\n' +

@@ -8,8 +8,13 @@ import { PHONE_DISPLAY, PHONE_HREF } from '@/lib/constants';
 // ─────────────────────────────────────────────────────────────────
 
 export interface SlotPickerProps {
-  /** GHL contactId — optional; book-appointment route upserts if absent */
-  contactId?    : string;
+  /**
+   * GHL contactId — passed as `cid` for consistency with the URL query param
+   * naming used across the funnel. The wire field name on the request body
+   * to /api/book-appointment is still `contactId` (that's the API contract).
+   * Optional — book-appointment route upserts if absent.
+   */
+  cid?          : string;
   /** Full name used as the GHL appointment title */
   name          : string;
   /** Lead contact fields */
@@ -144,7 +149,7 @@ const CSS = `
 // ─────────────────────────────────────────────────────────────────
 
 export default function SlotPicker({
-  contactId,
+  cid,
   name,
   firstName,
   lastName,
@@ -228,32 +233,40 @@ export default function SlotPicker({
       console.error('[BOOKING] blocked — no slot selected');
       return;
     }
-    // contactId may be empty if submit-lead upsert failed; the route will upsert
-    if (!contactId) {
+    // cid may be empty if submit-lead upsert failed; the route will upsert
+    if (!cid) {
       console.error('[BOOKING] ⚠️ contactId absent — route will upsert contact during booking');
     }
 
     setState('booking');
     setBookErr('');
-    console.error('[BOOKING] firing — contactId:', contactId || '(absent)', '| start:', selSlot.startTime, '| tz:', tz);
+
+    // ── Standardized hand-off log ───────────────────────────────
+    // Pairs with the matching log on /thank-you and inside
+    // /api/book-appointment so the same id is visible end-to-end.
+    console.log('BOOKING WITH CONTACT ID:', cid || '(absent — route will upsert)');
+    console.error('BOOKING WITH CONTACT ID:', cid || '(absent — route will upsert)');
+
+    console.error('[BOOKING] firing — contactId:', cid || '(absent)', '| start:', selSlot.startTime, '| tz:', tz);
 
     // ── Build payload from current props ────────────────────────
     // decisionStage maps to 'timeline' in the API / GHL layer.
-    // contactId may be empty string — route will upsert if so.
+    // The wire field name MUST stay `contactId` — that's the API contract
+    // /api/book-appointment expects, even though the React prop is `cid`.
     const bookingPayload = {
-      contactId: contactId || '',
+      contactId   : cid          || '',
       startTime   : selSlot.startTime,
       endTime     : selSlot.endTime,
       name,
       timezone    : tz,
-      firstName   : firstName   ?? '',
-      lastName    : lastName    ?? '',
-      phone       : phone       ?? '',
-      email       : email       ?? '',
-      address     : address     ?? '',
-      ownsHome    : ownsHome    ?? '',
-      monthlyBill : monthlyBill ?? '',
-      roofType    : roofType    ?? '',
+      firstName   : firstName    ?? '',
+      lastName    : lastName     ?? '',
+      phone       : phone        ?? '',
+      email       : email        ?? '',
+      address     : address      ?? '',
+      ownsHome    : ownsHome     ?? '',
+      monthlyBill : monthlyBill  ?? '',
+      roofType    : roofType     ?? '',
       timeline    : decisionStage ?? '',   // API field name
     };
 

@@ -212,12 +212,38 @@ export default function QualifyForm() {
 
     setLoading(true);
     try {
-      await submitToAPI(payload, true);
+      // Capture the response so we can forward contactId + lead context to
+      // /thank-you. Without this the booking page would have to re-upsert
+      // (creating a possible duplicate) and would not pre-fill the SlotPicker.
+      // NOTE: The payload itself is NOT modified — we only read the response.
+      const data = await submitToAPI(payload, true);
       submittedRef.current = true;
       track('form_complete', { bill: fs.billLabel ?? '' });
       clearContact(); // clear pre-fill data after successful submission
-      console.log('[QualifyForm] ✅ submission succeeded — redirecting to /thank-you');
-      router.push('/thank-you');
+
+      const contactId = data?.contactId ?? '';
+      console.log('[QualifyForm] ✅ submission succeeded — redirecting to /thank-you', { contactId: contactId || '(absent)' });
+
+      // Build URL params so /thank-you can pre-link the SAME GHL contact
+      // and pre-fill the SlotPicker. We have name + phone + bill + ownership
+      // here; address / roof / decision-stage aren't collected on this form
+      // (those come from the get-solar-info funnel), so they're omitted.
+      const q = new URLSearchParams();
+      if (contactId)        q.set('cid',         contactId);
+      const fullName = `${form.firstName.trim()} ${form.lastName.trim()}`.trim();
+      if (fullName)         q.set('name',        fullName);
+      if (e164)             q.set('phone',       e164);
+      // Pass the human bill label (e.g. "$150 – $250"); SlotPicker forwards
+      // it as monthlyBill which the book-appointment route uses verbatim.
+      if (fs.billLabel)     q.set('monthlyBill', fs.billLabel);
+      // is_owner is always 'yes' here — Step 1 routes renters to /not-yet.
+      q.set('ownsHome', 'yes');
+      // stage = 'complete' is funnel/state info, not the SlotPicker
+      // decisionStage code, so we don't forward it as `stage`.
+
+      // Hard navigation matches the get-solar-info → /thank-you redirect
+      // pattern and guarantees the new query string is read on mount.
+      window.location.href = '/thank-you?' + q.toString();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error('[QualifyForm] ❌ submission failed:', msg);
@@ -535,7 +561,17 @@ function buildBasePayload(
   };
 }
 
-async function submitToAPI(payload: LeadPayload, qualified: boolean): Promise<void> {
+interface SubmitLeadResponse {
+  success?  : boolean;
+  qualified?: boolean;
+  ghl_ok?   : boolean;
+  python_ok?: boolean;
+  contactId?: string | null;
+  dev_mode? : boolean;
+  error?    : string;
+}
+
+async function submitToAPI(payload: LeadPayload, qualified: boolean): Promise<SubmitLeadResponse> {
   console.log('[QualifyForm] → submitting', {
     qualified,
     phone:  payload.phone,
@@ -550,10 +586,11 @@ async function submitToAPI(payload: LeadPayload, qualified: boolean): Promise<vo
   });
 
   // Always try to parse the response body for logging, even on error
-  const data = await res.json().catch(() => ({}));
+  const data: SubmitLeadResponse = await res.json().catch(() => ({}));
   console.log('[QualifyForm] ← response', { status: res.status, ok: res.ok, data });
 
   if (!res.ok) {
     throw new Error(data.error || `API error ${res.status}`);
   }
+  return data;
 }

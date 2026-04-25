@@ -652,7 +652,19 @@ export default function GetSolarInfoPage() {
       }
       // isSubmitting stays true — flow is complete, do not allow re-submit
       setContactIdSafe(resolvedId);
-      setPageState('booking');
+      // Redirect to the thank-you + booking page, encoding all lead data in
+      // URL params so the SlotPicker there can pre-fill and link the same GHL
+      // contact without creating a duplicate.
+      const q = new URLSearchParams();
+      if (resolvedId)     q.set('cid',        resolvedId);
+      if (form.name)      q.set('name',       form.name);
+      if (phone)          q.set('phone',      phone);           // already E.164
+      if (form.address)   q.set('address',    form.address);
+      if (form.ownsHome)  q.set('ownsHome',   form.ownsHome);
+      if (form.monthlyBill) q.set('monthlyBill', form.monthlyBill);
+      if (form.roofType)  q.set('roofType',   form.roofType);
+      if (form.decisionStage) q.set('stage',  form.decisionStage);
+      window.location.href = '/thank-you?' + q.toString();
 
     } catch (err) {
       // ── Network / parse error ────────────────────────────────────
@@ -887,7 +899,7 @@ export default function GetSolarInfoPage() {
                 return null;
               })()}
               <SlotPicker
-                contactId    ={resolvedContactId}
+                cid          ={resolvedContactId}
                 name         ={form.name}
                 firstName    ={form.name.trim().split(/\s+/)[0] ?? ''}
                 lastName     ={form.name.trim().split(/\s+/).slice(1).join(' ')}
