@@ -96,6 +96,23 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // ── [GHL ENV CHECK] — confirms which key and location Vercel actually loaded ──
+  // Cross-reference keyLast4/keyLen against Vercel → Settings → Environment Variables.
+  {
+    const key      = process.env.GHL_API_KEY ?? '';
+    const keyLen   = key.length;
+    const keyLast4 = key.length >= 4 ? key.slice(-4) : key || '(empty)';
+    const locId    = process.env.GHL_LOCATION_ID ?? '';
+    const locLast4 = locId.length >= 4 ? `****${locId.slice(-4)}` : locId || '(not set)';
+    console.error(
+      `[GHL ENV CHECK] route=submit-lead` +
+      ` keyLabel=GHL_API_KEY` +
+      ` keyLen=${keyLen}` +
+      ` keyLast4=${keyLast4}` +
+      ` locationId=${locLast4}`,
+    );
+  }
+
   // Parse body
   let body: unknown;
   try {

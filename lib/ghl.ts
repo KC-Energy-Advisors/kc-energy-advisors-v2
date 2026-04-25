@@ -5,29 +5,35 @@
  */
 import type { LeadPayload, CalendarSlot, SlotsByDate } from './types';
 
+/**
+ * Thrown exclusively when GHL returns HTTP 403 during access validation.
+ * Exported so the route handler can distinguish a key/location mismatch from
+ * any other failure and return the correct error shape to the frontend.
+ */
+export class GhlAccessError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'GhlAccessError';
+  }
+}
+
 const GHL_WEBHOOK_URL = process.env.GHL_WEBHOOK_URL ?? '';
 const GHL_API_BASE    = 'https://services.leadconnectorhq.com';
 const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID ?? '';
 const GHL_CALENDAR_ID = process.env.GHL_CALENDAR_ID ?? '';
 
-// ── Dual API key resolution ───────────────────────────────────────────────────
-// GHL_LEAD_API_KEY    → KC Web Lead API    (contacts upsert, tag)
-// GHL_BOOKING_API_KEY → KC Booking API     (calendar slots, appointment creation)
-// GHL_API_KEY         → legacy single key  (fallback when specific key not set)
-//
-// All three can live in Vercel → Settings → Environment Variables.
-// The specific key always wins; GHL_API_KEY is the safety net.
-const GHL_API_KEY         = process.env.GHL_API_KEY         ?? '';
-const GHL_LEAD_API_KEY    = process.env.GHL_LEAD_API_KEY    || GHL_API_KEY;
-const GHL_BOOKING_API_KEY = process.env.GHL_BOOKING_API_KEY || GHL_API_KEY;
-
-// Human-readable source labels — logged but NEVER the actual token.
-const LEAD_KEY_SOURCE    = process.env.GHL_LEAD_API_KEY
-  ? 'GHL_LEAD_API_KEY'
-  : (GHL_API_KEY ? 'GHL_API_KEY (fallback)' : '⚠️ NOT SET');
-const BOOKING_KEY_SOURCE = process.env.GHL_BOOKING_API_KEY
-  ? 'GHL_BOOKING_API_KEY'
-  : (GHL_API_KEY ? 'GHL_API_KEY (fallback)' : '⚠️ NOT SET');
+// ── GHL API key ───────────────────────────────────────────────────────────────
+// Single key. No fallbacks. No aliases. No OR logic.
+// Every GHL API call in this file uses GHL_API_KEY exclusively.
+// Missing key = hard throw at module load so misconfiguration is instantly
+// visible in Vercel logs rather than causing silent 403s downstream.
+const GHL_API_KEY = process.env.GHL_API_KEY ?? '';
+if (!GHL_API_KEY) {
+  throw new Error(
+    '[GHL] FATAL: GHL_API_KEY is not set. ' +
+    'Add it in Vercel → Settings → Environment Variables and redeploy.',
+  );
+}
 
 // Admin phone for internal booking SMS notifications.
 // Primary env var:  INTERNAL_NOTIFY_PHONE  (new, shorter name)
@@ -57,12 +63,48 @@ const CF_DECISION_STAGE  = process.env.GHL_CF_DECISION_STAGE  || 'decision_stage
 // NOTE: property_address is NOT a custom field — GHL rejects it with 422.
 // Address is sent via the standard `address1` contact field instead.
 
+// ── Credential helpers ────────────────────────────────────────────────────────
+// maskSecret: shows first 6 + last 4 chars; safe for logs.
+function maskSecret(val: string, head = 6, tail = 4): string {
+  if (!val) return '(not set)';
+  if (val.length <= head + tail) return `${val.substring(0, head)}…`;
+  return `${val.substring(0, head)}…${val.substring(val.length - tail)}`;
+}
+
+// keyInfo: returns the diagnostic fields used in [GHL ENV CHECK] logs.
+// Enough to cross-reference against Vercel dashboard without exposing the secret.
+function keyInfo(key: string): { keyLen: number; keyLast4: string } {
+  return {
+    keyLen  : key.length,
+    keyLast4: key.length >= 4 ? key.slice(-4) : key || '(empty)',
+  };
+}
+
 if (!GHL_WEBHOOK_URL && process.env.NODE_ENV === 'production') {
   console.error('[GHL] GHL_WEBHOOK_URL is not set. Leads will not flow to GHL.');
 }
-console.error('[GHL] key sources — lead:', LEAD_KEY_SOURCE, '| booking:', BOOKING_KEY_SOURCE,
-  '| INTERNAL_NOTIFY_PHONE:', INTERNAL_NOTIFY_PHONE ? '✓ set' : '(not set — internal booking SMS disabled)',
-);
+
+// ── Startup credential config check ──────────────────────────────────────────
+// Printed once at cold-start.
+// Cross-reference keyLast4 + keyLen against your Vercel env var to confirm the
+// newest value was actually picked up by this deployment.
+// Cross-reference locationId last-4 against GHL → Settings → Business Profile.
+{
+  const ki       = keyInfo(GHL_API_KEY);
+  const locLast4 = GHL_LOCATION_ID.length >= 4
+    ? `****${GHL_LOCATION_ID.slice(-4)}`
+    : GHL_LOCATION_ID || '(not set)';
+  console.error(
+    `[GHL CONFIG CHECK]\n` +
+    `  keyLabel   : GHL_API_KEY\n` +
+    `  keyLen     : ${ki.keyLen}   ← confirm this matches your Vercel key length\n` +
+    `  keyLast4   : ${ki.keyLast4}   ← confirm last 4 chars match your Vercel key\n` +
+    `  locationId : ${locLast4}   ← cross-ref against GHL Settings → Business Profile\n` +
+    `  INTERNAL_NOTIFY_PHONE : ${INTERNAL_NOTIFY_PHONE ? 'set' : 'NOT SET'}\n` +
+    `  NOTE: GHL_API_KEY must be a Private Integration key from the sub-account\n` +
+    `        whose Location ID matches GHL_LOCATION_ID`,
+  );
+}
 console.error(
   '[GHL] custom field identifiers —',
   '| average_cost_per_month_for_electricity:', CF_MONTHLY_BILL,
@@ -145,6 +187,76 @@ function buildCustomFields(params: {
 }
 
 /**
+ * Probe a harmless GHL read endpoint with the given API key + GHL_LOCATION_ID.
+ * Called before upsert and appointment creation so a credential mismatch is
+ * caught and thrown immediately — before any write is attempted.
+ *
+ * Throws  → 403 received; caller must catch, log err.message, and bail out.
+ * Returns → success (void); proceed with the real operation.
+ *
+ * Non-403 failures (network errors, 5xx) are logged but DO NOT throw because
+ * they indicate a transient GHL problem, not a credential mismatch.
+ */
+async function validateGhlAccess(apiKey: string, keyLabel: string): Promise<void> {
+  if (!GHL_LOCATION_ID) {
+    throw new Error(
+      `[GHL ACCESS ERROR] GHL_LOCATION_ID is not set. ` +
+      `Set GHL_LOCATION_ID in Vercel → Settings → Environment Variables.`,
+    );
+  }
+  if (!apiKey) {
+    throw new Error(
+      `[GHL ACCESS ERROR] ${keyLabel} is empty. ` +
+      `Set this key in Vercel → Settings → Environment Variables.`,
+    );
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${GHL_API_BASE}/locations/${GHL_LOCATION_ID}`, {
+      method : 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type' : 'application/json',
+        'Version'      : '2021-07-28',
+      },
+      cache: 'no-store',
+    });
+  } catch (err) {
+    // Network error — not a credential issue; allow the real operation to proceed.
+    console.error('[GHL ACCESS ERROR] validateGhlAccess network error (non-fatal):', err);
+    return;
+  }
+
+  if (res.status === 403) {
+    const ki = keyInfo(apiKey);
+    const locLast4 = GHL_LOCATION_ID.length >= 4 ? `****${GHL_LOCATION_ID.slice(-4)}` : GHL_LOCATION_ID;
+    throw new GhlAccessError(
+      `WRONG GHL API KEY FOR THIS LOCATION. ` +
+      `Create/copy the Private Integration key from the exact same KC Energy Advisors sub-account as GHL_LOCATION_ID. ` +
+      `keyLabel=${keyLabel} keyLen=${ki.keyLen} keyLast4=${ki.keyLast4} locationId=${locLast4}`,
+    );
+  }
+
+  if (!res.ok) {
+    // Non-403 failures are logged but not thrown — may be transient GHL issues.
+    const raw = await res.text().catch(() => '');
+    console.error(
+      `[GHL ACCESS ERROR] validateGhlAccess: unexpected status ${res.status} (non-fatal) | ${raw.substring(0, 200)}`,
+    );
+    return;
+  }
+
+  {
+    const ki = keyInfo(apiKey);
+    const locLast4 = GHL_LOCATION_ID.length >= 4 ? `****${GHL_LOCATION_ID.slice(-4)}` : GHL_LOCATION_ID;
+    console.error(
+      `[GHL ACCESS OK] ✅ keyLabel=${keyLabel} keyLen=${ki.keyLen} keyLast4=${ki.keyLast4} locationId=${locLast4}`,
+    );
+  }
+}
+
+/**
  * Upsert a contact in GHL and return the contact's id.
  * Uses the Contacts Upsert endpoint so the same phone never creates duplicates.
  * Belt-and-suspenders: the inbound webhook (sendLeadToGHL) still fires for
@@ -167,8 +279,20 @@ export async function upsertGHLContact(params: {
   roofType? : string;   // code           → {{contact.roof_type}}
   timeline? : string;   // code           → {{contact.decision_stage}}
 }): Promise<string | null> {
-  if (!GHL_LEAD_API_KEY) {
-    console.error('[GHL] upsertGHLContact: no lead API key set (tried GHL_LEAD_API_KEY, GHL_API_KEY) — cannot upsert');
+  if (!GHL_API_KEY) {
+    console.error('[GHL] upsertGHLContact: GHL_API_KEY is not set — cannot upsert');
+    return null;
+  }
+
+  // ── Credential + location validation ────────────────────────────
+  // GhlAccessError (403) is re-thrown so the route can return a specific
+  // "GHL key/location mismatch" response to the frontend.
+  // Any other unexpected error is logged and returns null.
+  try {
+    await validateGhlAccess(GHL_API_KEY, 'GHL_API_KEY');
+  } catch (err: unknown) {
+    if (err instanceof GhlAccessError) throw err;
+    console.error('[GHL] upsertGHLContact: validateGhlAccess unexpected error:', (err as Error).message);
     return null;
   }
 
@@ -244,7 +368,7 @@ export async function upsertGHLContact(params: {
     res = await fetch(endpoint, {
       method:  'POST',
       headers: {
-        'Authorization': `Bearer ${GHL_LEAD_API_KEY}`,
+        'Authorization': `Bearer ${GHL_API_KEY}`,
         'Version':       '2021-07-28',
         'Content-Type':  'application/json',
       },
@@ -306,8 +430,8 @@ export async function updateGHLContactFields(contactId: string, params: {
   timeline?   : string;   // code e.g. 'ready'
   address?    : string;   // written to address1, NOT a custom field
 }): Promise<void> {
-  if (!GHL_LEAD_API_KEY) {
-    console.error('[GHL] updateGHLContactFields: no lead API key — skipping');
+  if (!GHL_API_KEY) {
+    console.error('[GHL] updateGHLContactFields: GHL_API_KEY not set — skipping');
     return;
   }
 
@@ -339,7 +463,7 @@ export async function updateGHLContactFields(contactId: string, params: {
     const res = await fetch(`${GHL_API_BASE}/contacts/${contactId}`, {
       method:  'PUT',
       headers: {
-        'Authorization': `Bearer ${GHL_LEAD_API_KEY}`,
+        'Authorization': `Bearer ${GHL_API_KEY}`,
         'Content-Type':  'application/json',
         'Version':       '2021-07-28',
       },
@@ -371,13 +495,13 @@ export async function getCalendarSlots(params: {
 
   // ── Env-var guard ────────────────────────────────────────────────
   console.error('[GHL] getCalendarSlots — calendarId:', GHL_CALENDAR_ID || '⚠️ NOT SET',
-    '| keySource:', BOOKING_KEY_SOURCE,
+    '| keySource: GHL_API_KEY',
     '| tz:', params.timezone,
     '| start:', new Date(params.startDate).toISOString(),
     '| end:', new Date(params.endDate).toISOString());
 
-  if (!GHL_BOOKING_API_KEY || !GHL_CALENDAR_ID) {
-    console.error('[GHL] ❌ getCalendarSlots blocked — booking API key (GHL_BOOKING_API_KEY / GHL_API_KEY) or GHL_CALENDAR_ID missing');
+  if (!GHL_API_KEY || !GHL_CALENDAR_ID) {
+    console.error('[GHL] ❌ getCalendarSlots blocked — GHL_API_KEY or GHL_CALENDAR_ID not set');
     return {};
   }
 
@@ -392,7 +516,7 @@ export async function getCalendarSlots(params: {
 
   let res: Response;
   try {
-    res = await fetch(url, { method: 'GET', headers: GHL_HEADERS(GHL_BOOKING_API_KEY), cache: 'no-store' });
+    res = await fetch(url, { method: 'GET', headers: GHL_HEADERS(GHL_API_KEY), cache: 'no-store' });
   } catch (err) {
     console.error('[GHL] getCalendarSlots network error:', err);
     return {};
@@ -574,8 +698,19 @@ export async function createGHLAppointment(params: {
   roofType?   : string;
   timeline?   : string;
 }): Promise<string | null> {
-  if (!GHL_BOOKING_API_KEY || !GHL_CALENDAR_ID) {
-    console.error('[GHL] createGHLAppointment: booking API key (GHL_BOOKING_API_KEY / GHL_API_KEY) or GHL_CALENDAR_ID not set — cannot book');
+  if (!GHL_API_KEY || !GHL_CALENDAR_ID) {
+    console.error('[GHL] createGHLAppointment: GHL_API_KEY or GHL_CALENDAR_ID not set — cannot book');
+    return null;
+  }
+
+  // ── Credential + location validation ────────────────────────────
+  // GhlAccessError (403) is re-thrown — do NOT retry booking on access denial.
+  // Any other unexpected error is logged and returns null.
+  try {
+    await validateGhlAccess(GHL_API_KEY, 'GHL_API_KEY');
+  } catch (err: unknown) {
+    if (err instanceof GhlAccessError) throw err;
+    console.error('[GHL] createGHLAppointment: validateGhlAccess unexpected error:', (err as Error).message);
     return null;
   }
 
@@ -620,7 +755,7 @@ export async function createGHLAppointment(params: {
   // ── Diagnostic log: outgoing request ────────────────────────────
   console.error('[GHL] createGHLAppointment → REQUEST',
     '| url:', url,
-    '| keySource:', BOOKING_KEY_SOURCE,
+    '| keySource: GHL_API_KEY',
     '| calendarId:', GHL_CALENDAR_ID,
     '| locationId:', GHL_LOCATION_ID,
     '| contactId:', params.contactId,
@@ -635,7 +770,7 @@ export async function createGHLAppointment(params: {
   try {
     res = await fetch(url, {
       method:  'POST',
-      headers: GHL_HEADERS(GHL_BOOKING_API_KEY),
+      headers: GHL_HEADERS(GHL_API_KEY),
       body:    JSON.stringify(body),
       cache:   'no-store',
     });
@@ -690,7 +825,7 @@ export async function createGHLAppointment(params: {
       try {
         retryRes = await fetch(url, {
           method:  'POST',
-          headers: GHL_HEADERS(GHL_BOOKING_API_KEY),
+          headers: GHL_HEADERS(GHL_API_KEY),
           body:    JSON.stringify(retryBody),
           cache:   'no-store',
         });
@@ -796,8 +931,8 @@ export async function createGHLAppointment(params: {
  * Non-blocking — caller should not await unless it cares about the result.
  */
 export async function addGHLContactNote(contactId: string, noteBody: string): Promise<void> {
-  if (!GHL_LEAD_API_KEY) {
-    console.error('[GHL] addGHLContactNote: no lead API key — skipping contact note');
+  if (!GHL_API_KEY) {
+    console.error('[GHL] addGHLContactNote: GHL_API_KEY not set — skipping contact note');
     return;
   }
 
@@ -808,7 +943,7 @@ export async function addGHLContactNote(contactId: string, noteBody: string): Pr
     const res = await fetch(url, {
       method:  'POST',
       headers: {
-        'Authorization': `Bearer ${GHL_LEAD_API_KEY}`,
+        'Authorization': `Bearer ${GHL_API_KEY}`,
         'Content-Type':  'application/json',
         'Version':       '2021-07-28',
       },
@@ -901,48 +1036,162 @@ export function buildInternalMessage(params: {
   ].join('\n');
 }
 
+// ── Internal notification contact cache ──────────────────────────────────────
+// The GHL Conversations API requires a contactId — it cannot send an outbound
+// SMS to an arbitrary phone number without one.
+//
+// Path used: Admin contact upsert (Path A)
+//   On first booking after a cold-start we upsert a GHL contact whose phone is
+//   INTERNAL_NOTIFY_PHONE. GHL deduplicates by phone so this is idempotent.
+//   The returned contactId is cached in memory for the lifetime of the Vercel
+//   instance so subsequent bookings skip the upsert round-trip.
+//   When we POST /conversations/messages with that contactId + type "SMS",
+//   GHL sends an outbound SMS FROM the sub-account phone TO INTERNAL_NOTIFY_PHONE.
+//   → The SMS lands on the admin's phone. ✅
+//
+// Alternative (Path B — Lead's conversation):
+//   Pass the lead's contactId directly to POST /conversations/messages.
+//   The outbound SMS goes to the LEAD's phone, not the admin's. ⚠️
+//   To switch to Path B: remove the getOrCreateAdminContact() call and pass
+//   the `leadContactId` argument straight into the conversations/messages body.
+let _adminNotifyContactId: string | null = null;
+
 /**
- * Send an internal SMS directly via GHL Conversations API.
- * Message is built entirely from backend booking values — no GHL merge fields.
- * Exported so book-appointment/route.ts fires it after a confirmed appointment.
- * Non-blocking — always wrap callsite in .catch() so a failure never blocks booking.
+ * Upsert the admin notification contact (INTERNAL_NOTIFY_PHONE) in GHL and
+ * return their contactId. Result is cached for the process lifetime.
+ * Returns null if the upsert fails — caller skips send and logs the error.
  */
-export async function sendInternalNotification(message: string): Promise<void> {
-  if (!INTERNAL_NOTIFY_PHONE) {
-    console.error('[INTERNAL SMS SKIPPED] INTERNAL_NOTIFY_PHONE not set — add this env var in Vercel to enable internal notifications');
-    return;
-  }
-  if (!GHL_LEAD_API_KEY) {
-    console.error('[INTERNAL SMS SKIPPED] no GHL API key available (GHL_LEAD_API_KEY / GHL_API_KEY) — cannot send');
-    return;
-  }
+async function getOrCreateAdminContact(): Promise<string | null> {
+  if (_adminNotifyContactId) return _adminNotifyContactId;
 
-  console.error('[INTERNAL SMS] sending to admin phone:', INTERNAL_NOTIFY_PHONE);
+  console.error('[INTERNAL SMS] upserting admin notification contact — phone:', INTERNAL_NOTIFY_PHONE);
 
+  let res: Response;
   try {
-    const res = await fetch(`${GHL_API_BASE}/conversations/messages`, {
+    res = await fetch(`${GHL_API_BASE}/contacts/upsert`, {
       method : 'POST',
       headers: {
-        'Authorization': `Bearer ${GHL_LEAD_API_KEY}`,
+        'Authorization': `Bearer ${GHL_API_KEY}`,
         'Content-Type' : 'application/json',
         'Version'      : '2021-07-28',
       },
       body : JSON.stringify({
-        type   : 'SMS',
-        message: message,
-        phone  : INTERNAL_NOTIFY_PHONE,
+        locationId: GHL_LOCATION_ID,
+        phone     : INTERNAL_NOTIFY_PHONE,
+        firstName : 'Admin',
+        lastName  : 'Notifications',
       }),
       cache: 'no-store',
     });
-
-    const raw = await res.text().catch(() => '');
-    if (res.ok) {
-      console.error('[INTERNAL SMS SENT] ✅ status:', res.status, '| to:', INTERNAL_NOTIFY_PHONE);
-    } else {
-      console.error('[INTERNAL SMS ERROR] ❌ status:', res.status, '| body:', raw.substring(0, 600));
-    }
   } catch (err) {
-    console.error('[INTERNAL SMS ERROR] network error:', err);
+    console.error('[INTERNAL SMS ERROR] network error upserting admin contact:', err);
+    return null;
+  }
+
+  const raw = await res.text().catch(() => '');
+  if (!res.ok) {
+    console.error('[INTERNAL SMS ERROR] admin contact upsert failed — status:', res.status, '| body:', raw.substring(0, 400));
+    return null;
+  }
+
+  try {
+    const data = JSON.parse(raw) as { contact?: { id?: string }; id?: string; contactId?: string };
+    const contactId =
+      data?.contact?.id ??
+      data?.id ??
+      data?.contactId ??
+      null;
+    if (contactId) {
+      _adminNotifyContactId = contactId;
+      console.error('[INTERNAL SMS] admin contact ready — contactId:', contactId);
+    } else {
+      console.error('[INTERNAL SMS ERROR] admin contact upsert succeeded but no id in response:', raw.substring(0, 400));
+    }
+    return contactId;
+  } catch {
+    console.error('[INTERNAL SMS ERROR] could not parse admin contact upsert response:', raw.substring(0, 400));
+    return null;
+  }
+}
+
+/**
+ * Send an internal booking notification SMS to the admin (INTERNAL_NOTIFY_PHONE).
+ *
+ * Accepts the booked lead's contactId (required by the function interface) but
+ * routes the actual SMS to the admin contact, not the lead.  See the path
+ * comment above for details.
+ *
+ * Exported so book-appointment/route.ts fires it after a confirmed appointment.
+ * The caller MUST wrap this in its own try-catch — a failure here must NEVER
+ * fail the booking response.
+ */
+export async function sendInternalNotification(
+  leadContactId: string,
+  message      : string,
+): Promise<void> {
+  // ── Guards ────────────────────────────────────────────────────────
+  if (!INTERNAL_NOTIFY_PHONE) {
+    console.error('[INTERNAL SMS SKIPPED] INTERNAL_NOTIFY_PHONE not set — add this env var in Vercel to enable admin booking notifications');
+    return;
+  }
+  if (!GHL_API_KEY) {
+    console.error('[INTERNAL SMS SKIPPED] GHL_API_KEY not set — cannot send');
+    return;
+  }
+  if (!GHL_LOCATION_ID) {
+    console.error('[INTERNAL SMS SKIPPED] GHL_LOCATION_ID not set — cannot send');
+    return;
+  }
+
+  console.error('[INTERNAL SMS] lead contactId:', leadContactId, '| messageLength:', message.length);
+
+  // ── Step 1: resolve admin contactId ──────────────────────────────
+  const adminContactId = await getOrCreateAdminContact();
+  if (!adminContactId) {
+    console.error('[INTERNAL SMS ERROR] could not resolve admin contactId — notification skipped');
+    return;
+  }
+
+  // ── Step 2: send via GHL Conversations API ────────────────────────
+  const url  = `${GHL_API_BASE}/conversations/messages`;
+  const body = {
+    type      : 'SMS',
+    contactId : adminContactId,
+    locationId: GHL_LOCATION_ID,
+    message   : message,
+  };
+
+  console.error(
+    '[INTERNAL SMS REQUEST] endpoint:', url,
+    '| contactId (admin):', adminContactId,
+    '| locationId:', GHL_LOCATION_ID,
+    '| messageLength:', message.length,
+  );
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method : 'POST',
+      headers: {
+        'Authorization': `Bearer ${GHL_API_KEY}`,
+        'Content-Type' : 'application/json',
+        'Version'      : '2021-07-28',
+      },
+      body : JSON.stringify(body),
+      cache: 'no-store',
+    });
+  } catch (err) {
+    console.error('[INTERNAL SMS ERROR] network error sending notification:', err);
+    return;
+  }
+
+  const raw = await res.text().catch(() => '');
+  console.error('[INTERNAL SMS RESPONSE] status:', res.status, '| body:', raw.substring(0, 400));
+
+  if (res.ok) {
+    console.error('[INTERNAL SMS SENT] ✅ admin notified — contactId:', adminContactId, '| to:', INTERNAL_NOTIFY_PHONE);
+  } else {
+    console.error('[INTERNAL SMS ERROR] ❌ status:', res.status, '| body:', raw.substring(0, 600));
   }
 }
 
@@ -951,17 +1200,17 @@ export async function sendInternalNotification(message: string): Promise<void> {
  * Used by the API route when we need to tag a disqualified lead.
  */
 export async function tagGHLContact(contactId: string, tags: string[]): Promise<void> {
-  if (!GHL_LEAD_API_KEY) {
-    console.error('[GHL] tagGHLContact: no lead API key set (tried GHL_LEAD_API_KEY, GHL_API_KEY) — skipping tag');
+  if (!GHL_API_KEY) {
+    console.error('[GHL] tagGHLContact: GHL_API_KEY not set — skipping tag');
     return;
   }
 
-  console.error('[GHL] tagGHLContact — contactId:', contactId, '| tags:', tags, '| keySource:', LEAD_KEY_SOURCE);
+  console.error('[GHL] tagGHLContact — contactId:', contactId, '| tags:', tags, '| keySource: GHL_API_KEY');
 
   const res = await fetch(`${GHL_API_BASE}/contacts/${contactId}`, {
     method:  'PUT',
     headers: {
-      'Authorization':  `Bearer ${GHL_LEAD_API_KEY}`,
+      'Authorization':  `Bearer ${GHL_API_KEY}`,
       'Content-Type':   'application/json',
       'Version':        '2021-04-15',
     },
