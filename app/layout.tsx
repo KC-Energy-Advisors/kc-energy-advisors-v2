@@ -20,8 +20,8 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "KC Energy Advisors — St. Louis Solar Advisory Firm",
-    template: '%s | KC Energy Advisors',
+    default: "STL Energy Advisors — St. Louis Solar Advisory Firm",
+    template: '%s | STL Energy Advisors',
   },
   description:
     "St. Louis homeowners: see exactly how much solar saves you. Free 60-second estimate + personalized SMS from Michael, our AI solar advisor. Licensed, local, no pressure.",
@@ -40,8 +40,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: SITE_URL,
-    siteName: 'KC Energy Advisors',
-    title: "KC Energy Advisors — Stop Overpaying Ameren",
+    siteName: 'STL Energy Advisors',
+    title: "STL Energy Advisors — Stop Overpaying Ameren",
     description:
       "See what solar saves YOU. Free instant estimate + personalized SMS from our AI advisor. 500+ Missouri families served. Licensed & local.",
     locale: 'en_US',
@@ -50,13 +50,13 @@ export const metadata: Metadata = {
         url: `${SITE_URL}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: 'KC Energy Advisors — St. Louis Solar Advisory',
+        alt: 'STL Energy Advisors — St. Louis Solar Advisory',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: "KC Energy Advisors — St. Louis Solar Advisory Firm",
+    title: "STL Energy Advisors — St. Louis Solar Advisory Firm",
     description:
       "Free 60-second solar estimate for St. Louis homeowners. Personalized numbers, no pressure.",
   },
@@ -71,7 +71,8 @@ export default function RootLayout({
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     '@id': SITE_URL,
-    name: 'KC Energy Advisors',
+    name: 'STL Energy Advisors',
+    legalName: 'KC Energy Advisors LLC',
     description: 'Solar energy advisory and installation referral services for St. Louis homeowners.',
     url: SITE_URL,
     telephone: '+18163190932',

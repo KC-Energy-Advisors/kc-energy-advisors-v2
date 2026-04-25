@@ -205,7 +205,7 @@ export default function MeetMichael() {
                     M
                   </div>
                   <div className="min-w-0">
-                    <div className="text-[13px] font-semibold text-white truncate">Michael · KC Energy Advisors</div>
+                    <div className="text-[13px] font-semibold text-white truncate">Michael · STL Energy Advisors</div>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse-dot" />
                       <span className="text-[10px] text-white/45">AI Advisor · Typically replies instantly</span>

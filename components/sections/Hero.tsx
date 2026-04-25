@@ -74,7 +74,7 @@ export default function Hero() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          St. Louis · Energy Advisors
+          STL Energy Advisors
         </motion.p>
 
         {/* H1 */}

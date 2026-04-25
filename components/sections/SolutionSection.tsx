@@ -103,7 +103,7 @@ export default function SolutionSection() {
                 viewport={viewport}
                 transition={{ delay: 0.3 }}
               >
-                <span className="text-[14px] font-bold" style={{ color: '#065F46' }}>With KC Energy Advisors</span>
+                <span className="text-[14px] font-bold" style={{ color: '#065F46' }}>With STL Energy Advisors</span>
               </motion.div>
             </div>
 

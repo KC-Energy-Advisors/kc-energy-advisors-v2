@@ -4,7 +4,7 @@ import Footer from '@/components/layout/Footer';
 import { PHONE_DISPLAY, PHONE_HREF } from '@/lib/constants';
 
 export const metadata: Metadata = {
-  title: "You're Booked | KC Energy Advisors",
+  title: "You're Booked | STL Energy Advisors",
   description: "Your savings report call is confirmed. Here's exactly what happens next.",
   robots: { index: false },
 };

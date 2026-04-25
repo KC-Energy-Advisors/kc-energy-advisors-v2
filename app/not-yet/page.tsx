@@ -4,7 +4,7 @@ import Footer from '@/components/layout/Footer';
 import { LinkButton } from '@/components/ui/Button';
 
 export const metadata: Metadata = {
-  title: "Solar May Not Be the Right Fit Today | KC Energy Advisors",
+  title: "Solar May Not Be the Right Fit Today | STL Energy Advisors",
   description: "Solar isn't for everyone right now — and that's okay. Here's where things stand.",
   robots: { index: false },
 };

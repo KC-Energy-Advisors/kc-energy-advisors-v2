@@ -4,7 +4,7 @@ import Footer from '@/components/layout/Footer';
 import ThankYouBooking from '@/components/sections/ThankYouBooking';
 
 export const metadata: Metadata = {
-  title: 'Schedule Your Free In-Home Solar Consultation | KC Energy Advisors',
+  title: 'Schedule Your Free In-Home Solar Consultation | STL Energy Advisors',
   description:
     'Book your free in-home solar consultation. Michael will come to your home, review your electric usage, and walk you through your options.',
   robots: { index: false },

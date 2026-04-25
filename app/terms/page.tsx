@@ -5,8 +5,8 @@ import { LinkButton } from '@/components/ui/Button';
 import { PHONE_DISPLAY, PHONE_HREF } from '@/lib/constants';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | KC Energy Advisors',
-  description: 'Terms of service for KC Energy Advisors — St. Louis solar advisory services.',
+  title: 'Terms of Service | STL Energy Advisors',
+  description: 'Terms of service for STL Energy Advisors — St. Louis solar advisory services.',
   robots: { index: false },
 };
 

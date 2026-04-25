@@ -3,8 +3,8 @@ import Nav    from '@/components/layout/Nav';
 import Footer from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — KC Energy Advisors',
-  description: 'How KC Energy Advisors collects, uses, and protects your personal information.',
+  title: 'Privacy Policy — STL Energy Advisors',
+  description: 'How STL Energy Advisors collects, uses, and protects your personal information.',
 };
 
 const LAST_UPDATED = 'January 1, 2025';

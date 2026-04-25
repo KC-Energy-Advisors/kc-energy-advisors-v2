@@ -31,11 +31,14 @@ export default function Footer() {
                 <path d="M14 5L16.5 11H22L17.5 14.5L19.5 21L14 17L8.5 21L10.5 14.5L6 11H11.5L14 5Z" fill="white"/>
               </svg>
               <span className="text-[15px] font-semibold">
-                KC Energy<strong className="font-extrabold">Advisors</strong>
+                STL Energy<strong className="font-extrabold">Advisors</strong>
               </span>
             </a>
             <p className="text-[14px] leading-relaxed" style={{ color: '#6B7280' }}>
               Helping St. Louis homeowners take control of their energy — without pressure or guesswork.
+            </p>
+            <p className="text-[11px] mt-3 leading-relaxed" style={{ color: '#4B5563' }}>
+              STL Energy Advisors is a division of KC Energy Advisors LLC.
             </p>
           </div>
 

@@ -17,7 +17,7 @@ function Logo() {
         <path d="M14 5L16.5 11H22L17.5 14.5L19.5 21L14 17L8.5 21L10.5 14.5L6 11H11.5L14 5Z" fill="white"/>
       </svg>
       <span className="text-[15.5px] font-medium tracking-tight" style={{ color: 'inherit' }}>
-        KC Energy<strong className="font-extrabold">Advisors</strong>
+        STL Energy<strong className="font-extrabold">Advisors</strong>
       </span>
     </a>
   );
