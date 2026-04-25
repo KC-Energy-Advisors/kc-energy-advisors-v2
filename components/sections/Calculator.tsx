@@ -115,7 +115,7 @@ export default function Calculator() {
               <ResultCard
                 label="Start with $0 Payments" value="$0"
                 className="bg-[linear-gradient(145deg,#0f1f3d_0%,#162952_55%,#1e3a8a_100%)] border-blue-500/45 shadow-[0_0_22px_rgba(37,99,235,0.20)] motion-safe:hover:-translate-y-0.5 hover:shadow-[0_0_32px_rgba(37,99,235,0.32)] hover:border-blue-400/60"
-                sub="$0 to start. Payments begin after year one."
+                sub="$0 to start. Payments begin after 6 months."
               />
               <ResultCard label="System Size" value={`${r.kwSize} kW`} className="bg-white/[0.05] border-white/[0.09]" />
             </div>

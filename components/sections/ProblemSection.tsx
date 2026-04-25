@@ -22,8 +22,24 @@ function RateBar({ item }: { item: (typeof RATE_CHART)[number] }) {
           }}
         />
       </div>
-      <span className={`text-[10px] font-medium transition-opacity duration-500 ${visible ? 'opacity-100' : 'opacity-0'}`} style={{ color: '#6B7280' }}>
-        {item.year}
+      <span
+        className={`relative text-[10px] font-medium leading-tight text-center transition-opacity duration-500 ${visible ? 'opacity-100' : 'opacity-0'}`}
+        style={{ color: '#6B7280' }}
+      >
+        {item.projected ? '2025' : item.year}
+        {item.projected && (
+          /*
+            Absolute-positioned so it doesn't add height to this column —
+            keeps every bar's base aligned with the others while still
+            stacking "(est.)" directly under "2025", center-aligned.
+          */
+          <span
+            className="absolute top-full left-1/2 -translate-x-1/2 mt-px text-[9px] whitespace-nowrap"
+            style={{ color: '#6B7280' }}
+          >
+            (est.)
+          </span>
+        )}
       </span>
     </div>
   );
