@@ -49,7 +49,8 @@ const CF_MONTHLY_BILL    = process.env.GHL_CF_MONTHLY_BILL    || 'average_cost_p
 const CF_ROOF_TYPE       = process.env.GHL_CF_ROOF_TYPE       || 'roof_type';
 const CF_OWNS_HOME       = process.env.GHL_CF_OWNS_HOME       || 'do_you_own_your_home';
 const CF_DECISION_STAGE  = process.env.GHL_CF_DECISION_STAGE  || 'decision_stage';
-const CF_PROPERTY_ADDR   = process.env.GHL_CF_PROPERTY_ADDRESS || 'property_address';
+// NOTE: property_address is NOT a custom field — GHL rejects it with 422.
+// Address is sent via the standard `address1` contact field instead.
 
 if (!GHL_WEBHOOK_URL && process.env.NODE_ENV === 'production') {
   console.error('[GHL] GHL_WEBHOOK_URL is not set. Leads will not flow to GHL.');
@@ -63,7 +64,7 @@ console.error(
   '| roof_type:', CF_ROOF_TYPE,
   '| do_you_own_your_home:', CF_OWNS_HOME,
   '| decision_stage:', CF_DECISION_STAGE,
-  '| property_address:', CF_PROPERTY_ADDR,
+  '| (address → address1 standard field, not a custom field)',
 );
 
 /**
@@ -117,7 +118,8 @@ function buildCustomFields(params: {
   billLabel?:  string;   // human label e.g. '$150–$200/mo'
   roofType?:   string;   // code e.g. 'asphalt'
   timeline?:   string;   // code e.g. 'ready'
-  address?:    string;   // full property address string
+  // address is intentionally NOT here — GHL rejects property_address as a custom field.
+  // Address is written via the standard `address1` contact field in the caller.
 }): Array<{ id: string; field_value: string }> {
   const fields: Array<{ id: string; field_value: string }> = [];
 
@@ -132,9 +134,6 @@ function buildCustomFields(params: {
   }
   if (params.timeline) {
     fields.push({ id: CF_DECISION_STAGE, field_value: TIMELINE_LABELS[params.timeline] ?? params.timeline });
-  }
-  if (params.address) {
-    fields.push({ id: CF_PROPERTY_ADDR,  field_value: params.address });
   }
 
   return fields;
@@ -189,14 +188,13 @@ export async function upsertGHLContact(params: {
   }
 
   // ── Custom fields — write to exact GHL field key names ─────────────
-  // address is written to both the standard address1 field (already set above)
-  // AND the property_address custom field so {{contact.property_address}} resolves.
+  // address is written ONLY to the standard address1 field above.
+  // Do NOT include address as a custom field — GHL returns 422 for it.
   const customFields = buildCustomFields({
     isOwner:   params.isOwner,
     billLabel: params.billLabel,
     roofType:  params.roofType,
     timeline:  params.timeline,
-    address:   params.address,
   });
   // GHL v2 contacts/upsert uses the key "customField" (singular array)
   if (customFields.length > 0) {
@@ -209,25 +207,31 @@ export async function upsertGHLContact(params: {
   const logRoofType      = params.roofType  ? (ROOF_LABELS[params.roofType]    ?? params.roofType)   : '(not provided)';
   const logDecisionStage = params.timeline  ? (TIMELINE_LABELS[params.timeline] ?? params.timeline)  : '(not provided)';
 
-  // ── LOG 1: Contact update payload ──────────────────────────────────
+  // ── LOG: Final customFields array — confirms property_address is absent ──
+  console.error(
+    '[GHL] upsertGHLContact — final customFields (property_address must NOT appear):\n' +
+    JSON.stringify(customFields, null, 2),
+  );
+
+  // ── LOG: Contact update payload ─────────────────────────────────────
   console.error(
     '[GHL] CONTACT UPDATE PAYLOAD\n' +
     JSON.stringify({
-      name           : `${params.firstName} ${params.lastName}`.trim(),
-      phone          : params.phone,
-      address1       : params.address ?? '',
-      customFields   : customFields,
+      name     : `${params.firstName} ${params.lastName}`.trim(),
+      phone    : params.phone,
+      address1 : params.address ?? '',
+      customFields,
     }, null, 2),
   );
 
-  // ── LOG 2: Custom field values being written ────────────────────────
+  // ── LOG: Custom field values being written ──────────────────────────
   console.error(
     '[GHL] CUSTOM FIELD VALUES\n' +
     `  average_cost_per_month_for_electricity: ${logMonthlyBill}\n` +
     `  roof_type:                              ${logRoofType}\n` +
     `  do_you_own_your_home:                   ${logOwnsHome}\n` +
     `  decision_stage:                         ${logDecisionStage}\n` +
-    `  property_address:                       ${params.address ?? '(not provided)'}`,
+    `  address1 (standard field):              ${params.address ?? '(not provided)'}`,
   );
 
   let res: Response;
@@ -295,7 +299,7 @@ export async function updateGHLContactFields(contactId: string, params: {
   monthlyBill?: string;   // code e.g. '150-200'
   roofType?   : string;   // code e.g. 'asphalt'
   timeline?   : string;   // code e.g. 'ready'
-  address?    : string;
+  address?    : string;   // written to address1, NOT a custom field
 }): Promise<void> {
   if (!GHL_LEAD_API_KEY) {
     console.error('[GHL] updateGHLContactFields: no lead API key — skipping');
@@ -307,12 +311,14 @@ export async function updateGHLContactFields(contactId: string, params: {
     ? (BILL_LABELS[params.monthlyBill] ?? params.monthlyBill)
     : undefined;
 
+  // address is intentionally NOT passed to buildCustomFields — GHL rejects it as a custom field.
+  // If address needs updating it should go in the PUT body as address1 (not implemented here
+  // since upsertGHLContact already handles address1 at lead submit time).
   const customField = buildCustomFields({
     isOwner:   params.ownsHome,
     billLabel,
     roofType:  params.roofType,
     timeline:  params.timeline,
-    address:   params.address,
   });
 
   if (customField.length === 0) {
