@@ -232,29 +232,53 @@ export default function SlotPicker({
     setState('booking');
     setBookErr('');
     console.error('[BOOKING] firing — contactId:', contactId, '| start:', selSlot.startTime, '| tz:', tz);
-    console.log('[BOOKING PAYLOAD]', { monthlyBill, roofType, ownsHome, decisionStage });
+
+    // ── Build payload from current props ────────────────────────
+    // decisionStage maps to 'timeline' in the API / GHL layer.
+    const bookingPayload = {
+      contactId,
+      startTime   : selSlot.startTime,
+      endTime     : selSlot.endTime,
+      name,
+      timezone    : tz,
+      firstName   : firstName   ?? '',
+      lastName    : lastName    ?? '',
+      phone       : phone       ?? '',
+      email       : email       ?? '',
+      address     : address     ?? '',
+      ownsHome    : ownsHome    ?? '',
+      monthlyBill : monthlyBill ?? '',
+      roofType    : roofType    ?? '',
+      timeline    : decisionStage ?? '',   // API field name
+    };
+
+    // Both variants so the log survives removeConsole in production
+    console.log('[FINAL BOOKING PAYLOAD]', {
+      firstName: bookingPayload.firstName,
+      lastName : bookingPayload.lastName,
+      phone    : bookingPayload.phone,
+      address  : bookingPayload.address,
+      ownsHome : bookingPayload.ownsHome,
+      monthlyBill  : bookingPayload.monthlyBill,
+      roofType     : bookingPayload.roofType,
+      decisionStage: decisionStage ?? '',
+    });
+    console.error('[FINAL BOOKING PAYLOAD]', {
+      firstName: bookingPayload.firstName,
+      lastName : bookingPayload.lastName,
+      phone    : bookingPayload.phone,
+      address  : bookingPayload.address,
+      ownsHome : bookingPayload.ownsHome,
+      monthlyBill  : bookingPayload.monthlyBill,
+      roofType     : bookingPayload.roofType,
+      decisionStage: decisionStage ?? '',
+    });
 
     try {
       const res  = await fetch('/api/book-appointment', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify({
-          contactId,
-          startTime   : selSlot.startTime,
-          endTime     : selSlot.endTime,
-          name,
-          timezone    : tz,
-          // ── Optional lead summary ───────────────────────────────
-          ...(firstName    != null ? { firstName }   : {}),
-          ...(lastName     != null ? { lastName }    : {}),
-          ...(phone        ? { phone }               : {}),
-          ...(email        ? { email }               : {}),
-          ...(address      ? { address }             : {}),
-          ...(ownsHome      ? { ownsHome }                    : {}),
-          ...(monthlyBill   ? { monthlyBill }                : {}),
-          ...(roofType      ? { roofType }                   : {}),
-          ...(decisionStage ? { timeline: decisionStage }    : {}),
-        }),
+        body   : JSON.stringify(bookingPayload),
       });
 
       const json = await res.json() as {

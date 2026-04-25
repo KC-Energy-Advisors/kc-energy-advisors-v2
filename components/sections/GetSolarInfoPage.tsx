@@ -26,13 +26,13 @@ interface FormData {
   monthlyBill: BillCode;
   roofType  : RoofCode;
   // Step 3
-  timeline  : TimelineCode;
+  decisionStage: TimelineCode;
 }
 
 const EMPTY_FORM: FormData = {
   name: '', phone: '', address: '', consent: false,
   ownsHome: '', monthlyBill: '', roofType: '',
-  timeline: '',
+  decisionStage: '',
 };
 
 // ─────────────────────────────────────────────────────────────────
@@ -425,7 +425,7 @@ export default function GetSolarInfoPage() {
   const step2OK = form.ownsHome !== '' &&
                   form.monthlyBill !== '' &&
                   form.roofType !== '';
-  const step3OK = form.timeline !== '';
+  const step3OK = form.decisionStage !== '';
 
   function goStep2() {
     if (!step1OK) return;
@@ -562,9 +562,9 @@ export default function GetSolarInfoPage() {
       bill_amount:  form.monthlyBill,
       bill_label:   billMeta.label,
       bill_midpoint: String(billMeta.midpoint),
-      roofType:     form.roofType,  // ← custom field merge: {{contact.roof_type}}
-      timeline:     form.timeline,  // ← custom field merge: {{contact.decision_stage}}
-      tags:         [`bill-${form.monthlyBill}`, `roof-${form.roofType}`, `timeline-${form.timeline}`],
+      roofType:     form.roofType,         // ← custom field merge: {{contact.roof_type}}
+      timeline:     form.decisionStage,    // ← custom field merge: {{contact.decision_stage}}
+      tags:         [`bill-${form.monthlyBill}`, `roof-${form.roofType}`, `timeline-${form.decisionStage}`],
       utm_source:   utmSource,
       utm_medium:   utmMedium,
       utm_campaign: utmCampaign,
@@ -811,6 +811,12 @@ export default function GetSolarInfoPage() {
   if (pageState === 'booking') {
     const resolvedContactId = contactIdRef.current ?? contactId;
     console.error('[FUNNEL] booking page rendering — contactId:', resolvedContactId ?? 'null');
+    console.error('[BOOKING RENDER] form qualification state',
+      '| ownsHome:', form.ownsHome       || '❌ MISSING',
+      '| monthlyBill:', form.monthlyBill || '❌ MISSING',
+      '| roofType:', form.roofType       || '❌ MISSING',
+      '| decisionStage:', form.decisionStage || '❌ MISSING',
+    );
 
     // Safety net: goResult() already blocks this path, but if contactId is
     // somehow null here we cannot create a valid appointment — show recovery.
@@ -875,19 +881,35 @@ export default function GetSolarInfoPage() {
                 padding    : '56px 52px 64px',
               }}
             >
+              {/* ── Verification log — both variants so it survives removeConsole ── */}
+              {(() => {
+                console.log('[FORM STATE BEFORE BOOKING]', {
+                  ownsHome     : form.ownsHome,
+                  monthlyBill  : form.monthlyBill,
+                  roofType     : form.roofType,
+                  decisionStage: form.decisionStage,
+                });
+                console.error('[FORM STATE BEFORE BOOKING]', {
+                  ownsHome     : form.ownsHome,
+                  monthlyBill  : form.monthlyBill,
+                  roofType     : form.roofType,
+                  decisionStage: form.decisionStage,
+                });
+                return null;
+              })()}
               <SlotPicker
-                contactId   ={resolvedContactId}
-                name        ={form.name}
-                firstName   ={form.name.trim().split(/\s+/)[0] ?? ''}
-                lastName    ={form.name.trim().split(/\s+/).slice(1).join(' ')}
-                phone       ={toE164(form.phone)}
-                address     ={form.address || undefined}
-                ownsHome    ={form.ownsHome || undefined}
-                monthlyBill ={form.monthlyBill || undefined}
-                roofType    ={form.roofType || undefined}
-                decisionStage={form.timeline || undefined}
-                onBooked    ={handleBooked}
-                onFatalError={handleBookingFatalError}
+                contactId    ={resolvedContactId}
+                name         ={form.name}
+                firstName    ={form.name.trim().split(/\s+/)[0] ?? ''}
+                lastName     ={form.name.trim().split(/\s+/).slice(1).join(' ')}
+                phone        ={toE164(form.phone)}
+                address      ={form.address}
+                ownsHome     ={form.ownsHome}
+                monthlyBill  ={form.monthlyBill}
+                roofType     ={form.roofType}
+                decisionStage={form.decisionStage}
+                onBooked     ={handleBooked}
+                onFatalError ={handleBookingFatalError}
               />
             </div>
           </div>
@@ -1120,8 +1142,8 @@ export default function GetSolarInfoPage() {
                   ] as { code: TimelineCode; label: string; sublabel: string }[]).map(opt => (
                     <ChoiceCard
                       key={opt.code}
-                      selected={form.timeline === opt.code}
-                      onClick={() => set('timeline', opt.code)}
+                      selected={form.decisionStage === opt.code}
+                      onClick={() => set('decisionStage', opt.code)}
                       label={opt.label}
                       sublabel={opt.sublabel}
                     />
