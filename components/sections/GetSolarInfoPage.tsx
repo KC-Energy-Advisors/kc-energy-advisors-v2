@@ -556,11 +556,14 @@ export default function GetSolarInfoPage() {
       lastName,
       phone,
       email:        '',
+      address:      form.address,   // ← address1 in GHL; populate merge field {{contact.address1}}
       is_owner:     form.ownsHome as 'yes' | 'no',
       location_ok:  'yes' as const,
       bill_amount:  form.monthlyBill,
       bill_label:   billMeta.label,
       bill_midpoint: String(billMeta.midpoint),
+      roofType:     form.roofType,  // ← custom field merge: {{contact.roof_type}}
+      timeline:     form.timeline,  // ← custom field merge: {{contact.decision_stage}}
       tags:         [`bill-${form.monthlyBill}`, `roof-${form.roofType}`, `timeline-${form.timeline}`],
       utm_source:   utmSource,
       utm_medium:   utmMedium,
@@ -873,9 +876,17 @@ export default function GetSolarInfoPage() {
               }}
             >
               <SlotPicker
-                contactId={resolvedContactId}
-                name={form.name}
-                onBooked={handleBooked}
+                contactId   ={resolvedContactId}
+                name        ={form.name}
+                firstName   ={form.name.trim().split(/\s+/)[0] ?? ''}
+                lastName    ={form.name.trim().split(/\s+/).slice(1).join(' ')}
+                phone       ={toE164(form.phone)}
+                address     ={form.address || undefined}
+                ownsHome    ={form.ownsHome || undefined}
+                monthlyBill ={form.monthlyBill || undefined}
+                roofType    ={form.roofType || undefined}
+                timeline    ={form.timeline || undefined}
+                onBooked    ={handleBooked}
                 onFatalError={handleBookingFatalError}
               />
             </div>

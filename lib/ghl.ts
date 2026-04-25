@@ -29,10 +29,33 @@ const BOOKING_KEY_SOURCE = process.env.GHL_BOOKING_API_KEY
   ? 'GHL_BOOKING_API_KEY'
   : (GHL_API_KEY ? 'GHL_API_KEY (fallback)' : '⚠️ NOT SET');
 
+// Phone number that receives internal booking SMS notifications (Michael's number).
+// Set INTERNAL_NOTIFICATION_PHONE in Vercel env vars. If unset, notifications are skipped.
+const INTERNAL_NOTIFICATION_PHONE = process.env.INTERNAL_NOTIFICATION_PHONE ?? '';
+
+// ── GHL custom field IDs ──────────────────────────────────────────────────────
+// GHL stores custom field values by opaque ID, not by the merge-field key name.
+// Find these in GHL → Settings → Custom Fields → click each field → copy the ID.
+// If a value is blank, that field is silently skipped in the contact upsert and
+// its merge tag (e.g. {{contact.monthly_bill}}) will be empty in GHL workflows.
+const GHL_CF_MONTHLY_BILL   = process.env.GHL_CF_MONTHLY_BILL   ?? '';
+const GHL_CF_ROOF_TYPE      = process.env.GHL_CF_ROOF_TYPE      ?? '';
+const GHL_CF_OWNS_HOME      = process.env.GHL_CF_OWNS_HOME      ?? '';
+const GHL_CF_DECISION_STAGE = process.env.GHL_CF_DECISION_STAGE ?? '';
+
 if (!GHL_WEBHOOK_URL && process.env.NODE_ENV === 'production') {
   console.error('[GHL] GHL_WEBHOOK_URL is not set. Leads will not flow to GHL.');
 }
-console.error('[GHL] key sources — lead:', LEAD_KEY_SOURCE, '| booking:', BOOKING_KEY_SOURCE);
+console.error('[GHL] key sources — lead:', LEAD_KEY_SOURCE, '| booking:', BOOKING_KEY_SOURCE,
+  '| internalNotifyPhone:', INTERNAL_NOTIFICATION_PHONE ? '✓ set' : '(not set — booking SMS disabled)',
+);
+console.error(
+  '[GHL] custom field IDs —',
+  '| monthly_bill:', GHL_CF_MONTHLY_BILL   || '⚠️ MISSING (set GHL_CF_MONTHLY_BILL)',
+  '| roof_type:',    GHL_CF_ROOF_TYPE      || '⚠️ MISSING (set GHL_CF_ROOF_TYPE)',
+  '| owns_home:',    GHL_CF_OWNS_HOME      || '⚠️ MISSING (set GHL_CF_OWNS_HOME)',
+  '| decision_stage:', GHL_CF_DECISION_STAGE || '⚠️ MISSING (set GHL_CF_DECISION_STAGE)',
+);
 
 /**
  * Send a qualified lead payload to the GHL inbound webhook.
@@ -69,18 +92,62 @@ const GHL_HEADERS = (apiKey: string) => ({
 });
 
 /**
+ * Build the customField array for a GHL contact upsert.
+ * Only includes entries where both the field ID (env var) and a value are present.
+ * GHL requires IDs — if an env var is blank the field is silently skipped.
+ *
+ * Merge field → env var mapping:
+ *   {{contact.monthly_bill}}   → GHL_CF_MONTHLY_BILL
+ *   {{contact.roof_type}}      → GHL_CF_ROOF_TYPE
+ *   {{contact.owns_home}}      → GHL_CF_OWNS_HOME
+ *   {{contact.decision_stage}} → GHL_CF_DECISION_STAGE
+ */
+function buildCustomFields(params: {
+  isOwner?:    string;   // 'yes' | 'no'
+  billLabel?:  string;   // human label e.g. '$150–$200/mo'
+  roofType?:   string;   // code e.g. 'asphalt'
+  timeline?:   string;   // code e.g. 'ready'
+}): Array<{ id: string; field_value: string }> {
+  const fields: Array<{ id: string; field_value: string }> = [];
+
+  if (GHL_CF_MONTHLY_BILL && params.billLabel) {
+    fields.push({ id: GHL_CF_MONTHLY_BILL, field_value: params.billLabel });
+  }
+  if (GHL_CF_ROOF_TYPE && params.roofType) {
+    fields.push({ id: GHL_CF_ROOF_TYPE, field_value: ROOF_LABELS[params.roofType] ?? params.roofType });
+  }
+  if (GHL_CF_OWNS_HOME && params.isOwner) {
+    fields.push({ id: GHL_CF_OWNS_HOME, field_value: params.isOwner === 'yes' ? 'Yes' : 'No' });
+  }
+  if (GHL_CF_DECISION_STAGE && params.timeline) {
+    fields.push({ id: GHL_CF_DECISION_STAGE, field_value: TIMELINE_LABELS[params.timeline] ?? params.timeline });
+  }
+
+  return fields;
+}
+
+/**
  * Upsert a contact in GHL and return the contact's id.
  * Uses the Contacts Upsert endpoint so the same phone never creates duplicates.
  * Belt-and-suspenders: the inbound webhook (sendLeadToGHL) still fires for
  * workflow triggers — this function only supplements it to get a contactId back.
+ *
+ * Custom fields (monthly_bill, roof_type, owns_home, decision_stage) are sent
+ * when the corresponding GHL_CF_* env vars are configured. If they are blank,
+ * those fields are skipped and Vercel logs will show which IDs are missing.
  */
 export async function upsertGHLContact(params: {
-  firstName: string;
-  lastName:  string;
-  phone:     string;  // E.164
-  email:     string;
-  tags?:     string[];
-  address?:  string;  // full address string; mapped to address1 in GHL
+  firstName : string;
+  lastName  : string;
+  phone     : string;   // E.164
+  email     : string;
+  tags?     : string[];
+  address?  : string;   // full address string; mapped to address1 in GHL
+  // Qualification — used to populate custom fields for workflow merge tags
+  isOwner?  : string;   // 'yes' | 'no'  → {{contact.owns_home}}
+  billLabel?: string;   // human label   → {{contact.monthly_bill}}
+  roofType? : string;   // code           → {{contact.roof_type}}
+  timeline? : string;   // code           → {{contact.decision_stage}}
 }): Promise<string | null> {
   if (!GHL_LEAD_API_KEY) {
     console.error('[GHL] upsertGHLContact: no lead API key set (tried GHL_LEAD_API_KEY, GHL_API_KEY) — cannot upsert');
@@ -107,8 +174,66 @@ export async function upsertGHLContact(params: {
     body.address1 = params.address;
   }
 
-  console.error('[GHL CLEAN BODY]', body);
-  console.error('[GHL REQUEST] Using endpoint:', endpoint, '| keySource:', LEAD_KEY_SOURCE);
+  // ── Custom fields — populate GHL merge tags for workflow SMS ────────
+  const customFields = buildCustomFields({
+    isOwner:   params.isOwner,
+    billLabel: params.billLabel,
+    roofType:  params.roofType,
+    timeline:  params.timeline,
+  });
+  // GHL v2 contacts/upsert uses the key "customField" (singular array)
+  if (customFields.length > 0) {
+    body.customField = customFields;
+  }
+
+  // ── Resolved human-readable values for logging ─────────────────────
+  const logOwnsHome      = params.isOwner    ? (params.isOwner === 'yes' ? 'Yes' : 'No')                         : '(not provided)';
+  const logMonthlyBill   = params.billLabel  ?? '(not provided)';
+  const logRoofType      = params.roofType   ? (ROOF_LABELS[params.roofType]    ?? params.roofType)              : '(not provided)';
+  const logDecisionStage = params.timeline   ? (TIMELINE_LABELS[params.timeline] ?? params.timeline)             : '(not provided)';
+
+  // ── Missing field ID detection ──────────────────────────────────────
+  const missingIds = [
+    !GHL_CF_MONTHLY_BILL   ? 'GHL_CF_MONTHLY_BILL'   : null,
+    !GHL_CF_ROOF_TYPE      ? 'GHL_CF_ROOF_TYPE'      : null,
+    !GHL_CF_OWNS_HOME      ? 'GHL_CF_OWNS_HOME'      : null,
+    !GHL_CF_DECISION_STAGE ? 'GHL_CF_DECISION_STAGE' : null,
+  ].filter((x): x is string => x !== null);
+
+  if (missingIds.length > 0) {
+    for (const id of missingIds) {
+      console.error(`[GHL] ❌ MISSING ENV: ${id} — {{contact.${id.replace('GHL_CF_', '').toLowerCase()}}} will be empty in GHL workflow`);
+    }
+  }
+
+  // ── LOG 1: Contact update payload ──────────────────────────────────
+  console.error(
+    '[GHL] CONTACT UPDATE PAYLOAD\n' +
+    JSON.stringify({
+      name    : `${params.firstName} ${params.lastName}`.trim(),
+      phone   : params.phone,
+      address1: params.address ?? '',
+      customFields: customFields,
+    }, null, 2),
+  );
+
+  // ── LOG 2: Custom field values (human-readable) ─────────────────────
+  console.error(
+    '[GHL] CUSTOM FIELD VALUES\n' +
+    `  monthly_bill:    ${logMonthlyBill}\n` +
+    `  roof_type:       ${logRoofType}\n` +
+    `  owns_home:       ${logOwnsHome}\n` +
+    `  decision_stage:  ${logDecisionStage}`,
+  );
+
+  // ── LOG 3: Custom field IDs being used ──────────────────────────────
+  console.error(
+    '[GHL] CUSTOM FIELD IDS USED\n' +
+    `  GHL_CF_MONTHLY_BILL:   ${GHL_CF_MONTHLY_BILL   || '❌ NOT SET'}\n` +
+    `  GHL_CF_ROOF_TYPE:      ${GHL_CF_ROOF_TYPE      || '❌ NOT SET'}\n` +
+    `  GHL_CF_OWNS_HOME:      ${GHL_CF_OWNS_HOME      || '❌ NOT SET'}\n` +
+    `  GHL_CF_DECISION_STAGE: ${GHL_CF_DECISION_STAGE || '❌ NOT SET'}`,
+  );
 
   let res: Response;
   try {
@@ -148,6 +273,15 @@ export async function upsertGHLContact(params: {
       data?.data?.contact?.id ||
       null;
     console.error('[GHL CONTACT ID]', contactId);
+    if (contactId && customFields.length > 0) {
+      console.error(
+        `[GHL] ✅ CONTACT UPDATED WITH CUSTOM FIELDS — contactId: ${contactId} | fields written: ${customFields.length}`,
+      );
+    } else if (contactId && customFields.length === 0) {
+      console.error(
+        `[GHL] ✅ contact upserted (no custom fields — all GHL_CF_* env vars are unset) — contactId: ${contactId}`,
+      );
+    }
     return contactId;
   } catch {
     console.error('[GHL] upsertGHLContact: could not parse response JSON:', raw);
@@ -267,6 +401,81 @@ export async function getCalendarSlots(params: {
   }
 }
 
+// ── Lead summary label maps ───────────────────────────────────────────────────
+const BILL_LABELS: Record<string, string> = {
+  'under-100': 'Under $100/mo',
+  '100-150':   '$100–$150/mo',
+  '150-200':   '$150–$200/mo',
+  '200-plus':  '$200+/mo',
+};
+const ROOF_LABELS: Record<string, string> = {
+  'asphalt': 'Asphalt shingle',
+  'metal':   'Metal',
+  'tile':    'Tile',
+  'unsure':  'Not sure',
+};
+const TIMELINE_LABELS: Record<string, string> = {
+  'exploring':  'Just exploring',
+  'interested': "I'm interested",
+  'ready':      'Ready if it makes sense',
+};
+
+/** Format an ISO appointment time as "Tuesday, April 28 · 10:00 AM Central" */
+function fmtAppointmentTime(iso: string, tz: string): string {
+  try {
+    const d = new Date(iso);
+    const date = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: tz });
+    const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: tz });
+    // Try to get a short timezone label like "Central"
+    const tzShort = d.toLocaleTimeString('en-US', { timeZoneName: 'short', timeZone: tz }).split(' ').pop() ?? tz;
+    return `${date} · ${time} ${tzShort}`;
+  } catch {
+    return iso;
+  }
+}
+
+/**
+ * Build the appointment notes block that appears in GHL and in the
+ * internal notification. Every booked appointment gets this summary.
+ */
+function buildAppointmentNotes(params: {
+  firstName?  : string;
+  lastName?   : string;
+  name        : string;
+  phone?      : string;
+  email?      : string;
+  address?    : string;
+  startTime   : string;
+  timezone    : string;
+  ownsHome?   : string;
+  monthlyBill?: string;
+  roofType?   : string;
+  timeline?   : string;
+}): string {
+  const fullName  = params.firstName
+    ? `${params.firstName} ${params.lastName ?? ''}`.trim()
+    : params.name;
+
+  return [
+    'NEW SOLAR CONSULTATION',
+    '',
+    `Name:    ${fullName}`,
+    `Phone:   ${params.phone ?? '(not provided)'}`,
+    `Email:   ${params.email   ? params.email   : '(not provided)'}`,
+    `Address: ${params.address ? params.address : '(not provided)'}`,
+    '',
+    `Appointment Time: ${fmtAppointmentTime(params.startTime, params.timezone)}`,
+    '',
+    'Qualification:',
+    `  Owns Home:      ${params.ownsHome    === 'yes' ? 'Yes' : params.ownsHome === 'no' ? 'No' : '(not provided)'}`,
+    `  Electric Bill:  ${params.monthlyBill ? (BILL_LABELS[params.monthlyBill] ?? params.monthlyBill)     : '(not provided)'}`,
+    `  Roof Type:      ${params.roofType    ? (ROOF_LABELS[params.roofType]    ?? params.roofType)        : '(not provided)'}`,
+    `  Decision Stage: ${params.timeline    ? (TIMELINE_LABELS[params.timeline] ?? params.timeline)       : '(not provided)'}`,
+    '',
+    'Source: KC Energy Advisors website',
+  ].join('\n');
+}
+
 /**
  * Create an appointment in GHL for a specific contact and time slot.
  * Returns the appointment id on success, null on failure.
@@ -278,18 +487,39 @@ export async function getCalendarSlots(params: {
  *     the appointment lands on Michael's calendar and triggers his workflow.
  *   - Full diagnostic logging: outgoing body, URL, HTTP status, raw response.
  *   - All logs use console.error so they survive Next.js removeConsole in prod.
+ *   - Added enriched title and notes from lead qualification data.
  */
 export async function createGHLAppointment(params: {
-  contactId : string;
-  startTime : string;  // ISO 8601
-  endTime   : string;  // ISO 8601
-  name      : string;
-  timezone  : string;  // IANA tz — sent as selectedTimezone per GHL API spec
+  contactId   : string;
+  startTime   : string;  // ISO 8601
+  endTime     : string;  // ISO 8601
+  name        : string;
+  timezone    : string;  // IANA tz — sent as selectedTimezone per GHL API spec
+  firstName?  : string;
+  lastName?   : string;
+  phone?      : string;
+  email?      : string;
+  address?    : string;
+  ownsHome?   : string;
+  monthlyBill?: string;
+  roofType?   : string;
+  timeline?   : string;
 }): Promise<string | null> {
   if (!GHL_BOOKING_API_KEY || !GHL_CALENDAR_ID) {
     console.error('[GHL] createGHLAppointment: booking API key (GHL_BOOKING_API_KEY / GHL_API_KEY) or GHL_CALENDAR_ID not set — cannot book');
     return null;
   }
+
+  // ── Build enriched title and notes ───────────────────────────────
+  const fullName = params.firstName
+    ? `${params.firstName} ${params.lastName ?? ''}`.trim()
+    : params.name;
+
+  const appointmentTitle = `Solar Consultation - ${fullName}`;
+  const appointmentNotes = buildAppointmentNotes(params);
+
+  // ── Log full summary to Vercel before the API call ───────────────
+  console.error('[GHL] createGHLAppointment — LEAD SUMMARY\n' + appointmentNotes);
 
   // ── Build request body ───────────────────────────────────────────
   // `selectedTimezone` is required by GHL — without it GHL rejects with 422.
@@ -302,7 +532,8 @@ export async function createGHLAppointment(params: {
     startTime:         params.startTime,
     endTime:           params.endTime,
     selectedTimezone:  params.timezone,   // ← WAS MISSING — root cause of booking failure
-    title:             `Solar Consultation — ${params.name}`,
+    title:             appointmentTitle,
+    notes:             appointmentNotes,
     appointmentStatus: 'confirmed',
     ignoreDateRange:   false,
     toNotify:          true,
@@ -427,6 +658,23 @@ export async function createGHLAppointment(params: {
             '| contactId:', params.contactId,
             '| startTime:', params.startTime,
           );
+          // Attach lead summary as a GHL contact note — fire-and-forget
+          addGHLContactNote(params.contactId, appointmentNotes).catch(err =>
+            console.error('[GHL] addGHLContactNote (post-retry) error:', err),
+          );
+          // Send internal SMS notification to Michael — fire-and-forget
+          console.error('[INTERNAL SMS] pre-send field check (retry path)',
+            '| ownsHome:', params.ownsHome ?? '❌ MISSING',
+            '| monthlyBill:', params.monthlyBill ?? '❌ MISSING',
+            '| roofType:', params.roofType ?? '❌ MISSING',
+            '| timeline:', params.timeline ?? '❌ MISSING',
+            '| phone:', params.phone ?? '❌ MISSING',
+            '| address:', params.address ?? '❌ MISSING',
+          );
+          const internalMsg = buildInternalMessage(params);
+          sendInternalNotification(internalMsg).catch(err =>
+            console.error('[INTERNAL SMS] post-retry send error:', err),
+          );
         } else {
           console.error('[GHL] createGHLAppointment retry: HTTP 2xx but no id — raw:', retryRaw.substring(0, 400));
         }
@@ -464,6 +712,23 @@ export async function createGHLAppointment(params: {
         '| contactId:', params.contactId,
         '| startTime:', params.startTime,
       );
+      // Attach lead summary as a GHL contact note — fire-and-forget, never blocks booking
+      addGHLContactNote(params.contactId, appointmentNotes).catch(err =>
+        console.error('[GHL] addGHLContactNote (post-booking) error:', err),
+      );
+      // Send internal SMS notification to Michael — fire-and-forget
+      console.error('[INTERNAL SMS] pre-send field check (first-attempt path)',
+        '| ownsHome:', params.ownsHome ?? '❌ MISSING',
+        '| monthlyBill:', params.monthlyBill ?? '❌ MISSING',
+        '| roofType:', params.roofType ?? '❌ MISSING',
+        '| timeline:', params.timeline ?? '❌ MISSING',
+        '| phone:', params.phone ?? '❌ MISSING',
+        '| address:', params.address ?? '❌ MISSING',
+      );
+      const internalMsg = buildInternalMessage(params);
+      sendInternalNotification(internalMsg).catch(err =>
+        console.error('[INTERNAL SMS] post-booking send error:', err),
+      );
     } else {
       console.error('[GHL] createGHLAppointment: HTTP 2xx but no id in response — raw:', raw.substring(0, 400));
     }
@@ -473,6 +738,145 @@ export async function createGHLAppointment(params: {
   } catch (parseErr) {
     console.error('[GHL] createGHLAppointment: could not parse response JSON —', parseErr, '| raw:', raw.substring(0, 400));
     return null;
+  }
+}
+
+/**
+ * Add a note to a GHL contact.
+ * Used after booking to attach the full lead summary to the contact record.
+ * Non-blocking — caller should not await unless it cares about the result.
+ */
+export async function addGHLContactNote(contactId: string, noteBody: string): Promise<void> {
+  if (!GHL_LEAD_API_KEY) {
+    console.error('[GHL] addGHLContactNote: no lead API key — skipping contact note');
+    return;
+  }
+
+  const url = `${GHL_API_BASE}/contacts/${contactId}/notes`;
+  console.error('[GHL] addGHLContactNote → POST', url, '| contactId:', contactId);
+
+  try {
+    const res = await fetch(url, {
+      method:  'POST',
+      headers: {
+        'Authorization': `Bearer ${GHL_LEAD_API_KEY}`,
+        'Content-Type':  'application/json',
+        'Version':       '2021-07-28',
+      },
+      body:  JSON.stringify({ body: noteBody }),
+      cache: 'no-store',
+    });
+
+    const raw = await res.text().catch(() => '');
+    if (res.ok) {
+      console.error('[GHL] addGHLContactNote SUCCESS — contactId:', contactId);
+    } else {
+      console.error('[GHL] addGHLContactNote FAILED —', res.status, '| body:', raw.substring(0, 400));
+    }
+  } catch (err) {
+    console.error('[GHL] addGHLContactNote network error:', err);
+  }
+}
+
+/**
+ * Build the internal SMS text that Michael receives after every booking.
+ * Format is locked — do not change labels or emoji without product sign-off.
+ */
+function buildInternalMessage(params: {
+  firstName?  : string;
+  lastName?   : string;
+  name        : string;
+  phone?      : string;
+  address?    : string;
+  ownsHome?   : string;   // 'yes' | 'no'
+  monthlyBill?: string;   // code e.g. '150-200'
+  roofType?   : string;   // code e.g. 'asphalt'
+  timeline?   : string;   // code e.g. 'ready'
+  startTime   : string;
+  timezone    : string;
+}): string {
+  const fullName = params.firstName
+    ? `${params.firstName} ${params.lastName ?? ''}`.trim()
+    : params.name;
+
+  const ownsHome  = params.ownsHome    === 'yes' ? 'Yes'
+                  : params.ownsHome    === 'no'  ? 'No'
+                  : '(not provided)';
+  const bill      = params.monthlyBill ? (BILL_LABELS[params.monthlyBill]    ?? params.monthlyBill)  : '(not provided)';
+  const roof      = params.roofType    ? (ROOF_LABELS[params.roofType]       ?? params.roofType)     : '(not provided)';
+  const stage     = params.timeline    ? (TIMELINE_LABELS[params.timeline]   ?? params.timeline)     : '(not provided)';
+  const apptTime  = fmtAppointmentTime(params.startTime, params.timezone);
+
+  // Log which fields are missing so Vercel shows the gap immediately
+  const missing = [
+    !params.phone       && 'phone',
+    !params.address     && 'address',
+    !params.ownsHome    && 'ownsHome',
+    !params.monthlyBill && 'monthlyBill',
+    !params.roofType    && 'roofType',
+    !params.timeline    && 'timeline',
+  ].filter(Boolean);
+  if (missing.length > 0) {
+    console.error('[INTERNAL SMS] ⚠️  missing fields — SMS will show (not provided) for:', missing.join(', '));
+  }
+
+  return [
+    '🔥 NEW APPOINTMENT BOOKED 🔥',
+    '',
+    `Name: ${fullName}`,
+    `Phone: ${params.phone ?? '(not provided)'}`,
+    `Address: ${params.address ?? '(not provided)'}`,
+    `Time: ${apptTime}`,
+    `Bill: ${bill}`,
+    `Roof: ${roof}`,
+    `Owns Home: ${ownsHome}`,
+    `Stage: ${stage}`,
+    '',
+    'This one is locked in. 📈',
+  ].join('\n');
+}
+
+/**
+ * Send an internal SMS via GHL Conversations API.
+ * Used to notify Michael immediately after a lead books an appointment.
+ * Non-blocking — wrap callsite in .catch() so failure never affects booking.
+ */
+export async function sendInternalNotification(message: string): Promise<void> {
+  if (!INTERNAL_NOTIFICATION_PHONE) {
+    console.error('[INTERNAL SMS] INTERNAL_NOTIFICATION_PHONE not set — skipping notification');
+    return;
+  }
+  if (!GHL_API_KEY) {
+    console.error('[INTERNAL SMS] GHL_API_KEY not set — cannot send notification');
+    return;
+  }
+
+  console.error('[INTERNAL SMS] Sending lead notification → phone:', INTERNAL_NOTIFICATION_PHONE);
+
+  try {
+    const res = await fetch(`${GHL_API_BASE}/conversations/messages`, {
+      method : 'POST',
+      headers: {
+        'Authorization': `Bearer ${GHL_API_KEY}`,
+        'Content-Type' : 'application/json',
+        'Version'      : '2021-07-28',
+      },
+      body : JSON.stringify({
+        type   : 'SMS',
+        message: message,
+        phone  : INTERNAL_NOTIFICATION_PHONE,
+      }),
+      cache: 'no-store',
+    });
+
+    const raw = await res.text().catch(() => '');
+    if (res.ok) {
+      console.error('[INTERNAL SMS] ✅ Sent successfully — status:', res.status);
+    } else {
+      console.error('[INTERNAL SMS] ❌ Failed — status:', res.status, '| body:', raw.substring(0, 600));
+    }
+  } catch (err) {
+    console.error('[INTERNAL SMS] Network error:', err);
   }
 }
 

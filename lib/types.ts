@@ -46,9 +46,11 @@ export interface LeadPayload {
   // Qualification
   is_owner:       'yes' | 'no';
   location_ok:    'yes' | 'no';
-  bill_amount:    string;       // code e.g. '150-250'
+  bill_amount:    string;       // code e.g. '150-200'
   bill_label:     string;       // human label
   bill_midpoint:  string;       // dollar midpoint as string
+  roofType?:      string;       // 'asphalt' | 'metal' | 'tile' | 'unsure'
+  timeline?:      string;       // 'exploring' | 'interested' | 'ready'
   // Tags
   tags:           string[];
   // Attribution
@@ -93,11 +95,21 @@ export interface CalendarSlot {
 export type SlotsByDate = Record<string, CalendarSlot[]>;
 
 export interface BookingRequest {
-  contactId : string;
-  startTime : string;  // ISO 8601
-  endTime   : string;  // ISO 8601
-  name      : string;  // display name on calendar event
-  timezone  : string;  // IANA tz, e.g. "America/Chicago"
+  contactId   : string;
+  startTime   : string;  // ISO 8601
+  endTime     : string;  // ISO 8601
+  name        : string;  // full name — kept for backward compat
+  timezone    : string;  // IANA tz, e.g. "America/Chicago"
+  // ── Optional lead summary — populated from form state ──────────────
+  firstName?  : string;
+  lastName?   : string;
+  phone?      : string;  // E.164
+  email?      : string;
+  address?    : string;
+  ownsHome?   : string;  // 'yes' | 'no'
+  monthlyBill?: string;  // code: 'under-100' | '100-150' | '150-200' | '200-plus'
+  roofType?   : string;  // 'asphalt' | 'metal' | 'tile' | 'unsure'
+  timeline?   : string;  // 'exploring' | 'interested' | 'ready'
 }
 
 export interface BookingResponse {

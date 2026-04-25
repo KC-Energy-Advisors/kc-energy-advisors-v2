@@ -12,6 +12,16 @@ export interface SlotPickerProps {
   contactId    : string;
   /** Full name used as the GHL appointment title */
   name         : string;
+  /** Optional lead summary fields — enrich GHL appointment notes */
+  firstName?   : string;
+  lastName?    : string;
+  phone?       : string;   // E.164
+  email?       : string;
+  address?     : string;
+  ownsHome?    : string;   // 'yes' | 'no'
+  monthlyBill? : string;   // code e.g. '150-200'
+  roofType?    : string;   // 'asphalt' | 'metal' | 'tile' | 'unsure'
+  timeline?    : string;   // 'exploring' | 'interested' | 'ready'
   /** Called when the appointment is successfully created in GHL */
   onBooked     : (slot: CalendarSlot) => void;
   /** Called only for truly unrecoverable failures (should be rare) */
@@ -136,6 +146,15 @@ const CSS = `
 export default function SlotPicker({
   contactId,
   name,
+  firstName,
+  lastName,
+  phone,
+  email,
+  address,
+  ownsHome,
+  monthlyBill,
+  roofType,
+  timeline,
   onBooked,
   onFatalError,
 }: SlotPickerProps) {
@@ -213,6 +232,14 @@ export default function SlotPicker({
     setState('booking');
     setBookErr('');
     console.error('[BOOKING] firing — contactId:', contactId, '| start:', selSlot.startTime, '| tz:', tz);
+    console.error('[BOOKING] qualification fields being sent',
+      '| ownsHome:', ownsHome ?? '❌ MISSING',
+      '| monthlyBill:', monthlyBill ?? '❌ MISSING',
+      '| roofType:', roofType ?? '❌ MISSING',
+      '| timeline:', timeline ?? '❌ MISSING',
+      '| phone:', phone ?? '❌ MISSING',
+      '| address:', address ?? '❌ MISSING',
+    );
 
     try {
       const res  = await fetch('/api/book-appointment', {
@@ -220,10 +247,20 @@ export default function SlotPicker({
         headers: { 'Content-Type': 'application/json' },
         body   : JSON.stringify({
           contactId,
-          startTime: selSlot.startTime,
-          endTime  : selSlot.endTime,
+          startTime   : selSlot.startTime,
+          endTime     : selSlot.endTime,
           name,
-          timezone : tz,
+          timezone    : tz,
+          // ── Optional lead summary ───────────────────────────────
+          ...(firstName    != null ? { firstName }   : {}),
+          ...(lastName     != null ? { lastName }    : {}),
+          ...(phone        ? { phone }               : {}),
+          ...(email        ? { email }               : {}),
+          ...(address      ? { address }             : {}),
+          ...(ownsHome     ? { ownsHome }            : {}),
+          ...(monthlyBill  ? { monthlyBill }         : {}),
+          ...(roofType     ? { roofType }            : {}),
+          ...(timeline     ? { timeline }            : {}),
         }),
       });
 

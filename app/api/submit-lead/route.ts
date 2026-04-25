@@ -148,17 +148,24 @@ export async function POST(req: NextRequest) {
     (async (): Promise<string | null> => {
       const p = payload as LeadPayload;
       const contactId = await upsertGHLContact({
-        firstName: p.firstName,
-        lastName:  p.lastName,
-        phone:     p.phone,
-        email:     p.email,
-        tags:      p.tags,
-        address:   p.address,
+        firstName : p.firstName,
+        lastName  : p.lastName,
+        phone     : p.phone,
+        email     : p.email,
+        tags      : p.tags,
+        address   : p.address,
+        // ── Qualification → custom fields (workflow merge tags) ───────
+        // Only populated on the full Step 3 submit; blank on Step 1 partial.
+        // GHL_CF_* env vars must be set for these to write to the contact.
+        isOwner   : p.is_owner   || undefined,
+        billLabel : p.bill_label || undefined,
+        roofType  : p.roofType   || undefined,
+        timeline  : p.timeline   || undefined,
       });
       if (contactId) {
-        console.log(`[submit-lead] ✅ GHL upsert succeeded — contactId: ${contactId}`);
+        console.error(`[submit-lead] ✅ GHL upsert succeeded — contactId: ${contactId}`);
       } else {
-        console.warn(`[submit-lead] ⚠️  GHL upsert returned no contactId — phone: ${p.phone}`);
+        console.error(`[submit-lead] ⚠️  GHL upsert returned no contactId — phone: ${p.phone}`);
       }
       return contactId;
     })(),

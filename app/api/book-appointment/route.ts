@@ -42,18 +42,39 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { contactId, startTime, endTime, name, timezone } = body;
+  const {
+    contactId,
+    startTime,
+    endTime,
+    name,
+    timezone,
+    firstName,
+    lastName,
+    phone,
+    email,
+    address,
+    ownsHome,
+    monthlyBill,
+    roofType,
+    timeline,
+  } = body;
 
-  // ── Diagnostic log: incoming request ──────────────────────────────
-  // console.error survives Next.js removeConsole; console.log does not.
-  console.error('[book-appointment] INCOMING REQUEST',
-    '| contactId:', contactId,
-    '| startTime:', startTime,
-    '| endTime:', endTime,
-    '| timezone:', timezone,
-    '| name:', name,
-    '| calendarId (env):', process.env.GHL_CALENDAR_ID ?? '⚠️ NOT SET',
-    '| assignedUserId (env):', process.env.GHL_ASSIGNED_USER_ID ?? '(not set)',
+  // ── Full lead summary log — survives removeConsole ─────────────────
+  console.error(
+    '[book-appointment] LEAD SUMMARY\n' +
+    `  Name:           ${firstName ? `${firstName} ${lastName}` : name}\n` +
+    `  Phone:          ${phone ?? '(not provided)'}\n` +
+    `  Email:          ${email ?? '(not provided)'}\n` +
+    `  Address:        ${address ?? '(not provided)'}\n` +
+    `  Appointment:    ${startTime}\n` +
+    `  Timezone:       ${timezone}\n` +
+    `  Owns Home:      ${ownsHome ?? '(not provided)'}\n` +
+    `  Electric Bill:  ${monthlyBill ?? '(not provided)'}\n` +
+    `  Roof Type:      ${roofType ?? '(not provided)'}\n` +
+    `  Decision Stage: ${timeline ?? '(not provided)'}\n` +
+    `  contactId:      ${contactId}\n` +
+    `  calendarId:     ${process.env.GHL_CALENDAR_ID ?? '⚠️ NOT SET'}\n` +
+    `  assignedUserId: ${process.env.GHL_ASSIGNED_USER_ID ?? '(not set)'}`,
   );
 
   try {
@@ -63,6 +84,15 @@ export async function POST(req: NextRequest) {
       endTime,
       name,
       timezone,
+      firstName,
+      lastName,
+      phone,
+      email,
+      address,
+      ownsHome,
+      monthlyBill,
+      roofType,
+      timeline,
     });
 
     if (!appointmentId) {
