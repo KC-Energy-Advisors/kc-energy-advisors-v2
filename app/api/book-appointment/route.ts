@@ -150,10 +150,45 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Appointment confirmed — fire background tasks, return immediately ──
-    // None of the following are awaited so the UI never waits on them.
+    // ── Appointment confirmed ─────────────────────────────────────────
+    console.error(`[book-appointment] ✅ SUCCESS — appointmentId: ${appointmentId}, contactId: ${contactId}`);
 
-    // 1. Write qualification custom fields to the GHL contact record
+    // ── 1. Internal SMS — awaited so it always completes before response ──
+    // Has its own try-catch so a failure NEVER affects the booking response.
+    // Empty strings normalized to undefined so label maps fire correctly.
+    // timeline is the wire key; buildInternalMessage expects decisionStage.
+    const decisionStage = timeline || undefined;
+
+    const normalized = {
+      name,
+      phone        : phone     || undefined,
+      address      : address   || undefined,
+      monthlyBill  : monthlyBill || undefined,
+      roofType     : roofType  || undefined,
+      ownsHome     : ownsHome  || undefined,
+      decisionStage,
+      startTime,
+      timezone,
+    };
+
+    console.error('[FINAL INTERNAL SMS DATA]', {
+      ...normalized,
+      firstName: firstName || '(none)',
+      lastName : lastName  || '(none)',
+    });
+
+    try {
+      const internalMsg = buildInternalMessage({
+        ...normalized,
+        firstName: firstName || undefined,
+        lastName : lastName  || undefined,
+      });
+      await sendInternalNotification(internalMsg);
+    } catch (smsErr) {
+      console.error('[INTERNAL SMS ERROR] unexpected throw:', smsErr);
+    }
+
+    // ── 2. Custom field write — fire-and-forget, never blocks response ──
     updateGHLContactFields(contactId, {
       ownsHome,
       monthlyBill,
@@ -162,43 +197,6 @@ export async function POST(req: NextRequest) {
       address,
     }).catch(err => console.error('[book-appointment] updateGHLContactFields error:', err));
 
-    // 2. Send internal SMS directly from code using booking payload values.
-    //    Zero GHL merge fields — this is the authoritative notification to admin.
-    //    Empty strings from the frontend are normalized to undefined so that
-    //    buildInternalMessage's label maps fire correctly.
-    //    timeline is the wire key; buildInternalMessage expects decisionStage.
-
-    // ── [FINAL INTERNAL SMS DATA] — exact values going into the SMS ──
-    console.error('[FINAL INTERNAL SMS DATA]', {
-      name         : firstName ? `${firstName} ${lastName ?? ''}`.trim() : name,
-      phone        : phone        || '(empty)',
-      address      : address      || '(empty)',
-      ownsHome     : ownsHome     || '(empty)',
-      monthlyBill  : monthlyBill  || '(empty)',
-      roofType     : roofType     || '(empty)',
-      decisionStage: timeline     || '(empty)',
-      startTime,
-      timezone,
-    });
-
-    const internalMsg = buildInternalMessage({
-      name,
-      firstName    : firstName    || undefined,
-      lastName     : lastName     || undefined,
-      phone        : phone        || undefined,
-      address      : address      || undefined,
-      ownsHome     : ownsHome     || undefined,
-      monthlyBill  : monthlyBill  || undefined,
-      roofType     : roofType     || undefined,
-      decisionStage: timeline     || undefined,   // wire key → internal label
-      startTime,
-      timezone,
-    });
-    sendInternalNotification(internalMsg).catch(err =>
-      console.error('[INTERNAL SMS ERROR] send threw:', err),
-    );
-
-    console.error(`[book-appointment] ✅ SUCCESS — appointmentId: ${appointmentId}, contactId: ${contactId}`);
     return NextResponse.json<BookingResponse>({ success: true, appointmentId, contactId });
 
   } catch (err) {
