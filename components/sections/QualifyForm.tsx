@@ -456,9 +456,9 @@ export default function QualifyForm() {
                       onChange={e => setForm(p => ({ ...p, consent: e.target.checked }))}
                       className="mt-0.5 w-4 h-4 accent-brand-blue flex-shrink-0 cursor-pointer"
                     />
-                    <label htmlFor="consent" className="text-[11px] text-white/38 leading-relaxed cursor-pointer">
-                      By checking this box, I agree to receive <strong className="text-white/55">automated</strong> text messages from KC Energy Advisors at the number above regarding my solar estimate. Message frequency varies. Msg &amp; data rates may apply. Reply STOP to opt out. Reply HELP for help. Consent is not a condition of purchase.{' '}
-                      <a href="/privacy" className="text-white/55 underline hover:text-white transition-colors">Privacy Policy</a>
+                    <label htmlFor="consent" className="text-[12px] text-white/65 leading-relaxed cursor-pointer">
+                      By checking this box, you agree to receive text messages from KC Energy Advisors about your savings report and appointment scheduling. Message and data rates may apply. Reply STOP to opt out.{' '}
+                      <a href="/privacy" className="text-white/80 underline hover:text-white transition-colors">Privacy Policy</a>
                     </label>
                   </div>
 
