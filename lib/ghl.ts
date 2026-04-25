@@ -325,42 +325,40 @@ export async function upsertGHLContact(params: {
     roofType:  params.roofType,
     timeline:  params.timeline,
   });
-  // GHL v2 contacts/upsert uses the key "customField" (singular array)
-  if (customFields.length > 0) {
-    body.customField = customFields;
+  // ── Filter to the 4 approved custom field IDs ─────────────────────────
+  // Any id that is not in this set is dropped with a log entry so a
+  // stray key (e.g. property_address, address, etc.) never causes a GHL 422.
+  const APPROVED_CF_IDS = new Set([
+    CF_MONTHLY_BILL,    // average_cost_per_month_for_electricity
+    CF_ROOF_TYPE,       // roof_type
+    CF_OWNS_HOME,       // do_you_own_your_home
+    CF_DECISION_STAGE,  // decision_stage
+  ]);
+
+  const safeCustomFields = customFields.filter(f => {
+    if (APPROVED_CF_IDS.has(f.id)) return true;
+    console.error('[GHL CUSTOM FIELD FILTERED]', f.id);
+    return false;
+  });
+
+  // GHL v2 contacts/upsert uses "customFields" (plural).
+  // "customField" (singular) is rejected with HTTP 422 "property customField should not exist".
+  if (safeCustomFields.length > 0) {
+    body.customFields = safeCustomFields;
   }
 
-  // ── Resolved human-readable values for logging ─────────────────────
-  const logOwnsHome      = params.isOwner   ? (params.isOwner === 'yes' ? 'Yes' : 'No')              : '(not provided)';
-  const logMonthlyBill   = params.billLabel ?? '(not provided)';
-  const logRoofType      = params.roofType  ? (ROOF_LABELS[params.roofType]    ?? params.roofType)   : '(not provided)';
-  const logDecisionStage = params.timeline  ? (TIMELINE_LABELS[params.timeline] ?? params.timeline)  : '(not provided)';
-
-  // ── LOG: Final customFields array — confirms property_address is absent ──
+  // ── LOG: Final upsert payload (before fetch) ───────────────────────
+  // Confirms address goes to address1 only and customFields contains
+  // exactly the 4 approved ids with no address/property_address entry.
   console.error(
-    '[GHL] upsertGHLContact — final customFields (property_address must NOT appear):\n' +
-    JSON.stringify(customFields, null, 2),
-  );
-
-  // ── LOG: Contact update payload ─────────────────────────────────────
-  console.error(
-    '[GHL] CONTACT UPDATE PAYLOAD\n' +
+    '[GHL FINAL UPSERT PAYLOAD]\n' +
     JSON.stringify({
-      name     : `${params.firstName} ${params.lastName}`.trim(),
-      phone    : params.phone,
-      address1 : params.address ?? '',
-      customFields,
+      name        : `${params.firstName} ${params.lastName}`.trim(),
+      phone       : params.phone,
+      address1    : params.address ?? '',
+      customFields: safeCustomFields,
+      tags        : body.tags,
     }, null, 2),
-  );
-
-  // ── LOG: Custom field values being written ──────────────────────────
-  console.error(
-    '[GHL] CUSTOM FIELD VALUES\n' +
-    `  average_cost_per_month_for_electricity: ${logMonthlyBill}\n` +
-    `  roof_type:                              ${logRoofType}\n` +
-    `  do_you_own_your_home:                   ${logOwnsHome}\n` +
-    `  decision_stage:                         ${logDecisionStage}\n` +
-    `  address1 (standard field):              ${params.address ?? '(not provided)'}`,
   );
 
   let res: Response;
@@ -401,11 +399,11 @@ export async function upsertGHLContact(params: {
       data?.data?.contact?.id ||
       null;
     console.error('[GHL CONTACT ID]', contactId);
-    if (contactId && customFields.length > 0) {
+    if (contactId && safeCustomFields.length > 0) {
       console.error(
-        `[GHL] ✅ CONTACT UPDATED WITH CUSTOM FIELDS — contactId: ${contactId} | fields written: ${customFields.length}`,
+        `[GHL] ✅ CONTACT UPDATED WITH CUSTOM FIELDS — contactId: ${contactId} | fields written: ${safeCustomFields.length}`,
       );
-    } else if (contactId && customFields.length === 0) {
+    } else if (contactId && safeCustomFields.length === 0) {
       console.error(
         `[GHL] ✅ contact upserted (no custom field values provided) — contactId: ${contactId}`,
       );
