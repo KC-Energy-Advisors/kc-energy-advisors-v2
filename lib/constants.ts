@@ -58,15 +58,24 @@ export const SOLAR = {
 export const BASE_TAGS = ['solar-lead-website'] as const;
 
 // ── KC utility rate chart data (2019–2025) ───────────────────────
-export const RATE_CHART = [
+// `projected: true` marks an estimate row so the chart can render the
+// "(est.)" subscript without baking it into the year string itself.
+export type RateChartItem = {
+  year     : string;
+  rate     : number;
+  height   : number;
+  projected?: boolean;
+};
+
+export const RATE_CHART: readonly RateChartItem[] = [
   { year: '2019', rate: 10.9, height: 68 },
   { year: '2020', rate: 11.2, height: 72 },
   { year: '2021', rate: 11.5, height: 75 },
   { year: '2022', rate: 12.4, height: 84 },
   { year: '2023', rate: 13.1, height: 89 },
   { year: '2024', rate: 14.3, height: 97 },
-  { year: '2025 est.', rate: 15.2, height: 100, projected: true },
-] as const;
+  { year: '2025', rate: 15.2, height: 100, projected: true },
+];
 
 // ── FAQ content ───────────────────────────────────────────────────
 // Updated: removed tax credit Q&A (expired Dec 31 2025), added Evergy-specific answers.
