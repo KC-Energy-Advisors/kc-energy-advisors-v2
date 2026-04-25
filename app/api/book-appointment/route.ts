@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createGHLAppointment, updateGHLContactFields, upsertGHLContact } from '@/lib/ghl';
+import {
+  createGHLAppointment,
+  updateGHLContactFields,
+  upsertGHLContact,
+  buildInternalMessage,
+  sendInternalNotification,
+} from '@/lib/ghl';
 import type { BookingRequest, BookingResponse } from '@/lib/types';
 
 function isValidBookingRequest(body: unknown): body is BookingRequest {
@@ -144,9 +150,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Appointment confirmed — return to frontend immediately ────────
-    // Custom field writes happen after the response is sent so the UI
-    // never waits on them. The contact already exists; this is metadata only.
+    // ── Appointment confirmed — fire background tasks, return immediately ──
+    // None of the following are awaited so the UI never waits on them.
+
+    // 1. Write qualification custom fields to the GHL contact record
     updateGHLContactFields(contactId, {
       ownsHome,
       monthlyBill,
@@ -154,6 +161,42 @@ export async function POST(req: NextRequest) {
       timeline,
       address,
     }).catch(err => console.error('[book-appointment] updateGHLContactFields error:', err));
+
+    // 2. Send internal SMS directly from code using booking payload values.
+    //    Zero GHL merge fields — this is the authoritative notification to admin.
+    //    Empty strings from the frontend are normalized to undefined so that
+    //    buildInternalMessage's label maps fire correctly.
+    //    timeline is the wire key; buildInternalMessage expects decisionStage.
+
+    // ── [FINAL INTERNAL SMS DATA] — exact values going into the SMS ──
+    console.error('[FINAL INTERNAL SMS DATA]', {
+      name         : firstName ? `${firstName} ${lastName ?? ''}`.trim() : name,
+      phone        : phone        || '(empty)',
+      address      : address      || '(empty)',
+      ownsHome     : ownsHome     || '(empty)',
+      monthlyBill  : monthlyBill  || '(empty)',
+      roofType     : roofType     || '(empty)',
+      decisionStage: timeline     || '(empty)',
+      startTime,
+      timezone,
+    });
+
+    const internalMsg = buildInternalMessage({
+      name,
+      firstName    : firstName    || undefined,
+      lastName     : lastName     || undefined,
+      phone        : phone        || undefined,
+      address      : address      || undefined,
+      ownsHome     : ownsHome     || undefined,
+      monthlyBill  : monthlyBill  || undefined,
+      roofType     : roofType     || undefined,
+      decisionStage: timeline     || undefined,   // wire key → internal label
+      startTime,
+      timezone,
+    });
+    sendInternalNotification(internalMsg).catch(err =>
+      console.error('[INTERNAL SMS ERROR] send threw:', err),
+    );
 
     console.error(`[book-appointment] ✅ SUCCESS — appointmentId: ${appointmentId}, contactId: ${contactId}`);
     return NextResponse.json<BookingResponse>({ success: true, appointmentId, contactId });

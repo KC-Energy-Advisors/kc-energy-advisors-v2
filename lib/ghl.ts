@@ -29,9 +29,14 @@ const BOOKING_KEY_SOURCE = process.env.GHL_BOOKING_API_KEY
   ? 'GHL_BOOKING_API_KEY'
   : (GHL_API_KEY ? 'GHL_API_KEY (fallback)' : '⚠️ NOT SET');
 
-// Phone number that receives internal booking SMS notifications (Michael's number).
-// Set INTERNAL_NOTIFICATION_PHONE in Vercel env vars. If unset, notifications are skipped.
-const INTERNAL_NOTIFICATION_PHONE = process.env.INTERNAL_NOTIFICATION_PHONE ?? '';
+// Admin phone for internal booking SMS notifications.
+// Primary env var:  INTERNAL_NOTIFY_PHONE  (new, shorter name)
+// Legacy fallback:  INTERNAL_NOTIFICATION_PHONE  (still honoured)
+// If neither is set, internal SMS is disabled and booking continues normally.
+const INTERNAL_NOTIFY_PHONE =
+  process.env.INTERNAL_NOTIFY_PHONE ||
+  process.env.INTERNAL_NOTIFICATION_PHONE ||
+  '';
 
 // ── GHL custom field identifiers ─────────────────────────────────────────────
 // Default to the exact key names from GHL → Settings → Custom Fields → "Key" column.
@@ -56,7 +61,7 @@ if (!GHL_WEBHOOK_URL && process.env.NODE_ENV === 'production') {
   console.error('[GHL] GHL_WEBHOOK_URL is not set. Leads will not flow to GHL.');
 }
 console.error('[GHL] key sources — lead:', LEAD_KEY_SOURCE, '| booking:', BOOKING_KEY_SOURCE,
-  '| internalNotifyPhone:', INTERNAL_NOTIFICATION_PHONE ? '✓ set' : '(not set — booking SMS disabled)',
+  '| INTERNAL_NOTIFY_PHONE:', INTERNAL_NOTIFY_PHONE ? '✓ set' : '(not set — internal booking SMS disabled)',
 );
 console.error(
   '[GHL] custom field identifiers —',
@@ -726,19 +731,9 @@ export async function createGHLAppointment(params: {
           addGHLContactNote(params.contactId, appointmentNotes).catch(err =>
             console.error('[GHL] addGHLContactNote (post-retry) error:', err),
           );
-          // NOTE: updateGHLContactFields is intentionally NOT called here.
-          // The route (book-appointment/route.ts) fires it after returning the
-          // success response so the frontend never waits on custom field writes.
-
-          // Send internal SMS notification to Michael — fire-and-forget
-          // Map params.timeline → decisionStage so buildInternalMessage reads the right key
-          const internalMsg = buildInternalMessage({
-            ...params,
-            decisionStage: params.timeline,
-          });
-          sendInternalNotification(internalMsg).catch(err =>
-            console.error('[INTERNAL SMS] post-retry send error:', err),
-          );
+          // NOTE: updateGHLContactFields and sendInternalNotification are NOT called here.
+          // Both are fired by book-appointment/route.ts after the success response is returned,
+          // so the frontend never waits on them and there is no double-send.
         } else {
           console.error('[GHL] createGHLAppointment retry: HTTP 2xx but no id — raw:', retryRaw.substring(0, 400));
         }
@@ -780,19 +775,9 @@ export async function createGHLAppointment(params: {
       addGHLContactNote(params.contactId, appointmentNotes).catch(err =>
         console.error('[GHL] addGHLContactNote (post-booking) error:', err),
       );
-      // NOTE: updateGHLContactFields is intentionally NOT called here.
-      // The route (book-appointment/route.ts) fires it after returning the
-      // success response so the frontend never waits on custom field writes.
-
-      // Send internal SMS notification to Michael — fire-and-forget
-      // Map params.timeline → decisionStage so buildInternalMessage reads the right key
-      const internalMsg = buildInternalMessage({
-        ...params,
-        decisionStage: params.timeline,
-      });
-      sendInternalNotification(internalMsg).catch(err =>
-        console.error('[INTERNAL SMS] post-booking send error:', err),
-      );
+      // NOTE: updateGHLContactFields and sendInternalNotification are NOT called here.
+      // Both are fired by book-appointment/route.ts after the success response is returned,
+      // so the frontend never waits on them and there is no double-send.
     } else {
       console.error('[GHL] createGHLAppointment: HTTP 2xx but no id in response — raw:', raw.substring(0, 400));
     }
@@ -843,13 +828,13 @@ export async function addGHLContactNote(contactId: string, noteBody: string): Pr
 }
 
 /**
- * Build the internal SMS text that Michael receives after every booking.
- * Format is locked — do not change labels or emoji without product sign-off.
+ * Build the internal SMS text sent to the admin after every booking.
+ * Uses ONLY backend values from the booking payload — zero GHL merge fields.
  *
- * Field names MUST match exactly what createGHLAppointment passes here:
- *   ownsHome, monthlyBill, roofType, decisionStage
+ * Exported so book-appointment/route.ts can call it directly after a
+ * confirmed appointment, ensuring the values match the Vercel booking logs.
  */
-function buildInternalMessage(params: {
+export function buildInternalMessage(params: {
   firstName?    : string;
   lastName?     : string;
   name          : string;
@@ -862,15 +847,16 @@ function buildInternalMessage(params: {
   startTime     : string;
   timezone      : string;
 }): string {
-  // ── Log exact input so Vercel shows what this function received ──
-  console.error('[SMS INPUT]', {
-    ownsHome     : params.ownsHome      ?? '(missing)',
-    monthlyBill  : params.monthlyBill   ?? '(missing)',
-    roofType     : params.roofType      ?? '(missing)',
-    decisionStage: params.decisionStage ?? '(missing)',
-    phone        : params.phone         ?? '(missing)',
-    address      : params.address       ?? '(missing)',
-    name         : params.name,
+  // ── [INTERNAL SMS INPUT] — log exact values before building ──────
+  // Uses || so both undefined AND empty string '' show as '(missing)'.
+  console.error('[INTERNAL SMS INPUT]', {
+    name         : params.firstName ? `${params.firstName} ${params.lastName ?? ''}`.trim() : params.name,
+    phone        : params.phone         || '(missing)',
+    address      : params.address       || '(missing)',
+    ownsHome     : params.ownsHome      || '(missing)',
+    monthlyBill  : params.monthlyBill   || '(missing)',
+    roofType     : params.roofType      || '(missing)',
+    decisionStage: params.decisionStage || '(missing)',
     startTime    : params.startTime,
   });
 
@@ -878,15 +864,15 @@ function buildInternalMessage(params: {
     ? `${params.firstName} ${params.lastName ?? ''}`.trim()
     : params.name;
 
-  const ownsHome  = params.ownsHome      === 'yes' ? 'Yes'
-                  : params.ownsHome      === 'no'  ? 'No'
-                  : '(not provided)';
-  const bill      = params.monthlyBill   ? (BILL_LABELS[params.monthlyBill]         ?? params.monthlyBill)   : '(not provided)';
-  const roof      = params.roofType      ? (ROOF_LABELS[params.roofType]            ?? params.roofType)      : '(not provided)';
-  const stage     = params.decisionStage ? (TIMELINE_LABELS[params.decisionStage]   ?? params.decisionStage) : '(not provided)';
-  const apptTime  = fmtAppointmentTime(params.startTime, params.timezone);
+  const ownsHome = params.ownsHome === 'yes' ? 'Yes'
+                 : params.ownsHome === 'no'  ? 'No'
+                 : '(not provided)';
+  const bill     = params.monthlyBill   ? (BILL_LABELS[params.monthlyBill]       ?? params.monthlyBill)   : '(not provided)';
+  const roof     = params.roofType      ? (ROOF_LABELS[params.roofType]          ?? params.roofType)      : '(not provided)';
+  const stage    = params.decisionStage ? (TIMELINE_LABELS[params.decisionStage] ?? params.decisionStage) : '(not provided)';
+  const apptTime = fmtAppointmentTime(params.startTime, params.timezone);
 
-  // Log which fields are missing so Vercel shows the gap immediately
+  // Warn about any blank fields (undefined OR empty string) so Vercel shows the gap immediately
   const missing = [
     !params.phone         && 'phone',
     !params.address       && 'address',
@@ -896,10 +882,10 @@ function buildInternalMessage(params: {
     !params.decisionStage && 'decisionStage',
   ].filter(Boolean);
   if (missing.length > 0) {
-    console.error('[INTERNAL SMS] ⚠️  missing fields — SMS will show (not provided) for:', missing.join(', '));
+    console.error('[INTERNAL SMS INPUT] ⚠️ missing/empty fields — will show (not provided) for:', missing.join(', '));
   }
 
-  const message = [
+  return [
     '🔥 NEW APPOINTMENT BOOKED 🔥',
     '',
     `Name: ${fullName}`,
@@ -911,56 +897,52 @@ function buildInternalMessage(params: {
     `Owns Home: ${ownsHome}`,
     `Stage: ${stage}`,
     '',
-    'This one is locked in. 📈',
+    "Let's Lock It In 📈",
   ].join('\n');
-
-  // ── Log final message text before it leaves this function ────────
-  console.error('[SMS OUTPUT]', message);
-
-  return message;
 }
 
 /**
- * Send an internal SMS via GHL Conversations API.
- * Used to notify Michael immediately after a lead books an appointment.
- * Non-blocking — wrap callsite in .catch() so failure never affects booking.
+ * Send an internal SMS directly via GHL Conversations API.
+ * Message is built entirely from backend booking values — no GHL merge fields.
+ * Exported so book-appointment/route.ts fires it after a confirmed appointment.
+ * Non-blocking — always wrap callsite in .catch() so a failure never blocks booking.
  */
 export async function sendInternalNotification(message: string): Promise<void> {
-  if (!INTERNAL_NOTIFICATION_PHONE) {
-    console.error('[INTERNAL SMS] INTERNAL_NOTIFICATION_PHONE not set — skipping notification');
+  if (!INTERNAL_NOTIFY_PHONE) {
+    console.error('[INTERNAL SMS SKIPPED] INTERNAL_NOTIFY_PHONE not set — add this env var in Vercel to enable internal notifications');
     return;
   }
-  if (!GHL_API_KEY) {
-    console.error('[INTERNAL SMS] GHL_API_KEY not set — cannot send notification');
+  if (!GHL_LEAD_API_KEY) {
+    console.error('[INTERNAL SMS SKIPPED] no GHL API key available (GHL_LEAD_API_KEY / GHL_API_KEY) — cannot send');
     return;
   }
 
-  console.error('[INTERNAL SMS] Sending lead notification → phone:', INTERNAL_NOTIFICATION_PHONE);
+  console.error('[INTERNAL SMS] sending to admin phone:', INTERNAL_NOTIFY_PHONE);
 
   try {
     const res = await fetch(`${GHL_API_BASE}/conversations/messages`, {
       method : 'POST',
       headers: {
-        'Authorization': `Bearer ${GHL_API_KEY}`,
+        'Authorization': `Bearer ${GHL_LEAD_API_KEY}`,
         'Content-Type' : 'application/json',
         'Version'      : '2021-07-28',
       },
       body : JSON.stringify({
         type   : 'SMS',
         message: message,
-        phone  : INTERNAL_NOTIFICATION_PHONE,
+        phone  : INTERNAL_NOTIFY_PHONE,
       }),
       cache: 'no-store',
     });
 
     const raw = await res.text().catch(() => '');
     if (res.ok) {
-      console.error('[INTERNAL SMS] ✅ Sent successfully — status:', res.status);
+      console.error('[INTERNAL SMS SENT] ✅ status:', res.status, '| to:', INTERNAL_NOTIFY_PHONE);
     } else {
-      console.error('[INTERNAL SMS] ❌ Failed — status:', res.status, '| body:', raw.substring(0, 600));
+      console.error('[INTERNAL SMS ERROR] ❌ status:', res.status, '| body:', raw.substring(0, 600));
     }
   } catch (err) {
-    console.error('[INTERNAL SMS] Network error:', err);
+    console.error('[INTERNAL SMS ERROR] network error:', err);
   }
 }
 
