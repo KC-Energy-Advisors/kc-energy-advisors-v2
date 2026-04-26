@@ -4,7 +4,7 @@ import { stagger, staggerSlow, fadeUp, fadeLeft, rowLeft, rowRight, viewport } f
 
 const WITHOUT = [
   { text: 'Utility decides your rate' },
-  { text: '$2,280+ paid annually, no return' },
+  { text: '$1,150+ paid annually, no return' },
   { text: 'Zero say in what you\'re charged' },
   { text: 'Grid-dependent, subject to outages' },
   { text: 'Electric demand keeps climbing' },
