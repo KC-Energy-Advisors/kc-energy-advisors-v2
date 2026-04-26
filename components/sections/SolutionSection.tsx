@@ -3,11 +3,11 @@ import { motion } from 'framer-motion';
 import { stagger, staggerSlow, fadeUp, fadeLeft, rowLeft, rowRight, viewport } from '@/lib/motion';
 
 const WITHOUT = [
-  { text: 'Rates go up — every year' },
+  { text: 'Utility decides your rate' },
   { text: '$2,280+ paid annually, no return' },
   { text: 'Zero say in what you\'re charged' },
   { text: 'Grid-dependent, subject to outages' },
-  { text: 'Average $190/mo and rising' },
+  { text: 'Rates go up — you have no control' },
   { text: 'No home value impact' },
 ];
 
