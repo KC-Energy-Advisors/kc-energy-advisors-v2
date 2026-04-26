@@ -7,7 +7,7 @@ const WITHOUT = [
   { text: '$2,280+ paid annually, no return' },
   { text: 'Zero say in what you\'re charged' },
   { text: 'Grid-dependent, subject to outages' },
-  { text: 'Rates go up — you have no control' },
+  { text: 'Electric demand keeps climbing' },
   { text: 'No home value impact' },
 ];
 
@@ -16,7 +16,7 @@ const WITH = [
   { text: 'System you own — builds equity' },
   { text: 'Your cost, your decision' },
   { text: 'Optional battery backup available' },
-  { text: 'Typical payment: $80–$130/mo*' },
+  { text: 'More independence from the grid' },
   { text: 'Solar homes sell 4% higher on avg.' },
 ];
 
@@ -140,13 +140,6 @@ export default function SolutionSection() {
                 </motion.div>
               </div>
             ))}
-
-            {/* Footer note */}
-            <div className="px-6 py-3 text-center" style={{ background: '#F9FAFB', borderTop: '1px solid #F3F4F6' }}>
-              <p className="text-[12px]" style={{ color: '#6B7280' }}>
-                *Payment depends on system size and financing terms. Individual results vary.
-              </p>
-            </div>
           </motion.div>
         </div>
       </div>
