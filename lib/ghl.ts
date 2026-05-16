@@ -52,6 +52,16 @@ const INTERNAL_NOTIFY_PHONE =
   process.env.INTERNAL_NOTIFICATION_PHONE ||
   '';
 
+// ── Brand config — single source of truth for all outbound GHL messages ──────
+// Mirror of the Python BRAND dict in michael_agent.py.
+// Update here to rebrand all appointment notes and admin SMS in one place.
+const BRAND = {
+  name       : 'STL Energy Advisors',
+  agent      : 'Michael',
+  utility    : 'Ameren',
+  serviceArea: 'St. Louis metro',
+} as const;
+
 // ── GHL custom field identifiers ─────────────────────────────────────────────
 // Default to the exact key names from GHL → Settings → Custom Fields → "Key" column.
 // These are the same identifiers used in workflow merge tags:
@@ -241,7 +251,7 @@ async function validateGhlAccess(apiKey: string, keyLabel: string): Promise<void
     const locLast4 = GHL_LOCATION_ID.length >= 4 ? `****${GHL_LOCATION_ID.slice(-4)}` : GHL_LOCATION_ID;
     throw new GhlAccessError(
       `WRONG GHL API KEY FOR THIS LOCATION. ` +
-      `Create/copy the Private Integration key from the exact same STL Energy Advisors sub-account as GHL_LOCATION_ID. ` +
+      `Create/copy the Private Integration key from the exact same ${BRAND.name} sub-account as GHL_LOCATION_ID. ` +
       `keyLabel=${keyLabel} keyLen=${ki.keyLen} keyLast4=${ki.keyLast4} locationId=${locLast4}`,
     );
   }
@@ -671,7 +681,7 @@ function buildAppointmentNotes(params: {
     `  Roof Type:      ${params.roofType    ? (ROOF_LABELS[params.roofType]    ?? params.roofType)        : '(not provided)'}`,
     `  Decision Stage: ${params.timeline    ? (TIMELINE_LABELS[params.timeline] ?? params.timeline)       : '(not provided)'}`,
     '',
-    'Source: STL Energy Advisors website',
+    `Source: ${BRAND.name} website`,
   ].join('\n');
 }
 
@@ -1057,7 +1067,7 @@ export function buildInternalMessage(params: {
   }
 
   // Build lines conditionally — missing fields produce no line at all
-  const lines: string[] = ['🔥 NEW APPOINTMENT BOOKED 🔥'];
+  const lines: string[] = [`🔥 NEW APPOINTMENT BOOKED 🔥`];
   if (fullName)          lines.push(`👤 ${fullName}`);
   if (params.phone)      lines.push(`📞 ${params.phone}`);
   if (params.address)    lines.push(`📍 ${params.address}`);
@@ -1066,6 +1076,7 @@ export function buildInternalMessage(params: {
   if (ownsHome !== null) lines.push(`🏠 Owns: ${ownsHome}`);
   if (roof     !== null) lines.push(`🏚 Roof: ${roof}`);
   if (stage    !== null) lines.push(`🎯 Stage: ${stage}`);
+  lines.push(            `— ${BRAND.name}`);
 
   return lines.join('\n\n');
 }
