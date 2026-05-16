@@ -1,4 +1,4 @@
-# KC Energy Advisors — Deployment Guide
+# STL Energy Advisors — Deployment Guide
 
 ## First-time setup (local dev)
 

@@ -38,7 +38,7 @@ export default function Footer() {
               Helping St. Louis homeowners take control of their energy — without pressure or guesswork.
             </p>
             <p className="text-[11px] mt-3 leading-relaxed" style={{ color: '#4B5563' }}>
-              STL Energy Advisors is a division of KC Energy Advisors LLC.
+              STL Energy Advisors is a division of STL Energy Advisors LLC.
             </p>
           </div>
 
@@ -93,7 +93,7 @@ export default function Footer() {
             Individual results vary based on system size, roof orientation, local utility rates, and usage patterns.
             Not all homeowners qualify. Subject to credit approval. Individual results vary based on home, roof, and energy usage.
           </p>
-          <p>© {new Date().getFullYear()} KC Energy Advisors · St. Louis, MO · All rights reserved.</p>
+          <p>© {new Date().getFullYear()} STL Energy Advisors · St. Louis, MO · All rights reserved.</p>
         </div>
       </div>
     </footer>

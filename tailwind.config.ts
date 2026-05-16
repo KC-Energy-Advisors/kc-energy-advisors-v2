@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // ── KC Energy Advisors brand tokens (v3 spec) ──────────────
+        // ── STL Energy Advisors brand tokens (v3 spec) ──────────────
         brand: {
           // Primary darks
           ink:       '#0C1322',   // Deep Ink — nav, hero, dark sections

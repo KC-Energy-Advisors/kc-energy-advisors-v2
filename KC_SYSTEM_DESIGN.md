@@ -1,4 +1,4 @@
-# KC Energy Advisors — Multi-Million Dollar Solar System Design
+# STL Energy Advisors — Multi-Million Dollar Solar System Design
 ## Full 6-Phase Architecture · Approval-Gated · Additive Only
 
 > **How to use this document:** Each phase ends with a clear APPROVAL GATE.
@@ -42,7 +42,7 @@ Every rewrite is designed to be equally or MORE persuasive than the original.
 
 **File:** `components/sections/TrustBar.tsx` line 7
 
-**Risk:** If KC Energy Advisors is not formally registered as an Evergy Partner Program
+**Risk:** If STL Energy Advisors is not formally registered as an Evergy Partner Program
 participant, this claim constitutes false advertising under FTC Act § 5 and Missouri
 Merchandising Practices Act. Evergy's legal team actively monitors this.
 
@@ -165,7 +165,7 @@ testimonials themselves — FTC requires proximity.
 the CTA button:**
 ```tsx
 <p className="text-[11px] text-slate-400 text-center max-w-2xl mx-auto mt-8 leading-relaxed">
-  * Results shown are from real KC Energy Advisors customers and reflect their
+  * Results shown are from real STL Energy Advisors customers and reflect their
   individual systems, usage patterns, and utility rates. Individual savings vary.
   Tax credits depend on your tax liability — consult a qualified tax professional.
   Reviews have not been incentivized.
@@ -423,7 +423,7 @@ T+30min:  Check: does contact have booking-confirmed tag?
           → NO: continue
 
 SMS 1 (T+30min):
-"Hey [First Name], this is Michael from KC Energy Advisors.
+"Hey [First Name], this is Michael from STL Energy Advisors.
 You just checked if solar makes sense for your home — great first step.
 Want me to find the best available time for your free consultation?
 Just reply YES and I'll send you a link. Reply STOP to opt out."
@@ -463,7 +463,7 @@ or GHL "Appointment Created" trigger)
 
 ```
 T+0:    Immediate SMS confirmation:
-"You're booked! [First Name] — your KC Energy Advisors consultation is
+"You're booked! [First Name] — your STL Energy Advisors consultation is
 confirmed for [DATE] at [TIME].
 We'll review your actual Evergy bill and show you exactly what solar
 would look like for your home.
@@ -882,4 +882,4 @@ You can approve multiple phases at once. I'll implement in the correct order.
 
 ---
 
-*Document version: 1.0 · Generated: April 2026 · Author: Claude (KC Energy Advisors session)*
+*Document version: 1.0 · Generated: April 2026 · Author: Claude (STL Energy Advisors session)*

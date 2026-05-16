@@ -1,4 +1,4 @@
-// ── KC Energy Advisors — TypeScript Interfaces ──────────────────
+// ── STL Energy Advisors — TypeScript Interfaces ──────────────────
 
 export type Stage =
   | 'INITIAL'

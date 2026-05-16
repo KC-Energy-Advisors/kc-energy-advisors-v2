@@ -20,7 +20,7 @@ export default function PrivacyPage() {
 
           <div className="prose prose-slate max-w-none">
             <Section title="1. Who We Are">
-              <p>KC Energy Advisors LLC (&ldquo;KC Energy Advisors,&rdquo; &ldquo;we,&rdquo; or &ldquo;us&rdquo;) is a solar advisory firm based in St. Louis, Missouri. This Privacy Policy explains how we collect, use, disclose, and safeguard information when you visit our website or submit a form requesting solar information.</p>
+              <p>STL Energy Advisors LLC (&ldquo;STL Energy Advisors,&rdquo; &ldquo;we,&rdquo; or &ldquo;us&rdquo;) is a solar advisory firm based in St. Louis, Missouri. This Privacy Policy explains how we collect, use, disclose, and safeguard information when you visit our website or submit a form requesting solar information.</p>
             </Section>
 
             <Section title="2. Information We Collect">
@@ -44,7 +44,7 @@ export default function PrivacyPage() {
             </Section>
 
             <Section title="4. SMS / Text Messaging">
-              <p>By submitting our qualification form and checking the consent box, you expressly consent to receive text messages from KC Energy Advisors at the mobile number you provide. Message frequency varies (typically 2–6 messages per inquiry). Message and data rates may apply.</p>
+              <p>By submitting our qualification form and checking the consent box, you expressly consent to receive text messages from STL Energy Advisors at the mobile number you provide. Message frequency varies (typically 2–6 messages per inquiry). Message and data rates may apply.</p>
               <p className="mt-3"><strong>To opt out:</strong> Reply STOP to any text message from us. You will receive a single confirmation message and will not receive further messages. To opt back in, text START.</p>
               <p className="mt-3">We do not share your mobile number with third parties for their marketing purposes.</p>
             </Section>
@@ -76,7 +76,7 @@ export default function PrivacyPage() {
             </Section>
 
             <Section title="10. Contact Us">
-              <p>KC Energy Advisors LLC<br/>St. Louis, Missouri<br/>Email: info@kcenergyadvisors.com</p>
+              <p>STL Energy Advisors LLC<br/>St. Louis, Missouri<br/>Email: info@kcenergyadvisors.com</p>
               <p className="mt-3">For SMS opt-out issues, text STOP to the number you received our message from, or email us with your phone number and we will immediately remove you.</p>
             </Section>
           </div>

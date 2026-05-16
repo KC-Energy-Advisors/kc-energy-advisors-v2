@@ -241,7 +241,7 @@ async function validateGhlAccess(apiKey: string, keyLabel: string): Promise<void
     const locLast4 = GHL_LOCATION_ID.length >= 4 ? `****${GHL_LOCATION_ID.slice(-4)}` : GHL_LOCATION_ID;
     throw new GhlAccessError(
       `WRONG GHL API KEY FOR THIS LOCATION. ` +
-      `Create/copy the Private Integration key from the exact same KC Energy Advisors sub-account as GHL_LOCATION_ID. ` +
+      `Create/copy the Private Integration key from the exact same STL Energy Advisors sub-account as GHL_LOCATION_ID. ` +
       `keyLabel=${keyLabel} keyLen=${ki.keyLen} keyLast4=${ki.keyLast4} locationId=${locLast4}`,
     );
   }
@@ -671,7 +671,7 @@ function buildAppointmentNotes(params: {
     `  Roof Type:      ${params.roofType    ? (ROOF_LABELS[params.roofType]    ?? params.roofType)        : '(not provided)'}`,
     `  Decision Stage: ${params.timeline    ? (TIMELINE_LABELS[params.timeline] ?? params.timeline)       : '(not provided)'}`,
     '',
-    'Source: KC Energy Advisors website',
+    'Source: STL Energy Advisors website',
   ].join('\n');
 }
 

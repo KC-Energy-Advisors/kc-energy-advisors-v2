@@ -30,7 +30,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-[18px] font-bold mb-3" style={{ color: '#0C1322' }}>1. Services</h2>
               <p>
-                KC Energy Advisors LLC ("we," "us," or "our") provides solar energy advisory,
+                STL Energy Advisors LLC ("we," "us," or "our") provides solar energy advisory,
                 consultation, and referral services to residential homeowners in the St. Louis
                 metropolitan area. Our services include free savings estimates, advisor consultations,
                 and connection to licensed installation partners.
@@ -50,7 +50,7 @@ export default function TermsPage() {
               <h2 className="text-[18px] font-bold mb-3" style={{ color: '#0C1322' }}>3. SMS Communications</h2>
               <p>
                 By providing your phone number and checking the consent box on our contact form,
-                you agree to receive SMS text messages from KC Energy Advisors. Message and data
+                you agree to receive SMS text messages from STL Energy Advisors. Message and data
                 rates may apply. You may opt out at any time by replying STOP to any message.
                 View our{' '}
                 <a href="/privacy" className="underline" style={{ color: '#2563EB' }}>Privacy Policy</a>
@@ -61,7 +61,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-[18px] font-bold mb-3" style={{ color: '#0C1322' }}>4. Savings Estimates</h2>
               <p>
-                All savings estimates provided by KC Energy Advisors are projections based on
+                All savings estimates provided by STL Energy Advisors are projections based on
                 average Missouri utility rates, historical EIA rate data, and standard production
                 assumptions for our region. Actual savings will vary based on your home's
                 specific characteristics, usage patterns, roof orientation, and applicable

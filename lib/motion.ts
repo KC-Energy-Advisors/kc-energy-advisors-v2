@@ -1,5 +1,5 @@
 /**
- * Framer Motion variants — KC Energy Advisors
+ * Framer Motion variants — STL Energy Advisors
  *
  * Central library of animation variants used across all sections.
  * Import only what you need to keep bundle size minimal.

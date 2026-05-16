@@ -34,7 +34,7 @@ const REVIEWS = [
     location: 'Blue Springs, MO',
     bill: 'System paid off in 7yr',
     rating: 5,
-    text: "We got 4 other solar quotes. KC Energy Advisors was the only company that felt honest. No fake urgency, no hidden fees. Our payback is 7 years and after that it's basically free electricity for life.",
+    text: "We got 4 other solar quotes. STL Energy Advisors was the only company that felt honest. No fake urgency, no hidden fees. Our payback is 7 years and after that it's basically free electricity for life.",
     initials: 'DS',
     color: 'bg-green-600',
   },
@@ -52,7 +52,7 @@ const REVIEWS = [
     location: 'Independence, MO',
     bill: '$178/mo → $19/mo',
     rating: 5,
-    text: "I'm a retired electrician so I know panels. These guys recommended LG panels — solid choice. Install crew was professional. Bill went from $178 to $19. Would absolutely recommend KC Energy Advisors.",
+    text: "I'm a retired electrician so I know panels. These guys recommended LG panels — solid choice. Install crew was professional. Bill went from $178 to $19. Would absolutely recommend STL Energy Advisors.",
     initials: 'TB',
     color: 'bg-orange-500',
   },
@@ -132,7 +132,7 @@ export default function Reviews() {
 
         <RevealSection className="text-center">
           <p className="text-[11px] text-slate-400 max-w-2xl mx-auto mb-8 leading-relaxed px-4">
-            * Results shown are from real KC Energy Advisors customers and reflect their individual
+            * Results shown are from real STL Energy Advisors customers and reflect their individual
             systems, usage patterns, and utility rates. Savings vary by home. Results vary by home, roof, and energy usage.
             No reviewer was compensated for their review.
           </p>

@@ -998,7 +998,7 @@ export default function GetSolarInfoPage() {
                   <label htmlFor="gsi-consent" className="text-[11px] text-[#6b7280] leading-relaxed cursor-pointer">
                     By checking this box, I agree to receive{' '}
                     <strong className="text-[#374151]">automated</strong> text messages from
-                    KC Energy Advisors at the number above regarding my solar estimate.
+                    STL Energy Advisors at the number above regarding my solar estimate.
                     Message frequency varies. Msg &amp; data rates may apply.
                     Reply STOP to opt out. Reply HELP for help.
                     Consent is not a condition of purchase.{' '}

@@ -457,7 +457,7 @@ export default function QualifyForm() {
                       className="mt-0.5 w-4 h-4 accent-brand-blue flex-shrink-0 cursor-pointer"
                     />
                     <label htmlFor="consent" className="text-[12px] text-white/65 leading-relaxed cursor-pointer">
-                      By checking this box, you agree to receive text messages from KC Energy Advisors about your savings report and appointment scheduling. Message and data rates may apply. Reply STOP to opt out.{' '}
+                      By checking this box, you agree to receive text messages from STL Energy Advisors about your savings report and appointment scheduling. Message and data rates may apply. Reply STOP to opt out.{' '}
                       <a href="/privacy" className="text-white/80 underline hover:text-white transition-colors">Privacy Policy</a>
                     </label>
                   </div>

@@ -1,4 +1,4 @@
-# KC Energy Advisors — Website Content Upgrade
+# STL Energy Advisors — Website Content Upgrade
 ### Research-Backed, Evergy-Specific, High-Conversion Copy
 
 ---
@@ -23,7 +23,7 @@ It will make you look out of date and undermine trust.
 
 The remaining federal pathway is third-party ownership (solar leases, PPAs) —
 which remain eligible under the 48E business Investment Tax Credit through 2027.
-If KC Energy Advisors offers a lease/PPA product, this is worth noting.
+If STL Energy Advisors offers a lease/PPA product, this is worth noting.
 If you only do customer-owned systems, don't mention federal credits at all.
 
 **Replace with your own installer incentive/rebate if you have one.**
@@ -129,7 +129,7 @@ That's $600/year in your pocket from day one, with a locked-in rate for 25 years
    Solar turns that into an asset you own."
 
 4. **Installer rebate / financing incentive.**
-   [FILL IN: What specific rebate or financing incentive does KC Energy Advisors offer?
+   [FILL IN: What specific rebate or financing incentive does STL Energy Advisors offer?
    Example: "We offer a $1,500 installation rebate for homeowners who book by [date]"
    or "Our financing partners offer 0% for the first 12 months."
    Do NOT publish a specific number until confirmed with your team.]
@@ -373,7 +373,7 @@ If a visitor asks about the tax credit, he should acknowledge it honestly:
 ## PART 6: WEAK SPOTS & RISKS
 
 ### 1. CRITICAL — Your installer rebate claim needs to be specific
-The brief mentions "cash rebate (installer-specific program)" as a replacement for the tax credit. I could not confirm what KC Energy Advisors specifically offers. Before publishing, define this exactly:
+The brief mentions "cash rebate (installer-specific program)" as a replacement for the tax credit. I could not confirm what STL Energy Advisors specifically offers. Before publishing, define this exactly:
 - What is the rebate amount?
 - Who qualifies?
 - Is it a financing rate, a cash-back amount, or a bill credit?
