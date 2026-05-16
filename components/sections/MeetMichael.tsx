@@ -90,7 +90,7 @@ export default function MeetMichael() {
       if (!res.ok || !data.reply) {
         setMessages(prev => [
           ...prev,
-          { from: 'michael', text: "Sorry, having a tech issue on my end. You can grab a time here: https://kcenergyadvisors.com/get-solar-info" },
+          { from: 'michael', text: "Sorry, having a tech issue on my end. The next step is to pick a quick time for your free savings review — tap the secure STL booking link I'll text you." },
         ]);
         return;
       }
@@ -100,7 +100,7 @@ export default function MeetMichael() {
     } catch {
       setMessages(prev => [
         ...prev,
-        { from: 'michael', text: "Something went wrong on my end. You can grab a time here: https://kcenergyadvisors.com/get-solar-info" },
+        { from: 'michael', text: "Something went wrong on my end. The next step is to pick a quick time for your free savings review — tap the secure STL booking link I'll text you." },
       ]);
     } finally {
       setTyping(false);
