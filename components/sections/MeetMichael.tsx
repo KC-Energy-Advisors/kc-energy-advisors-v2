@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import type { ReactNode } from 'react';
 import RevealSection from '@/components/ui/RevealSection';
 
 // Single opening line — matches the backend's response to an empty/first message.
@@ -21,6 +22,37 @@ function TypingDots() {
       ))}
     </div>
   );
+}
+
+// Matches any stlenergyadvisors.com/get-solar-info booking URL in a Michael reply.
+// Used only for visual rendering inside the phone mockup — m.text is never mutated,
+// so the conversation history sent back to /api/website-chat stays pristine.
+const BOOKING_URL_RE = /https?:\/\/[a-zA-Z0-9._-]*stlenergyadvisors\.com\/get-solar-info[^\s]*/g;
+
+function renderMichaelText(text: string): ReactNode {
+  const nodes: ReactNode[] = [];
+  let last = 0;
+  let match: RegExpExecArray | null;
+  BOOKING_URL_RE.lastIndex = 0;
+
+  while ((match = BOOKING_URL_RE.exec(text)) !== null) {
+    if (match.index > last) nodes.push(text.slice(last, match.index));
+    nodes.push(
+      <a
+        key={match.index}
+        href="/get-solar-info?source=phone-preview"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-2 flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer select-none"
+      >
+        Schedule Your Free Savings Review →
+      </a>
+    );
+    last = BOOKING_URL_RE.lastIndex;
+  }
+
+  if (last < text.length) nodes.push(text.slice(last));
+  return nodes.length === 0 ? text : nodes;
 }
 
 interface Msg { from: 'michael' | 'user'; text: string; }
@@ -230,7 +262,7 @@ export default function MeetMichael() {
                             : 'bg-brand-blue text-white rounded-tr-sm'
                         }`}
                       >
-                        {m.text}
+                        {m.from === 'michael' ? renderMichaelText(m.text) : m.text}
                       </div>
                     </div>
                   ))}
