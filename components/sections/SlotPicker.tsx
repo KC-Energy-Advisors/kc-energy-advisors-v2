@@ -89,7 +89,7 @@ const CSS = `
   .kc-date-strip::-webkit-scrollbar { display: none; }
 
   /* Date card */
-  .kc-date-card { scroll-snap-align: start; }
+  .kc-date-card { scroll-snap-align: start; scroll-snap-stop: always; }
   .kc-date-card:not(.kc-date-on):hover {
     background: rgba(59,130,246,0.12) !important;
     border-color: rgba(59,130,246,0.32) !important;
@@ -108,9 +108,18 @@ const CSS = `
   }
   .kc-time-btn:active { transform: translateY(0) scale(0.96) !important; transition-duration: 0.07s !important; }
 
-  /* Responsive time grid — collapse to 3 cols on narrow phones */
-  @media (max-width: 480px) {
-    .kc-time-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  /* Responsive time grid — 3 cols on all common iPhone widths */
+  @media (max-width: 600px) {
+    .kc-time-grid {
+      grid-template-columns: repeat(3, 1fr) !important;
+      gap: 10px !important;
+    }
+    .kc-time-btn {
+      padding: 14px 6px !important;
+      font-size: 14px !important;
+      min-height: 62px !important;
+      border-radius: 12px !important;
+    }
   }
 
   /* Arrow button */
@@ -142,6 +151,28 @@ const CSS = `
   .kc-trust { display:flex; align-items:center; justify-content:center; gap:32px; flex-wrap:wrap; }
   .kc-trust-item { display:flex; align-items:center; gap:8px; color:rgba(255,255,255,0.36); font-size:15px; white-space:nowrap; }
   .kc-trust-check { color:rgba(74,222,128,0.8); font-size:13px; }
+
+  /* Confirmation card — responsive layout for narrow phones */
+  @media (max-width: 600px) {
+    .kc-confirm-card {
+      padding: 24px 20px !important;
+      gap: 16px !important;
+    }
+    .kc-confirm-icon {
+      width: 56px !important;
+      height: 56px !important;
+      min-width: 56px !important;
+      border-radius: 16px !important;
+    }
+    .kc-confirm-date {
+      font-size: clamp(16px, 5.5vw, 26px) !important;
+      letter-spacing: -0.02em !important;
+      margin-bottom: 8px !important;
+    }
+    .kc-confirm-time {
+      font-size: clamp(14px, 4.5vw, 19px) !important;
+    }
+  }
 `;
 
 // ─────────────────────────────────────────────────────────────────
@@ -181,9 +212,16 @@ export default function SlotPicker({
 
   // ── Scroll the date strip left / right ────────────────────────
   function scrollDates(dir: 'left' | 'right') {
-    const el = dateStripRef.current;
-    if (!el) return;
-    el.scrollBy({ left: dir === 'right' ? 360 : -360, behavior: 'smooth' });
+    const currentIdx = selDate ? dates.indexOf(selDate) : 0;
+    const safe       = Math.max(0, Math.min(dates.length - 1, currentIdx));
+    const nextIdx    = dir === 'right'
+      ? Math.min(dates.length - 1, safe + 1)
+      : Math.max(0, safe - 1);
+    const nextDate = dates[nextIdx];
+    if (nextDate && nextDate !== selDate) {
+      setSelDate(nextDate);
+      setSelSlot(null);
+    }
   }
 
   // ── Fetch available slots ──────────────────────────────────────
@@ -226,6 +264,18 @@ export default function SlotPicker({
   }, [tz]);
 
   useEffect(() => { loadSlots(); }, [loadSlots]);
+
+  // Smooth-scroll the selected date card to horizontal center of the strip.
+  // Runs on initial selection AND on every arrow/click navigation.
+  useEffect(() => {
+    const el = dateStripRef.current;
+    if (!el || !selDate) return;
+    const idx = dates.indexOf(selDate);
+    if (idx < 0) return;
+    const STEP        = 138;          // 120px card + 18px gap
+    const centeredLeft = idx * STEP - (el.clientWidth / 2 - 60);
+    el.scrollTo({ left: Math.max(0, centeredLeft), behavior: 'smooth' });
+  }, [selDate, dates]);
 
   // ── Confirm the selected slot ──────────────────────────────────
   async function confirmBooking() {
@@ -836,7 +886,7 @@ export default function SlotPicker({
         </div>
 
         {/* ── Appointment hero card ─────────────────────────────── */}
-        <div style={{
+        <div className="kc-confirm-card" style={{
           background  : 'rgba(59,130,246,0.1)',
           border      : '1px solid rgba(59,130,246,0.24)',
           borderTop   : '3px solid rgba(59,130,246,0.7)',
@@ -849,7 +899,7 @@ export default function SlotPicker({
           boxShadow   : '0 12px 52px rgba(0,0,0,0.32)',
         }}>
           {/* Calendar icon */}
-          <div style={{
+          <div className="kc-confirm-icon" style={{
             flexShrink    : 0,
             width         : 80,
             height        : 80,
@@ -880,7 +930,7 @@ export default function SlotPicker({
             }}>
               Your appointment
             </p>
-            <p style={{
+            <p className="kc-confirm-date" style={{
               color        : 'white',
               fontSize     : 30,
               fontWeight   : 800,
@@ -890,7 +940,7 @@ export default function SlotPicker({
             }}>
               {dateLong}
             </p>
-            <p style={{
+            <p className="kc-confirm-time" style={{
               color     : 'rgba(255,255,255,0.62)',
               fontSize  : 22,
               fontWeight: 500,
